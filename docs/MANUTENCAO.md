@@ -1,0 +1,477 @@
+# Guia de manutenção — HELP-AGENT Orçamentos
+
+Para quem vai mexer no código. Visão geral e como rodar estão no [README](../README.md). O escopo
+original e o plano de migração estão em [ESCOPO-E-PLANO-MIGRACAO.md](ESCOPO-E-PLANO-MIGRACAO.md).
+
+## 1. Como o sistema funciona
+
+```
+Navegador (Angular)                          Servidor (Spring Boot, 127.0.0.1:8080)
+───────────────────                          ──────────────────────────────────────
+1. Composer: cola/anexa chamado e orçamentos
+2. "Extrair dados com IA" ── multipart ────▶ POST /api/extracoes
+                                               ExtracaoService → PromptExtracao (prompts/extracao.txt)
+                                               ExtratorIa (tentativas + fallback) → GeminiClient → Google
+                                               RegrasExtracao (avisos A2/C2) + LojaService.resolver
+3. Revisão: formulário preenchido ◀── JSON ─┘
+4. "Baixar PDF" ── multipart (dados+arquivos)▶ POST /api/orcamentos
+                                               ValidadorOrcamento (A1) → CalculoOrcamento
+                                               PdfOrcamentoService (PDFBox): template + anexos
+                                               ArmazenamentoLocal (PDF em disco) + tabela orcamento
+   download do PDF ◀────────────────────────┘
+5. Histórico ─────────────────────────────▶ GET /api/historico · /exportar · /importar
+```
+
+O navegador só conhece `/api/...`. Em desenvolvimento e no uso atual pela rede, o `ng serve` recebe tudo
+na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O backend não fica exposto.
+
+### Tipos de requisição (desde 28/09/2026)
+
+| Tipo (banco) | Tela | Chamado | Observação do impresso |
+|---|---|---|---|
+| `REQUISICAO` | **Requisição / Chamado** (padrão) | obrigatório | `# 1021069. Manutenção de…`, o formato de sempre |
+| `OPEX` | OPEX | obrigatório | `OPEX. # 1021069. …` |
+| `CAPEX` | CAPEX | opcional; não vai para a IA | `CAPEX. Aquisição de…` |
+
+- **Nomes:** o nome exibido fica só em `ROTULO_MODO` (`frontend/src/app/core/modelos.ts`). "Requisição / Chamado"
+  é provisório, e trocar ali não mexe em banco nem em backup. **Não renomeie a constante do enum**, porque ela é o valor gravado.
+- **Obrigatoriedade do chamado:** vem de `ModoAquisicao.exigeChamado()` (backend) e de `exigeChamado()` (frontend).
+- **Prompt:** OPEX e Requisição usam o mesmo prompt; o OPEX só ganha o rótulo `OPEX. ` no começo da observação.
+  O `PromptExtracaoTest` garante que, sem o rótulo, o texto é idêntico ao de antes, então a precisão medida continua valendo.
+- **Histórico antigo:** até 28/09 "OPEX" era o fluxo normal. A migration V4 moveu os 97 que existiam para
+  `REQUISICAO`. O backup de antes está em `backend/dados/backups/historico-antes-dos-3-tipos-2026-09-28.json`.
+  Backup em formato **versão 2** (exportado antes disso) com "OPEX" também é importado como `REQUISICAO`.
+- **Tela de histórico:** abas por tipo com contagem (que respeita a busca) e paginação de 20 em 20. A aba, a
+  página e a busca ficam na URL (`/historico?tipo=CAPEX&pagina=2`).
+
+### Recursos da revisão
+
+- **Documentos ao lado do formulário** (`documentos.ts`): abas com os orçamentos e chamados, com imagem em
+  "ajustar à largura"/"tamanho real" e PDF no visualizador do navegador.
+- **Chamado já orçado** (`ChamadosJaOrcados`): aviso com link para o PDF anterior, feito depois da leitura e
+  quando o número é editado. A busca é por número inteiro, então "102107" não casa com "1021071".
+- **Válido até**: a IA só informa o que está escrito (`validade_ate` ou `validade_dias`) e o servidor faz a
+  conta (`ExtracaoService.validadeSugerida`). Validade anterior à emissão é recusada.
+- **Fonte de cada valor**: a IA diz de onde leu cada total, por exemplo "pág. 1, linha Subtotal". Isso vai só
+  para o log (`Extração item 1: … fonte="…"`), não para a tela, e serve para auditar uma leitura errada.
+
+### Regras de negócio (nomes herdados do HTML v3.5, citados nos comentários)
+
+| Código | Regra | Onde |
+|---|---|---|
+| **A1** | Não gerar impresso cujo total não fecha com as linhas visíveis (linha com valor sem produto, produto sem valor, nenhum item) | `ValidadorOrcamento` |
+| **A2** | O impresso tem 10 linhas; se a IA trouxer mais, avisar quantas ficaram de fora | `RegrasExtracao`, `helpagent.orcamento.max-itens` |
+| **A4** | Data de emissão na data **local**, não UTC (depois das 21h o UTC já é amanhã) | `dataLocalISO` (frontend) |
+| **C2** | Total lido pela IA ≠ soma das linhas (> R$ 0,05) → aviso de conferência | `RegrasExtracao` |
+| — | Cada orçamento anexado vira **um** item consolidado (qtd 1, valor = total do orçamento) | prompt |
+| — | Preço de e-commerce: à vista/PIX > preço regular; nunca parcela | prompt |
+
+## 2. Mapa do código
+
+### Backend — `backend/src/main/java/br/com/rdamasio/helpagent/`
+
+| Pacote | Responsabilidade |
+|---|---|
+| `config` | `HelpAgentProperties` (tudo que é configurável, prefixo `helpagent.*`), segurança/CORS, usuário atual, `/api/parametros` |
+| `common` | `Dinheiro` (BRL ↔ `BigDecimal`), `Documento` (arquivo enviado), `OrigemRequisicao` (IP para os logs de auditoria), erros de negócio e o `TratadorErros` (ProblemDetail) |
+| `loja` | Cadastro de lojas e busca por número/nome |
+| `template` | Os 4 impressos: `TemplateCodigo`, nomes dos campos AcroForm (`CamposImpresso`) e leitura do PDF em branco |
+| `extracao` | Tudo da IA: prompt, cliente Gemini, política de tentativas, parser da resposta, avisos |
+| `orcamento` | Entidades, cálculo, validação A1 e o serviço que gera o impresso |
+| `pdf` | Montagem do PDF com PDFBox (preenchimento, anexos, carimbo, página de erro) |
+| `armazenamento` | Onde os PDFs gerados ficam (hoje: disco local) |
+| `historico` | Consulta, download, exclusão, backup JSON (exportar/importar) |
+| `cotacao` | Cotação em 7 lojas online, à parte do orçamento: Chrome via Playwright, uma `Fonte*` por loja, motor de ranking, planilha (§7) |
+
+Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem PostgreSQL e sem login),
+`db/migration/` (Flyway), `prompts/extracao.txt`, `pdf-templates/*.pdf`, `cotacao/extrair-<loja>.js` (um por loja da cotação).
+
+### Frontend — `frontend/src/app/`
+
+| Pasta | Conteúdo |
+|---|---|
+| `core/` | `api.ts` (todas as chamadas HTTP), `modelos.ts` (tipos da API), `dinheiro.ts`, `arquivos.ts` (anexos, texto→imagem), `avisos.ts` (toasts e overlay), `marca.ts` (visual Damásio × TD) |
+| `layout/` | Cabeçalho, faixa de abertura, etapas, overlay de carregamento, toasts, ícones SVG |
+| `features/novo-orcamento/` | Página principal: `orcamento.store.ts` (estado com signals), `composer.ts` (card 1), `revisao.ts` (cards 2 e 3) |
+| `features/historico/` | Lista, busca, download, backup JSON |
+| `features/lojas/` | Cadastro de lojas |
+| `features/cotacao/` | Cotação em lojas online: `cotacao.api.ts` (tipos + HTTP, separados do `core/api.ts`), `cotacao.page.ts`, `criterios.ts`, `resultado.ts` |
+
+Estilo: **um único** `src/styles.scss`, no **Design System R Damásio** (o mesmo do piloto de cotação de
+Suprimentos, adotado em 28/09/2026: papel claro, marinho `#0B3A5C` + vermelho `#CB2028`, fontes Archivo e
+JetBrains Mono). Os tokens têm duas camadas:
+1. **primitivos** `--rd-*` (paleta, fontes, sombras), que não mudam;
+2. **semânticos** (`--primaria`, `--destaque`, `--topo`, `--text`, `--border`…), que os componentes usam e que
+   cada marca redefine.
+
+Os componentes usam as classes globais e não têm estilo próprio. Assim o visual inteiro muda num lugar só.
+
+## 3. Receitas
+
+### Trocar a chave ou o modelo do Gemini
+- Chave: `backend/config/application-local.yml` → `helpagent.gemini.api-key` (fora do git). Em servidor: variável `GEMINI_API_KEY`.
+- Modelos: `GEMINI_MODELO_PRIMARIO` / `GEMINI_MODELO_FALLBACK`, ou os mesmos campos em `application.yml`. Para comparar modelos sem fallback: `GEMINI_MODELO_FORCADO`.
+- Reiniciar o backend (`parar-helpagent.bat` → `iniciar-helpagent.bat`).
+
+### Mudar o que a IA devolve (novo campo)
+O contrato está em cinco lugares, que precisam andar juntos:
+1. `prompts/extracao.txt`;
+2. `DadosExtraidos.java`;
+3. `GeminiClient.ESQUEMA_RESPOSTA`;
+4. `frontend/src/app/core/modelos.ts`;
+5. `tools/avaliar_extracao.py` (`SCHEMA`).
+
+Depois de mudar, rode a avaliação com orçamentos reais para ver se a precisão se manteve.
+
+### Mudar o prompt
+Editar `backend/src/main/resources/prompts/extracao.txt`. Os trechos que mudam entre OPEX e CAPEX são
+os marcadores `{{...}}`, preenchidos em `PromptExtracao`. O JSON pedido no prompt precisa continuar
+batendo com `DadosExtraidos` (nomes em snake_case).
+
+### Adicionar ou alterar uma loja
+Pela tela **Lojas** (menu do cabeçalho), sem mexer em código. Regras, validadas no servidor (`LojaService`):
+- número único e fixo; se a loja trocar de número, cadastre outra e desative a antiga;
+- CNPJ conferido pelos dígitos verificadores (`common/Cnpj`);
+- nome e empresa gravados em maiúsculas, como no cadastro original;
+- loja não se apaga, só se desativa: ela some da revisão, mas os orçamentos antigos continuam apontando para ela.
+
+Sem login, cada alteração vai para o log com o antes, o depois e o IP (`Loja 23 ALTERADA por 10.4.x.x: antes […] depois […]`).
+O IP do atendente chega pelo `X-Forwarded-For`, que o proxy do `ng serve` preenche (`xfwd` em `proxy.conf.json`).
+Não edite `V2__seed_lojas.sql`: o Flyway recusa migration já aplicada que foi alterada.
+
+### Trocar ou incluir um impresso (template PDF)
+1. Salve o PDF em `backend/src/main/resources/pdf-templates/<CODIGO>.pdf`.
+2. Novo código: acrescente em `TemplateCodigo` e na coluna `template_codigo` das lojas.
+3. Confira os nomes dos campos do formulário. Se forem diferentes dos atuais (`Caixa de texto …`), o
+   `CamposImpresso` precisa virar um mapa por template. Campo inexistente não quebra a geração, só gera
+   um `WARN Campo '...' não existe no template` no log. Procure por isso depois de testar.
+
+### Adicionar uma marca ao seletor de visual
+1. Logo branca em `frontend/public/`.
+2. `core/marca.ts`: nova entrada em `MARCAS` e no tipo `Marca`.
+3. `styles.scss`: bloco `:root[data-marca='x']` redefinindo só a camada semântica (`--primaria`, `--primaria-escura`,
+   `--primaria-clara`, `--anel`, `--destaque`, `--destaque-escuro`, `--topo`, `--topo-texto`, `--rodape`, `--border`, `--border2`).
+4. `index.html`: o script inline que aplica a marca antes da pintura aceita só `td`. Inclua o novo id.
+
+### Mudar cores e sombras
+Só pelos tokens no topo de `styles.scss`. Cor de componente que deve seguir a marca usa o token semântico,
+nunca um primitivo `--rd-*` direto. Exceções de propósito:
+- as 4 cores dos critérios da cotação (`--cot-*`), que são fixas porque na TD primária e destaque são ambos vermelhos;
+- o overlay de carregamento, que é escuro porque as logos da esteira são brancas.
+
+### Backup antes de atualizar
+Histórico → **Exportar JSON** antes de atualizar a versão ou trocar de banco. Depois, **Importar JSON**.
+Repetidos (mesmo título + mesmo instante) são ignorados, então importar duas vezes é seguro.
+
+## 4. Desempenho da leitura por IA
+
+**Medido em uso real (25/09/2026):** uma leitura normal leva **5–10 s**. O caso lento (43,6 s) não era
+leitura: o modelo principal sobrecarregado segurou **~37 s** antes de devolver *503 high demand*, e o
+sistema insistia nele. Onde o tempo vai e o que cada peça faz:
+
+| Etapa | Otimização | Onde |
+|---|---|---|
+| Envio | Imagens reduzidas no navegador para no máximo 2000px e recomprimidas se passarem de 1,5 MB | `core/arquivos.ts` (`LADO_MAXIMO`, `BYTES_MAXIMO`) |
+| Espera por modelo lento | Limite de **30 s** por chamada (antes 90 s) | `helpagent.gemini.timeout` |
+| Modelo sobrecarregado (503/tempo esgotado) | Vai **direto para o modelo alternativo**, sem repetir o principal | `ExtratorIa` |
+| Os dois sobrecarregados | Depois de um 503 do principal, se o alternativo também travar, a próxima tentativa **volta ao principal** em vez de insistir no alternativo. Há um **prazo total de 60 s** para começar tentativas; depois disso a tela devolve o erro, e dá para preencher à mão | `ExtratorIa` (`alternarNaSobrecarga`, `PRAZO_TOTAL`) |
+| Principal lento (fila do Google) | Passou de **12 s** sem responder → dispara o alternativo **em paralelo** e vale a primeira resposta boa. Gasta requisição extra só quando já está lento | `ExtratorIa`, `helpagent.gemini.reserva-apos` |
+| Cota diária esgotada (plano gratuito: **20 leituras/dia** no principal) | Detectada pelo `quotaId` "PerDay" do erro, não pelo texto (o limite por minuto usa as mesmas palavras). O principal fica fora **15 min** e é sondado de novo, porque a cota libera antes da meia-noite e o 429 volta na hora | `ExtratorIa.PAUSA_COTA`, `FalhaIa.cotaDiaria` |
+| Resposta fora do formato | *Structured output* (`responseJsonSchema`): a API garante o JSON dos campos de `DadosExtraidos` | `GeminiClient.ESQUEMA_RESPOSTA` |
+| Mesmos arquivos de novo | Cache por conteúdo (SHA-256) por **30 min**: resposta na hora, sem gastar cota | `CacheExtracao`, `helpagent.gemini.cache-extracao` |
+| Raciocínio do modelo | `thinkingLevel` configurável (`low` padrão; `minimal` é mais rápido, testar a precisão antes) | `helpagent.gemini.nivel-raciocinio` |
+| Espera percebida | Overlay com fase ("Enviando · 60%" → "IA lendo…"), cronômetro, e o toast final informa o tempo | `Processando`, `NovoOrcamentoPage` |
+
+Medição depois das mudanças: leitura de 1 imagem pelo principal em 11,5 s (2.053 tokens de entrada, a
+maioria do prompt; 158 de saída), e repetição dos mesmos arquivos em **0,24 s** pelo cache. O que sobra
+no caminho normal é fila do lado do Google, e não tamanho de arquivo.
+
+**Incidente de 28/09/2026 ("extrator lento"):** o prompt estava intacto. O principal devolveu 503 e o
+alternativo (`flash-lite`) estourou 30 s três vezes seguidas: 95 s até o erro. Medido logo depois, a mesma
+leitura levou **2–3 s no principal**, com ou sem formato fixo, e **de 2 s a mais de 60 s no alternativo**, também
+com ou sem formato fixo. Ou seja, era instabilidade do alternativo no Google, e a política insistia nele. Hoje
+o sistema alterna entre os modelos (linha "Os dois sobrecarregados" acima).
+
+**Como diagnosticar lentidão:** o log fica em `backend/dados/logs/helpagent.log` (perfil local; gira em 10 MB,
+guarda 14 dias). O backend registra, para cada chamada,
+`[Gemini] <modelo> → 200 em <ms> · tokens entrada=… saída=… raciocínio=…` e, por extração,
+`Extração … duracaoMs=… arquivos=… tamanhoKB=… cache=…`.
+- Muitos tokens de **entrada**: imagem ou PDF pesado (PDF multipágina conta cada página).
+- Muitos de **raciocínio**: baixar `nivel-raciocinio`.
+- `HTTP 503` ou "não respondeu": sobrecarga do Google. O fallback já cuida disso.
+
+### Avaliação com orçamentos reais (25/09/2026) — `tools/avaliar_extracao.py`
+
+6 orçamentos do histórico, com o total revisado pelo atendente como gabarito: print do Mercado Livre (riscado,
+"16% OFF" e parcelas), tabela de fornecedor, ordem de serviço fotografada, proposta escaneada de 6 páginas
+e propostas em PDF. Modelo alternativo (`flash-lite`), porque a cota do principal acabou no meio do teste.
+
+| Configuração | Acertos | Observação |
+|---|---|---|
+| atual (`low`) | 5/6 | errou só a proposta de 6 páginas com anotações à mão |
+| `minimal` | 6/6 | acertou a de 6 páginas, mas por variação: `raciocínio=null` em todas as configs mostra que o modelo quase não raciocina já em `low` |
+| `low` + formato fixo | 5/6 | mesma precisão e tempo do atual → **adotado** (só ganha robustez) |
+
+- **Preço à vista:** acertou o print do Mercado Livre (R$ 2.678, e não o riscado nem a parcela) em todas as
+  configurações e nos dois modelos.
+- **`minimal`: não adotado.** Sem ganho mensurável, já que o modelo não gasta tokens de raciocínio em `low`,
+  e sem amostra suficiente para provar que não piora nos casos difíceis.
+- **Paralelo por orçamento: não adotado.** Com 2 orçamentos, 3,0 s juntos contra 2,8 s em paralelo. A outra
+  medição (29 s contra 2,4 s) foi fila do Google, que a reserva em paralelo já cobre. Dobra a cota gasta.
+- O erro recorrente (proposta com o valor certo impresso, mas com anotações e páginas extras) é de
+  interpretação, não de configuração. Quem pega é a revisão humana.
+
+Para repetir depois de trocar modelo ou prompt, com o backend rodando:
+`python tools/avaliar_extracao.py --ids 40 36 45 51 39 161 --configs atual minimal schema`.
+Cada chamada gasta cota.
+
+**Ainda possível, não feito:** *resolução de mídia* (`mediaResolution`), que gasta menos tokens por imagem mas
+arrisca errar valores pequenos. Avaliar com a ferramenta acima antes.
+
+## 5. Armadilhas conhecidas (custam tempo se esquecidas)
+
+- **Cotação: o Chrome não sobe.** O backend precisa rodar com um usuário logado na máquina, porque na sessão 0
+  do Windows (Serviço, ou Tarefa Agendada "executar estando conectado ou não") o Chrome não abre. Bloquear a tela
+  (Win+L) não atrapalha; fazer logoff, sim. Detalhes na §7.
+- **Arquivo `.java` com BOM não compila** (`illegal character: '\ufeff'`). O `Set-Content`/`Out-File` do
+  PowerShell 5 grava UTF-8 com BOM. Edite pelo editor ou use `-Encoding utf8NoBOM` (PowerShell 7).
+- **`&` em argumento do `mvnw.cmd` quebra o comando.** O `mvnw.cmd` passa pelo `cmd`, que lê o `&` como
+  separador: tudo depois dele some, inclusive o `-DargLine` da pasta temporária (e a JVM falha com "loopback").
+  Nas URLs de teste da cotação, evite `&`.
+- **Pichau (Next.js): ler as tags `<script>`, não o array `self.__next_f`.** Depois que a página hidrata, o Next
+  troca o `push` do array, e os pedaços que chegam depois (o dos produtos) não ficam guardados nele. Lendo o
+  array, a Pichau voltava com 0 anúncios.
+- **JVM não sobe: `Unable to establish loopback connection`.** O TEMP do Windows com nome curto 8.3
+  (`ELUAN~1.JES`) quebra o socket AF_UNIX interno do NIO. Solução: `-Djdk.net.unixdomain.tmpdir=<pasta sem ~>`.
+  O `.bat` já passa isso.
+- **`.bat` abre a janela do backend mas nada sobe ("mvnw.cmd não é reconhecido").** Com a variável
+  `NoDefaultCurrentDirectoryInExePath` ligada, o `cmd` não procura comandos na pasta atual. O `.bat` chama o
+  `mvnw.cmd` pelo caminho completo, com aspas externas extras: com mais de duas aspas na linha, o `cmd /k`
+  remove a primeira e a última. Não simplifique essa linha.
+- **`npm install` trava.** `registry.npmjs.org` é bloqueado na rede; use `--registry=https://registry.yarnpkg.com`.
+- **403 ao abrir por um nome novo.** O `ng serve` só aceita os nomes listados em `allowedHosts`
+  (`frontend/angular.json`), como proteção contra DNS rebinding. Nome novo precisa entrar ali.
+- **Backend recusando conexão do proxy.** O backend escuta só em `127.0.0.1`, e o proxy aponta para
+  `127.0.0.1:8080`, não para `localhost`. O Node pode resolver `localhost` para `::1` (IPv6), onde não há ninguém.
+- **Schema.** `ddl-auto: validate`: o Hibernate só confere, e quem cria tabela é o Flyway. Mudou entidade?
+  Crie migration. Use SQL padrão (sem tipos exclusivos do PostgreSQL), porque os testes e o perfil local rodam em H2.
+- **Dinheiro é `BigDecimal` no backend.** O frontend manda números. Toda conta que vale é refeita no
+  servidor (`CalculoOrcamento`), e o total da tela é só visual.
+- **Emoji ou caractere fora do Latin-1 em campo do PDF.** A fonte do formulário (WinAnsi) não codifica.
+  O `PdfOrcamentoService` remove o caractere em vez de perder o campo inteiro.
+
+## 6. Convenções
+
+- Nomes de classes, métodos, campos e mensagens em **português**. Comentários explicam o **porquê**
+  (regra de negócio, armadilha, decisão), não o que a linha já diz.
+- Toda classe/arquivo começa com um comentário de 1–3 linhas dizendo seu papel.
+- Regra de negócio nova ganha teste e um código na tabela da seção 1 se for conferência exibida ao usuário.
+- Frontend: componentes standalone, `OnPush`, estado em signals, sem zone.js. Tipos da API ficam em `core/modelos.ts`; a cotação, por ser funcionalidade à parte, tem os seus em `features/cotacao/cotacao.api.ts`.
+- Nada de segredo em arquivo versionado. `backend/config/` está no `.gitignore`.
+
+## 7. Cotação em lojas online (`cotacao`, tela `/cotacao`)
+
+Começou como o piloto em Python de Suprimentos, só com o Mercado Livre (`legacy/cotacao-suprimentos/`, repasse em
+[legacy/cotacao-suprimentos/HANDOFF.md](../legacy/cotacao-suprimentos/HANDOFF.md)). Foi portado para o Java com
+**paridade provada por teste** e depois ampliado para 7 lojas. É funcionalidade à parte: não toca no orçamento
+nem no banco.
+
+### Lojas e níveis de busca
+
+| Nível | Grupo | Lojas | Quando usar |
+|---|---|---|---|
+| 1 (padrão) | Varejo de TI | Kabum, Pichau, Terabyte | peças e periféricos; o melhor preço à vista costuma estar aqui |
+| 2 | + Marketplaces | Amazon, Mercado Livre | item que o varejo de TI não tem, ou para comparar |
+| 3 | + Fabricantes | Dell, Lenovo | notebooks, desktops, monitores dessas marcas |
+
+Os níveis estão em `CotacaoService.NIVEIS`; o grupo de cada loja, na própria classe (`FonteCotacao.Grupo`); a ordem
+na tela e na planilha, no `@Order` de cada fonte. A tela também deixa marcar loja por loja.
+
+Tempos medidos em 28/09/2026: nível 1 ~20 s; as 7 lojas juntas, 24–42 s. A primeira cotação depois de subir o
+backend é mais lenta (o Chrome cria o perfil).
+
+### Fluxo
+```
+POST /api/cotacao {termo, paginas, fontes, criterios}
+  CotacaoService ─► ColetorCotacao ─► Chrome instalado (Playwright), uma aba por página de loja
+       │                 │            1) dispara todas as navegações (COMMIT)  2) lê aba por aba
+       │                 ├► FonteKabum, FontePichau, ... ─► resources/cotacao/extrair-<loja>.js
+       │                 └► ResolvedorPatrocinados (só o click1 do ML) · sem duplicados (loja + título)
+       ├─► MotorCotacao: eliminatórios (ordem fixa) → score ponderado → grupos por segmento
+       └─► guarda em memória por `id` (30 min): /reavaliar e /planilha usam esse id
+```
+- **Lojas em paralelo**: o coletor abre uma aba por página e dispara todas as navegações antes de ler qualquer
+  uma. O total fica perto da loja mais lenta, não da soma (em sequência, as 7 levariam ~100 s). Em ondas de 8 abas.
+- **Falha de uma loja não derruba as outras**: vira aviso ("Pichau não devolveu resultados para o termo") e a
+  tela mostra a loja riscada na lista "anúncios por loja".
+- **Reavaliar** (`POST /api/cotacao/{id}/reavaliar`) roda só o motor sobre os mesmos anúncios, na hora e sem
+  abrir o Chrome. A tela chama sozinha 350 ms depois da última mudança num critério.
+- **Uma cotação por vez** no servidor inteiro (trava no `ColetorCotacao`): os objetos do Playwright não podem
+  ser usados por duas threads. `GET /api/cotacao/estado` diz se há uma em andamento, e a tela avisa que vai
+  entrar na fila.
+- Cada cotação vai para o log com o termo, as lojas e o IP
+  (`Cotação 'ssd 256gb' em [kabum, pichau, terabyte] (1 pág.) pedida por 10.4.x.x`).
+
+### De onde cada loja tira os dados
+
+Sempre que o site embute os dados em JSON, a extração lê o JSON e não o HTML: quebra bem menos quando o
+layout muda. Tudo que depende do site fica em `resources/cotacao/extrair-<loja>.js`, com os seletores comentados.
+
+| Loja | Fonte dos dados | Preço usado | Nota | Quem vende | Ponto frágil |
+|---|---|---|---|---|---|
+| Kabum | `script#__NEXT_DATA__` → `props.pageProps.data.catalogServer.data` | `priceWithDiscount` (PIX) | `rating` se `ratingCount > 0` | KaBuM! ou parceiro (`flags.isMarketplace`) | caminho do JSON |
+| Pichau | tags `<script>self.__next_f.push(...)` → linha com `products.items` | `pichau_prices.avista` (PIX) | não tem | Pichau | formato do Next.js (ver armadilha abaixo) |
+| Terabyte | cartões `.product-item` e atributos `data-tss-*` | `data-tss-price` (Pix) | `.tss-rating-value` | Terabyte | nomes das classes |
+| Amazon | `div[data-component-type="s-search-result"][data-asin]` | `.a-price:not(.a-text-price)` | "x de 5 estrelas" | vários (desconhecido) | classes `a-*`; **`.a-text-price` sem strike é a parcela** |
+| Mercado Livre | cartões `li.ui-search-layout__item` (tabela abaixo) | preço do cartão | chips de avaliação | vários | layout muda com frequência |
+| Dell | atributo `data-product-detail` (JSON por cartão) | `dellPrice` | não tem | Dell | nome do atributo; título genérico + especificações do cartão |
+| Lenovo | cartões `.product_item[data-product-code]` | `.price-summary-info .price-title` | `.card-rating-container` | Lenovo | classes do preço |
+
+Mercado Livre em detalhe (o script é o do piloto, sem alteração). **Use `textContent`, nunca `innerText`**: os
+dados acessíveis (`.andes-visually-hidden`) são escondidos por CSS, e `innerText` volta vazio.
+
+| Seletor | Extrai | Sintoma se quebrar |
+|---|---|---|
+| `li.ui-search-layout__item` | o card do anúncio | Mercado Livre sem resultados |
+| `.poly-component__title` | título e link | anúncio ignorado |
+| `.poly-price__current .andes-money-amount__fraction` | preço | anúncio descartado (sem preço) |
+| `.andes-visually-hidden` | nota, vendidos, frete grátis, origem | tudo `null` |
+| `.poly-component__review-compacted` | nota (layout alternativo) | nota `null` → tudo cortado por "sem avaliação" |
+| `use[href="#poly_full"]` · `use[href="#poly_cockade"]` | FULL · loja oficial | entrega e reputação pontuam errado |
+| `click1.mercadolivre.com.br` no href | patrocinado | links de anúncio pago ficam de rastreamento |
+
+### Decisões que não devem ser desfeitas sem medir
+- **Chrome de verdade, com janela, fora da tela.** O Mercado Livre bloqueia HTTP direto, a API pública
+  (`403` sem token de aplicação) e qualquer modo headless, mesmo com perfil aquecido. O piloto testou seis
+  abordagens (tabela no HANDOFF, §7.1). Selenium é mais detectável ainda. As outras 6 lojas abriram sem bloqueio
+  nesse mesmo Chrome (28/09/2026).
+- **Flags contra "economia" de aba em segundo plano** (`--disable-background-timer-throttling` e afins, em
+  `ColetorCotacao.abrirNavegador`): a janela fica fora da tela e as lojas abrem em abas de fundo.
+- **Usa o navegador instalado** (`helpagent.cotacao.canal`: `chrome` ou `msedge`) e nunca baixa o Chromium do
+  Playwright (`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`).
+- **Perfil persistente** em `backend/dados/navegador/` (fora do git, porque tem cookies). Se um site pedir
+  verificação de conta, resolva à mão uma vez (ver diagnóstico abaixo) e as próximas passam.
+- **`vendidos = null` é "a página não informou", nunca zero.** Só o ML (às vezes) e a Amazon ("compras no mês
+  passado", aproximado) informam; o filtro de volume mínimo só vale quando o dado existe. Tratar como 0 derruba a
+  lista inteira com o filtro padrão de 100.
+- **Loja própria sem nota não é eliminada** (`aceitarLojaPropriaSemNota`, ligado por padrão, com switch na tela).
+  A regra do piloto ("vendedor sem avaliação pública" sai) foi feita para vendedor de marketplace e descartaria
+  quase todo produto da Pichau, da Dell e da própria KaBuM!. Com a regra, quem vende é a loja (`vendedorProprio`)
+  e a reputação é presumida com nota 4,5 (`MotorCotacao.NOTA_PRESUMIDA_LOJA_PROPRIA`, o mínimo padrão).
+  **É mudança de política, acrescentada ao ampliar as lojas: Suprimentos deve validar.** O ML nunca tem
+  `vendedorProprio`, então a paridade com o piloto continua valendo.
+- **Duplicados só dentro da mesma loja.** O mesmo SSD na Kabum e na Pichau é justamente a comparação.
+- **A ordem dos eliminatórios é regra:** produto → logística → reputação. O primeiro que bate vira o motivo exibido.
+- **Arredondamento igual ao Python** (`MotorCotacao.arred`, `HALF_EVEN` sobre o valor exato). `Math.round` desalinha.
+- **Pesos e cortes padrão (`CriteriosCotacao.PADRAO`) são política do departamento de Suprimentos**, não
+  decisão técnica. Mudança passa por eles.
+
+### Limitações conhecidas
+- **As buscas das lojas misturam categorias.** "ssd 256gb" na Pichau traz notebooks e pen drives; "notebook i5"
+  traz mesa de colo. Como preço baixo pesa muito no score, acessório barato pode virar o "melhor". O remédio é o
+  filtro de título: "Título deve conter" (`256, nvme`), "não pode conter" (`pen drive, mesa`) ou segmentos.
+- **Paginação**: Terabyte e Dell usam só a 1ª página (a Terabyte já traz a lista inteira; o catálogo da Dell é
+  pequeno). A Lenovo pede mais itens na mesma página (`rows`).
+- **Dell e Lenovo** só fazem sentido para produtos delas; para outros itens não devolvem nada, e isso vira aviso.
+- **Amazon**: o preço é o do cartão (sem desconto de PIX), e o vendedor não aparece na listagem.
+
+### Desempenho da cotação: investigação em aberto (28/09/2026)
+
+**Queixa:** depois de entrar as outras lojas, a busca ficou lenta. Antes (só Mercado Livre) levava 7 a 15 s;
+hoje o nível 1 leva ~20 s e as 7 lojas, 24 a 42 s. **Nada foi alterado na coleta ainda** — o que segue é medição
+e proposta, à espera de validação.
+
+Ferramenta: `DiagnosticoTempoManualTest` reproduz a coleta (uma aba por loja, mesmo Chrome) e mostra, por loja,
+quando a resposta começou, o HTML ficou pronto, a página terminou de carregar, a lista foi lida e quanto durou a
+extração. `-Dcotacao.modos` escolhe as variantes a comparar:
+```bash
+cd backend && ./mvnw test -Dtest=DiagnosticoTempoManualTest -Dcotacao.diagnostico=true -Dcotacao.modos=0,1,2,0,1,2
+```
+(modo 0 = como a coleta faz hoje · 1 = disparo imediato · 2 = disparo imediato + bloqueio dentro do Chrome.
+Nesta máquina, acrescente `-DargLine=-Djdk.net.unixdomain.tmpdir=<pasta sem ~>`.)
+
+**O que as medições mostraram** (7 lojas, "ssd 256gb"):
+
+| Achado | Medida |
+|---|---|
+| Abrir o Chrome a cada cotação | 8–9 s na 1ª vez, ~1,5 s nas seguintes |
+| O disparo das lojas **não é paralelo**: `navigate(COMMIT)` espera cada site responder antes de passar à próxima aba | a 7ª loja só começava aos 13–15 s |
+| Cada página fica com o HTML pronto em menos de 2 s depois de a resposta começar | — |
+| Modo atual, até ler a última loja (sem contar abrir o Chrome) | 17,8 s e 18,4 s |
+| Disparo imediato sozinho (com `waitForURL` já em `COMMIT`) | 21,7 s e 17,6 s — sem ganho claro |
+| Disparo imediato + bloqueio de imagem/fonte/rastreador dentro do Chrome (CDP) | 15,3 · 16,0 · 13,8 · 16,1 s — o melhor, ~3 s a menos |
+
+**Descartado (medido):**
+- *Espera de 30 s por loja sem resultado* — não acontece: a Dell sem o item devolve a página vazia na hora.
+- *Bloquear imagem/fonte com `route` do Playwright* — piorou (lista lida aos ~25 s em vez de ~20 s): no Java,
+  cada requisição interceptada passa pelo processo Java. Se for bloquear, tem de ser dentro do Chrome
+  (CDP `Network.setBlockedURLs`, como no modo 2).
+- *Contar requisições com `onRequest`* — também passa cada evento pelo Java; o diagnóstico só conta com
+  `-Dcotacao.contar=true`.
+
+**Hipótese principal ainda não confirmada:** com 7 sites pesados carregando juntos (60–100 scripts cada, anúncios
+e rastreadores), o processador satura e a leitura de cada aba espera o JavaScript do site. Sinal disso: os
+eventos `load` chegam aos 14–22 s, e o disparo imediato sozinho quase não ganhou.
+
+**Ponto em aberto — por que a leitura demora depois do HTML pronto:** no disparo imediato, a Kabum fica com o
+HTML pronto aos ~5 s mas só é lida aos ~19 s (e o modo 1 sozinho não ganhou do atual: ~20 s). Suspeitou-se do
+`waitForURL`, que por padrão espera o `load` da página; passou a esperar só o `COMMIT` e **a demora continuou**
+(19,4 s). Não se sabe ainda qual das esperas segura: `waitForURL`, `waitForLoadState(DOMCONTENTLOADED)`,
+`waitForSelector` ou o `evaluate` da extração. É o primeiro passo ao retomar: cronometrar cada uma separadamente
+no `DiagnosticoTempoManualTest`.
+
+**Próximos passos, em ordem (propostos, ainda não validados):**
+1. Descobrir qual espera segura a leitura (ponto em aberto acima). Depois repetir `-Dcotacao.modos=0,1,2,0,1,2`
+   e decidir entre disparo imediato simples e disparo + bloqueio no Chrome (lista `BLOQUEIO_CDP` do diagnóstico).
+   Conferir se algum site passa a pedir verificação anti-robô com o bloqueio.
+2. Aplicar o escolhido no `ColetorCotacao` (hoje: `navigate(... COMMIT)` em sequência) e ler as abas **na ordem
+   em que ficam prontas**, não na ordem das lojas, fechando cada uma logo após ler (libera processador).
+3. Mostrar o tempo de cada loja na tela e no log (`porFonte` com tempo), para o usuário ver qual loja pesa.
+4. Manter o Chrome aberto entre cotações (economiza 1,5–9 s por busca); fechar sozinho após alguns minutos
+   sem uso e reabrir se cair. Pede cuidado com a trava de uma cotação por vez.
+
+**Outra observação da medição:** a Terabyte devolveu 80 ou 29 anúncios para o mesmo termo em rodadas
+seguidas, sem relação com o modo. Parece variação do próprio site; vale confirmar abrindo a busca no navegador.
+
+### Diagnóstico
+1. **Coleta isolada** com o Chrome desta máquina: mostra quantos anúncios vieram de cada loja, os avisos e os 2
+   primeiros de cada uma.
+   ```bash
+   cd backend && ./mvnw test -Dtest=ColetaRealManualTest -Dcotacao.real=true -Dcotacao.termo="ssd 256gb" -Dcotacao.fontes=kabum,pichau
+   ```
+   Nesta máquina, acrescente `-DargLine=-Djdk.net.unixdomain.tmpdir=<pasta sem ~>`.
+2. **Mapear ou consertar uma loja**: a ferramenta de exploração abre a URL no mesmo Chrome e salva em
+   `backend/target/exploracao/` o HTML, o JSON-LD, o `__NEXT_DATA__` e uma captura de tela (o que o site mostra para
+   o robô). Se existir `extrair-<id>.js`, também roda o script na página e mostra quantos itens ele achou.
+   ```bash
+   cd backend && ./mvnw test -Dtest=ExplorarLojaManualTest "-Dcotacao.explorar=kabum=https://www.kabum.com.br/busca/ssd-256gb"
+   ```
+   Não use `&` nas URLs de teste (ver armadilhas).
+3. Com `-Dcotacao.visivel=true` (ou `helpagent.cotacao.janela-visivel: true`), a janela aparece na tela. Se
+   houver verificação de conta ou captcha, resolva nela uma vez: o perfil guarda o cookie.
+4. Página carrega, mas a extração vem vazia → a estrutura do site mudou (tabela "De onde cada loja tira os dados").
+   Antes de mexer, confira na página se a loja realmente tem resultado: a Terabyte, por exemplo, às vezes devolve
+   só 1 produto para uma busca que antes trazia dezenas ("Exibindo 1 de 1").
+5. O Chrome abre e fecha na hora → antivírus/EDR bloqueando o controle do navegador (CDP). Peça exceção para
+   o `java.exe` e a pasta do projeto.
+
+### Testes
+- `MotorCotacaoParidadeTest`: 4 cenários (padrão, segmentado, rigoroso, com volume) comparados com o
+  `motor.py` original. Gabarito em `src/test/resources/cotacao/paridade.json`, gerado por
+  `python tools/paridade_cotacao.py` sobre a amostra real `amostra-ssd-256gb.json` (Mercado Livre). Só regere se a
+  regra mudar de propósito, ou se regravar a amostra com `-Dcotacao.gravar=true -Dcotacao.fontes=mercadolivre`.
+- `LojaPropriaTest`: loja própria sem nota fica (e sai com o critério desligado); nota baixa continua eliminando;
+  o mesmo título em lojas diferentes não é duplicado.
+- `PlanilhaCotacaoTest`: as 4 abas, a coluna Loja, o top 3 e os links.
+- As extrações por loja (`extrair-*.js`) não têm teste automático: rodam dentro do Chrome, contra o site real.
+  A verificação é a coleta isolada do item 1 do diagnóstico.
+
+### Acrescentar outra loja
+1. Mapeie com a ferramenta de exploração (diagnóstico, item 2). Procure primeiro dados em JSON (`__NEXT_DATA__`,
+   `__next_f`, atributos `data-*`, JSON-LD) e só depois seletores de HTML. Anote de onde vem o **preço à vista**.
+2. Escreva `resources/cotacao/extrair-<id>.js`: uma função sem argumentos que devolve a lista de anúncios com as
+   chaves de `Anuncio.doJs` (snake_case). Comece o arquivo com um comentário dizendo de onde vem cada dado.
+3. Crie a classe `Fonte<Loja>` estendendo `FonteComScript` como `@Component` com `@Order`: id, nome, grupo, o
+   seletor que indica "lista pronta" e as URLs de busca. Veja `FonteKabum` como modelo.
+4. Acrescente a loja na tabela acima e, se entrar num grupo novo, em `CotacaoService.NIVEIS`.
+5. Rode a coleta isolada com `-Dcotacao.fontes=<id>` e confira preço, "de", nota e link de 2 ou 3 produtos na loja.

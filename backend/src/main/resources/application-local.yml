@@ -1,0 +1,25 @@
+# Perfil para rodar sem PostgreSQL nem provedor de login: H2 em arquivo e API aberta.
+# Uso: mvnw spring-boot:run -Dspring-boot.run.profiles=local
+# NUNCA usar em servidor compartilhado — a API fica sem autenticação.
+spring:
+  datasource:
+    url: jdbc:h2:file:./dados/helpagent-local;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password: ""
+
+helpagent:
+  seguranca:
+    habilitada: false
+
+# O backend só atende a própria máquina; quem está na rede entra pelo proxy do frontend (:4200).
+server:
+  address: 127.0.0.1
+
+# Log também em arquivo (a janela do console some ao fechar). Gira em 10 MB e guarda 14 dias.
+logging:
+  file:
+    name: ./dados/logs/helpagent.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 14

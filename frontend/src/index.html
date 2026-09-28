@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>HELP-AGENT — Orçamentos</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    // Aplica a marca salva antes da primeira pintura — sem isso a tela pisca na cor da outra marca.
+    try { var m = localStorage.getItem('helpagent-marca'); if (m === 'td') document.documentElement.dataset['marca'] = 'td'; } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- fontes do Design System R Damásio (ver styles.scss) -->
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <ha-root></ha-root>
+</body>
+</html>

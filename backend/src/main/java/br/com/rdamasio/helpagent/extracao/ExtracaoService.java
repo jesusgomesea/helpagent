@@ -1,0 +1,116 @@
+package br.com.rdamasio.helpagent.extracao;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import br.com.rdamasio.helpagent.common.Documento;
+import br.com.rdamasio.helpagent.common.ErroNegocio;
+import br.com.rdamasio.helpagent.config.HelpAgentProperties;
+import br.com.rdamasio.helpagent.historico.ChamadosJaOrcados;
+import br.com.rdamasio.helpagent.historico.HistoricoController;
+import br.com.rdamasio.helpagent.loja.LojaDto;
+import br.com.rdamasio.helpagent.loja.LojaService;
+import br.com.rdamasio.helpagent.orcamento.ModoAquisicao;
+
+/**
+ * Orquestra a leitura por IA: valida o que foi enviado para o modo (OPEX exige chamado), monta o prompt,
+ * chama o {@link ExtratorIa} (ou reaproveita o {@link CacheExtracao}), resolve a loja no cadastro e calcula
+ * os avisos A2/C2. Não grava nada no banco — a extração é descartável até o usuário gerar o PDF.
+ */
+@Service
+public class ExtracaoService {
+
+    private static final Logger log = LoggerFactory.getLogger(ExtracaoService.class);
+
+    /**
+     * @param loja    loja já resolvida no cadastro a partir do que a IA leu (null se não achou)
+     * @param avisos  conferências A2/C2 para o usuário revisar antes de gerar
+     * @param duracaoMs tempo da leitura no servidor (a tela mostra; é o número a acompanhar)
+     * @param doCache  true quando os mesmos arquivos já tinham sido lidos há pouco (resposta instantânea)
+     * @param validadeSugerida "válido até" para o impresso: a data escrita no documento, ou hoje + os dias
+     *                 de validade escritos nele; null quando o documento não diz (comum em print de e-commerce)
+     * @param chamadosJaOrcados orçamentos já gerados para os mesmos chamados (aviso de duplicidade)
+     */
+    public record Resposta(DadosExtraidos dados, LojaDto loja, List<String> avisos, String modelo, int tentativas,
+            long duracaoMs, boolean doCache, LocalDate validadeSugerida,
+            List<HistoricoController.Item> chamadosJaOrcados) {
+    }
+
+    private final ExtratorIa extrator;
+    private final CacheExtracao cache;
+    private final PromptExtracao prompt;
+    private final LojaService lojas;
+    private final HelpAgentProperties props;
+    private final ChamadosJaOrcados jaOrcados;
+
+    public ExtracaoService(ExtratorIa extrator, CacheExtracao cache, PromptExtracao prompt, LojaService lojas,
+            HelpAgentProperties props, ChamadosJaOrcados jaOrcados) {
+        this.jaOrcados = jaOrcados;
+        this.extrator = extrator;
+        this.cache = cache;
+        this.prompt = prompt;
+        this.lojas = lojas;
+        this.props = props;
+    }
+
+    public Resposta extrair(ModoAquisicao modo, List<Documento> chamados, List<Documento> orcamentos) {
+        if (orcamentos.isEmpty()) throw new ErroNegocio("Suba pelo menos 1 orçamento.");
+        if (modo.exigeChamado() && chamados.isEmpty()) {
+            throw new ErroNegocio("Suba o chamado e pelo menos 1 orçamento.");
+        }
+
+        // Em CAPEX um chamado eventualmente anexado não vai para a IA (o prompt diz que não existe).
+        List<Documento> enviados = new ArrayList<>();
+        int totalChamados = modo.exigeChamado() ? chamados.size() : 0;
+        if (totalChamados > 0) enviados.addAll(chamados);
+        enviados.addAll(orcamentos);
+
+        long inicio = System.currentTimeMillis();
+        String textoPrompt = prompt.montar(modo, totalChamados, orcamentos.size());
+        String chave = CacheExtracao.chave(modo.name(), textoPrompt, enviados);
+        var doCache = cache.buscar(chave);
+        ExtratorIa.Resultado r = doCache.orElseGet(() -> extrator.extrair(enviados, textoPrompt));
+        if (doCache.isEmpty()) cache.guardar(chave, r);
+        long ms = System.currentTimeMillis() - inicio;
+        long bytes = enviados.stream().mapToLong(d -> d.conteudo().length).sum();
+        log.info("Extração {} concluída: modelo={} tentativas={} duracaoMs={} arquivos={} tamanhoKB={} cache={}", modo,
+                r.modelo(), r.tentativas(), ms, enviados.size(), bytes / 1024, doCache.isPresent());
+
+        DadosExtraidos d = r.dados();
+        // Rastro de auditoria: de onde a IA tirou cada valor. Não aparece na tela; serve para investigar
+        // uma leitura errada depois (ex.: somou anotação à mão da proposta).
+        for (int i = 0; i < d.itens().size(); i++) {
+            DadosExtraidos.Item it = d.itens().get(i);
+            log.info("Extração item {}: produto=\"{}\" valor={} fonte=\"{}\"", i + 1, it.produto(), it.valorTotal(), it.fonte());
+        }
+        LojaDto loja = lojas.resolver(d.lojaNum(), d.lojaNome()).map(LojaDto::de).orElse(null);
+        var duplicados = modo.exigeChamado() ? jaOrcados.buscar(ChamadosJaOrcados.numeros(d.chamadoNum())) : List.<HistoricoController.Item>of();
+        return new Resposta(d, loja, RegrasExtracao.avisos(d, props.orcamento().maxItens()), r.modelo(), r.tentativas(),
+                ms, doCache.isPresent(), validadeSugerida(d, LocalDate.now(props.fuso())), duplicados);
+    }
+
+    private static final DateTimeFormatter DATA_BR = DateTimeFormatter.ofPattern("dd/MM/uuuu");
+
+    /** Data explícita do documento tem prioridade; senão, prazo em dias contado a partir de hoje (a emissão). */
+    static LocalDate validadeSugerida(DadosExtraidos d, LocalDate hoje) {
+        if (d.validadeAte() != null && !d.validadeAte().isBlank()) {
+            try {
+                return LocalDate.parse(d.validadeAte().trim(), DATA_BR);
+            } catch (DateTimeParseException e) {
+                // a IA devolveu num formato inesperado: melhor sem sugestão do que com data errada
+            }
+        }
+        if (d.validadeDias() != null) {
+            String dias = d.validadeDias().replaceAll("\\D", "");
+            if (!dias.isEmpty() && dias.length() <= 3) return hoje.plusDays(Integer.parseInt(dias));
+        }
+        return null;
+    }
+}

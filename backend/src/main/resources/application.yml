@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: helpagent
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/helpagent}
+    username: ${DB_USER:helpagent}
+    password: ${DB_PASSWORD:helpagent}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate # o schema é das migrations Flyway, nunca do Hibernate
+  servlet:
+    multipart:
+      # Prints e PDFs de fornecedor são pequenos, mas o backup do histórico leva todos os PDFs em base64.
+      max-file-size: 200MB
+      max-request-size: 250MB
+  # Com segurança habilitada, definir SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+  # (provedor corporativo ainda em decisão — docs/ESCOPO-E-PLANO-MIGRACAO.md §6).
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+helpagent:
+  fuso: America/Sao_Paulo
+  cors-origens: ${CORS_ORIGENS:http://localhost:4200}
+  gemini:
+    # Só no servidor. Nunca commitar; em produção vem de secret/cofre.
+    api-key: ${GEMINI_API_KEY:}
+    modelo-primario: ${GEMINI_MODELO_PRIMARIO:gemini-3.6-flash}
+    modelo-fallback: ${GEMINI_MODELO_FALLBACK:gemini-3.5-flash-lite}
+    modelo-forcado: ${GEMINI_MODELO_FORCADO:}
+    max-tentativas: 3
+    backoff: 1200ms
+    # Desempenho (ver docs/MANUTENCAO.md §4). Leitura normal: 5–12 s.
+    timeout: 30s          # espera máxima por chamada; sobrecarregado, o Google já segurou 37 s até dar 503
+    reserva-apos: 12s     # principal lento → dispara o fallback em paralelo e vale a 1ª resposta (0 desliga)
+    nivel-raciocinio: low # thinkingLevel: minimal | low | medium | high
+    cache-extracao: 30m   # mesmos arquivos de novo → resposta na hora, sem gastar quota (0 desliga)
+  orcamento:
+    max-itens: 10
+    departamento: TECNOLOGIA
+    variacao: 6%
+    requerente-padrao: ANTONIO FELIPE
+    gestor-padrao: GILSON PASSOS
+  armazenamento:
+    diretorio: ${ARMAZENAMENTO_DIR:./dados/arquivos}
+  cotacao:
+    canal: ${COTACAO_CANAL:chrome}   # chrome | msedge — navegador já instalado na máquina do backend
+    perfil: ${COTACAO_PERFIL:./dados/navegador}
+    max-paginas: 3
+    cache-resultado: 30m
+    janela-visivel: false            # true só para diagnosticar bloqueio/captcha (MANUTENCAO §7)
+  seguranca:
+    habilitada: ${SEGURANCA_HABILITADA:true}

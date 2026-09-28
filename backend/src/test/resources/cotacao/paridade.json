@@ -1,0 +1,1985 @@
+[
+ {
+  "nome": "padrao",
+  "volumeSintetico": false,
+  "criterios": {},
+  "elegiveis": [
+   {
+    "titulo": "Ssd 120gb 2.5 Keepdata Kds120g-l21 Cor Preto",
+    "score": 85.2,
+    "parciais": {
+     "preco": 100,
+     "entrega": 100,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd 256gb 2,5 Sata Patriot P220 Cor Preto",
+    "score": 81.8,
+    "parciais": {
+     "preco": 55,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Lexar 256GB NQ100 2.5'' SATA 6Gb/s Interno Preto",
+    "score": 81.0,
+    "parciais": {
+     "preco": 59,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd 256gb Sata Iii 2.5 Polegadas Velocidade 550mb/s Preto Hd Sólido Universal Para Desktop, Notebook, Pc Gamer E Notebooks",
+    "score": 80.6,
+    "parciais": {
+     "preco": 76,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Patriot 256GB P300 M.2 NVMe PCIe Gen3x4 Interno Preto",
+    "score": 78.6,
+    "parciais": {
+     "preco": 47,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Hd Ssd Interno 256gb 2,5 Sata3 6gb/s Computador Pc Notebook",
+    "score": 78.4,
+    "parciais": {
+     "preco": 70,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD 256gb interno PC e notebook sata3 armazenamento disco",
+    "score": 78.0,
+    "parciais": {
+     "preco": 76,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Nvme M.2 2230 256gb Pcie 3.0 X4 ? Adata Im2p33f3a-256g2 Cor Verde-escuro",
+    "score": 77.3,
+    "parciais": {
+     "preco": 50,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD 256GB 2,5\" SATA III Knup KP-SS256 para PC e Notebook",
+    "score": 76.8,
+    "parciais": {
+     "preco": 66,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Hd Lexar Ssd Lns100-256rbna 256gb 2.5",
+    "score": 75.9,
+    "parciais": {
+     "preco": 72,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Portátil Cloud Case UP Gamer 256GB, Externo Com USB-C Para PC e Console",
+    "score": 75.3,
+    "parciais": {
+     "preco": 63,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Ssstc 256gb M.2 2242 Nvme Pcie 4.0 Gen4 X4 Lenovo Oem",
+    "score": 73.4,
+    "parciais": {
+     "preco": 54,
+     "entrega": 60,
+     "fornecedor": 100,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Adata Legend 710 256gb Nvme M.2 2280 - Aleg-710-256gcs Cor Azul",
+    "score": 73.2,
+    "parciais": {
+     "preco": 39,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Interno 256gb Sata 3 Alltek 530mb/s 3 Anos Garantia Nf-e",
+    "score": 72.3,
+    "parciais": {
+     "preco": 55,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Kioxia 256GB M.2 2230 NVMe Interno para Notebook",
+    "score": 72.1,
+    "parciais": {
+     "preco": 55,
+     "entrega": 100,
+     "fornecedor": 60,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD 256GB Safe Gamer SATA III 2.5\" 550MB/s Preto",
+    "score": 71.9,
+    "parciais": {
+     "preco": 60,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Disco Sólido Interno Ssd Sata 3 256gb Goldenfir Original Nf",
+    "score": 70.9,
+    "parciais": {
+     "preco": 58,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd M.2 Nvme 2280 Go! Memory De 256gb Gn-256 Notebook E Pc",
+    "score": 70.6,
+    "parciais": {
+     "preco": 51,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Sata Iii 256gb 550m/s Disco Solido Interno Pc Notebook",
+    "score": 70.3,
+    "parciais": {
+     "preco": 63,
+     "entrega": 100,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Macrovip MVGLD/256GB NVMe M.2 2280 PCIe 3.0 x4 2100MB/s Interno",
+    "score": 70.1,
+    "parciais": {
+     "preco": 50,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Puskill M.2 NVMe 256GB PCIe 3.0x4 - Leitura 3300MB/s - Para Notebook e PC",
+    "score": 69.0,
+    "parciais": {
+     "preco": 47,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD M.2 256GB WinMemory PCIe 4.0 Gen3 NVMe Alta Velocidade",
+    "score": 68.6,
+    "parciais": {
+     "preco": 52,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD NVMe ADATA 256GB PCIe Gen3x4 M.2 2230 para console",
+    "score": 68.0,
+    "parciais": {
+     "preco": 39,
+     "entrega": 100,
+     "fornecedor": 70,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD EletroYou M.2 256GB PCIe 3.0 x4 NVMe Interno Preto",
+    "score": 67.7,
+    "parciais": {
+     "preco": 44,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Redragon Ember Ssd M.2 Nvme 256gb Pcie 3.0 Alta Velocidade Preto",
+    "score": 67.4,
+    "parciais": {
+     "preco": 43,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd M.2 256gb Pcie 3.0 X4 Nvme Interno Preto Lancaster",
+    "score": 66.6,
+    "parciais": {
+     "preco": 47,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Patriot 256GB M.2 2280 NVMe PCIe Gen3 x4 P300 Interno",
+    "score": 66.2,
+    "parciais": {
+     "preco": 42,
+     "entrega": 60,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Unidade de estado sólida Adata Su650 256gb Sata 520/450 Mbps 3dn e 2.5 SSD",
+    "score": 65.9,
+    "parciais": {
+     "preco": 47,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Disco Sólido Interno Kingston Suv400s37/240g 240gb Cor Preto",
+    "score": 65.8,
+    "parciais": {
+     "preco": 47,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Disco Sólido Interno Goldenfir T650 256gb Preto Goldenfir Ssd 256gb",
+    "score": 65.4,
+    "parciais": {
+     "preco": 63,
+     "entrega": 100,
+     "fornecedor": 60,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Disco sólido interno KingSpec NE-256 256GB",
+    "score": 65.3,
+    "parciais": {
+     "preco": 44,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Gamer Gmog 256gb Sata 3 Interno",
+    "score": 64.0,
+    "parciais": {
+     "preco": 61,
+     "entrega": 60,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd M2 Nvme 256gb Samsung Pcie 4.0 X4 M.2 2280 Cor Preta Preto",
+    "score": 63.3,
+    "parciais": {
+     "preco": 41,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "interno Kingston SKC600/256G 256GB preto",
+    "score": 62.7,
+    "parciais": {
+     "preco": 33,
+     "entrega": 60,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd M2 256gb Sata 6gb Oem 2280 - Pc / Notebook Cv6-8q256 Cor Verde-escuro",
+    "score": 62.3,
+    "parciais": {
+     "preco": 55,
+     "entrega": 100,
+     "fornecedor": 60,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd M.2 Nvme 256gb 2280 Adata Sm2p32a8-256gc Oem",
+    "score": 62.0,
+    "parciais": {
+     "preco": 38,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Netac 256gb Sata 3",
+    "score": 61.9,
+    "parciais": {
+     "preco": 49,
+     "entrega": 60,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Disco Sólido Kingston 480gb Mais Velocidade 480gb",
+    "score": 61.0,
+    "parciais": {
+     "preco": 35,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd 512gb 2.5 Keepdata Kds512g-l21",
+    "score": 60.6,
+    "parciais": {
+     "preco": 38,
+     "entrega": 100,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Sandisk 1tb Plus 2.5 Sata 3 - Sdssda-1t00-g28 Preto",
+    "score": 58.3,
+    "parciais": {
+     "preco": 22,
+     "entrega": 60,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD M.2 NVME 2280 Gen 3.0 x4 256gb Goldenfir Cor Preto",
+    "score": 56.0,
+    "parciais": {
+     "preco": 47,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   }
+  ],
+  "descartados": [
+   {
+    "titulo": "Ssd SATA III Interno 256gb Lancaster 2.5 Preto Gamer Notebook Pc Console",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Ssd M2 256gb Samsung Nvme Pci-e Gen3x4 - Mz-vlb256b Cor Preto - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "A Unidade De Estado Sólido Sata De 256 Gb/2,5 ;;;",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Ssd Gamerblack 256gb Para Notebook E Pc| Sata 3 2.5",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Hd Ssd Lexar 512gb Ns100 Sata Iii 6gb/s Leitura 550mb/s",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Ssd M2 256gb Mz-vlq2560 Nvme Para Notebook Samsung - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd Samsung Pm981a 256gb M.2 Nvme Cor Verde-escuro - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Kit upgrade SSD 256gb + cooler PC desktop processador",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Ssd 256gb, M.2 Nvme, 256 Gb, Cl1-8d256, 3c07120411 - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd 256gb Sata Smark17/256gb Markvision - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd Nvme 256gb Patri P2",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "SSD Kioxia 256GB M.2 2230 NVMe Interno para Notebook - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   }
+  ],
+  "grupos": [
+   {
+    "rotulo": "Todos os resultados",
+    "qtd": 41,
+    "menorPreco": 187.53,
+    "precoMedio": 383.7,
+    "top3": [
+     "Ssd 120gb 2.5 Keepdata Kds120g-l21 Cor Preto",
+     "Ssd 256gb 2,5 Sata Patriot P220 Cor Preto",
+     "SSD Lexar 256GB NQ100 2.5'' SATA 6Gb/s Interno Preto"
+    ]
+   }
+  ],
+  "resumo": {
+   "mediana": 378.0,
+   "precoMedio": 383.7,
+   "pesosEfetivos": {
+    "peso_preco": 40,
+    "peso_entrega": 20,
+    "peso_fornecedor": 25,
+    "peso_marca": 15
+   },
+   "semVolume": 41
+  }
+ },
+ {
+  "nome": "segmentado",
+  "volumeSintetico": false,
+  "criterios": {
+   "segmentos": "M.2, SATA",
+   "naoPodeConter": "portátil, externo"
+  },
+  "elegiveis": [
+   {
+    "titulo": "SSD Patriot 256GB P300 M.2 NVMe PCIe Gen3x4 Interno Preto",
+    "score": 93.7,
+    "parciais": {
+     "preco": 84,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "Ssd Nvme M.2 2230 256gb Pcie 3.0 X4 ? Adata Im2p33f3a-256g2 Cor Verde-escuro",
+    "score": 93.5,
+    "parciais": {
+     "preco": 90,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "Ssd Ssstc 256gb M.2 2242 Nvme Pcie 4.0 Gen4 X4 Lenovo Oem",
+    "score": 90.8,
+    "parciais": {
+     "preco": 97,
+     "entrega": 60,
+     "fornecedor": 100,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "Ssd 256gb Sata Iii 2.5 Polegadas Velocidade 550mb/s Preto Hd Sólido Universal Para Desktop, Notebook, Pc Gamer E Notebooks",
+    "score": 90.3,
+    "parciais": {
+     "preco": 100,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "SSD Kioxia 256GB M.2 2230 NVMe Interno para Notebook",
+    "score": 90.0,
+    "parciais": {
+     "preco": 100,
+     "entrega": 100,
+     "fornecedor": 60,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "Ssd 256gb 2,5 Sata Patriot P220 Cor Preto",
+    "score": 88.8,
+    "parciais": {
+     "preco": 72,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "SSD Lexar 256GB NQ100 2.5'' SATA 6Gb/s Interno Preto",
+    "score": 88.5,
+    "parciais": {
+     "preco": 78,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "SSD 256gb interno PC e notebook sata3 armazenamento disco",
+    "score": 87.6,
+    "parciais": {
+     "preco": 100,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "Hd Ssd Interno 256gb 2,5 Sata3 6gb/s Computador Pc Notebook",
+    "score": 87.4,
+    "parciais": {
+     "preco": 93,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "Ssd M.2 Nvme 2280 Go! Memory De 256gb Gn-256 Notebook E Pc",
+    "score": 87.1,
+    "parciais": {
+     "preco": 92,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "SSD Macrovip MVGLD/256GB NVMe M.2 2280 PCIe 3.0 x4 2100MB/s Interno",
+    "score": 86.2,
+    "parciais": {
+     "preco": 90,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "Ssd Adata Legend 710 256gb Nvme M.2 2280 - Aleg-710-256gcs Cor Azul",
+    "score": 86.0,
+    "parciais": {
+     "preco": 71,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "SSD M.2 256GB WinMemory PCIe 4.0 Gen3 NVMe Alta Velocidade",
+    "score": 85.6,
+    "parciais": {
+     "preco": 95,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "SSD 256GB 2,5\" SATA III Knup KP-SS256 para PC e Notebook",
+    "score": 85.2,
+    "parciais": {
+     "preco": 87,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "Ssd 120gb 2.5 Keepdata Kds120g-l21 Cor Preto",
+    "score": 85.2,
+    "parciais": {
+     "preco": 100,
+     "entrega": 100,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Puskill M.2 NVMe 256GB PCIe 3.0x4 - Leitura 3300MB/s - Para Notebook e PC",
+    "score": 84.3,
+    "parciais": {
+     "preco": 85,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "SSD EletroYou M.2 256GB PCIe 3.0 x4 NVMe Interno Preto",
+    "score": 82.0,
+    "parciais": {
+     "preco": 79,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "Ssd M.2 256gb Pcie 3.0 X4 Nvme Interno Preto Lancaster",
+    "score": 82.0,
+    "parciais": {
+     "preco": 86,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "Redragon Ember Ssd M.2 Nvme 256gb Pcie 3.0 Alta Velocidade Preto",
+    "score": 81.3,
+    "parciais": {
+     "preco": 78,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "SSD NVMe ADATA 256GB PCIe Gen3x4 M.2 2230 para console",
+    "score": 80.6,
+    "parciais": {
+     "preco": 70,
+     "entrega": 100,
+     "fornecedor": 70,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "SSD Patriot 256GB M.2 2280 NVMe PCIe Gen3 x4 P300 Interno",
+    "score": 79.8,
+    "parciais": {
+     "preco": 76,
+     "entrega": 60,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "SSD 256GB Safe Gamer SATA III 2.5\" 550MB/s Preto",
+    "score": 79.6,
+    "parciais": {
+     "preco": 80,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "Ssd Interno 256gb Sata 3 Alltek 530mb/s 3 Anos Garantia Nf-e",
+    "score": 79.4,
+    "parciais": {
+     "preco": 73,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "Ssd Sata Iii 256gb 550m/s Disco Solido Interno Pc Notebook",
+    "score": 78.3,
+    "parciais": {
+     "preco": 83,
+     "entrega": 100,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "Disco Sólido Interno Ssd Sata 3 256gb Goldenfir Original Nf",
+    "score": 78.3,
+    "parciais": {
+     "preco": 76,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "Ssd M2 Nvme 256gb Samsung Pcie 4.0 X4 M.2 2280 Cor Preta Preto",
+    "score": 76.6,
+    "parciais": {
+     "preco": 74,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "Hd Lexar Ssd Lns100-256rbna 256gb 2.5",
+    "score": 75.9,
+    "parciais": {
+     "preco": 72,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd M.2 Nvme 256gb 2280 Adata Sm2p32a8-256gc Oem",
+    "score": 74.3,
+    "parciais": {
+     "preco": 68,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "Unidade de estado sólida Adata Su650 256gb Sata 520/450 Mbps 3dn e 2.5 SSD",
+    "score": 71.9,
+    "parciais": {
+     "preco": 62,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "Ssd Gamer Gmog 256gb Sata 3 Interno",
+    "score": 71.8,
+    "parciais": {
+     "preco": 80,
+     "entrega": 60,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "SSD M.2 NVME 2280 Gen 3.0 x4 256gb Goldenfir Cor Preto",
+    "score": 71.3,
+    "parciais": {
+     "preco": 85,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "M.2"
+   },
+   {
+    "titulo": "Ssd M2 256gb Sata 6gb Oem 2280 - Pc / Notebook Cv6-8q256 Cor Verde-escuro",
+    "score": 69.4,
+    "parciais": {
+     "preco": 73,
+     "entrega": 100,
+     "fornecedor": 60,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "Ssd Netac 256gb Sata 3",
+    "score": 68.1,
+    "parciais": {
+     "preco": 65,
+     "entrega": 60,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "Disco Sólido Interno Kingston Suv400s37/240g 240gb Cor Preto",
+    "score": 65.8,
+    "parciais": {
+     "preco": 47,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Disco Sólido Interno Goldenfir T650 256gb Preto Goldenfir Ssd 256gb",
+    "score": 65.4,
+    "parciais": {
+     "preco": 63,
+     "entrega": 100,
+     "fornecedor": 60,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Disco sólido interno KingSpec NE-256 256GB",
+    "score": 65.3,
+    "parciais": {
+     "preco": 44,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "interno Kingston SKC600/256G 256GB preto",
+    "score": 62.7,
+    "parciais": {
+     "preco": 33,
+     "entrega": 60,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Sandisk 1tb Plus 2.5 Sata 3 - Sdssda-1t00-g28 Preto",
+    "score": 61.1,
+    "parciais": {
+     "preco": 29,
+     "entrega": 60,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": "SATA"
+   },
+   {
+    "titulo": "Disco Sólido Kingston 480gb Mais Velocidade 480gb",
+    "score": 61.0,
+    "parciais": {
+     "preco": 35,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd 512gb 2.5 Keepdata Kds512g-l21",
+    "score": 60.6,
+    "parciais": {
+     "preco": 38,
+     "entrega": 100,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   }
+  ],
+  "descartados": [
+   {
+    "titulo": "SSD Portátil Cloud Case UP Gamer 256GB, Externo Com USB-C Para PC e Console",
+    "motivo": "titulo contem termo excluido: portatil, externo"
+   },
+   {
+    "titulo": "Ssd SATA III Interno 256gb Lancaster 2.5 Preto Gamer Notebook Pc Console",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Ssd M2 256gb Samsung Nvme Pci-e Gen3x4 - Mz-vlb256b Cor Preto - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "A Unidade De Estado Sólido Sata De 256 Gb/2,5 ;;;",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Ssd Gamerblack 256gb Para Notebook E Pc| Sata 3 2.5",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Hd Ssd Lexar 512gb Ns100 Sata Iii 6gb/s Leitura 550mb/s",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Ssd M2 256gb Mz-vlq2560 Nvme Para Notebook Samsung - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd Samsung Pm981a 256gb M.2 Nvme Cor Verde-escuro - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Kit upgrade SSD 256gb + cooler PC desktop processador",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Ssd 256gb, M.2 Nvme, 256 Gb, Cl1-8d256, 3c07120411 - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd 256gb Sata Smark17/256gb Markvision - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd Nvme 256gb Patri P2",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "SSD Kioxia 256GB M.2 2230 NVMe Interno para Notebook - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   }
+  ],
+  "grupos": [
+   {
+    "rotulo": "M.2",
+    "qtd": 17,
+    "menorPreco": 340.0,
+    "precoMedio": 412.28,
+    "top3": [
+     "SSD Patriot 256GB P300 M.2 NVMe PCIe Gen3x4 Interno Preto",
+     "Ssd Nvme M.2 2230 256gb Pcie 3.0 X4 ? Adata Im2p33f3a-256g2 Cor Verde-escuro",
+     "Ssd Ssstc 256gb M.2 2242 Nvme Pcie 4.0 Gen4 X4 Lenovo Oem"
+    ]
+   },
+   {
+    "rotulo": "SATA",
+    "qtd": 15,
+    "menorPreco": 247.38,
+    "precoMedio": 350.68,
+    "top3": [
+     "Ssd 256gb Sata Iii 2.5 Polegadas Velocidade 550mb/s Preto Hd Sólido Universal Para Desktop, Notebook, Pc Gamer E Notebooks",
+     "Ssd 256gb 2,5 Sata Patriot P220 Cor Preto",
+     "SSD Lexar 256GB NQ100 2.5'' SATA 6Gb/s Interno Preto"
+    ]
+   },
+   {
+    "rotulo": "Sem segmento",
+    "qtd": 8,
+    "menorPreco": 187.53,
+    "precoMedio": 395.37,
+    "top3": [
+     "Ssd 120gb 2.5 Keepdata Kds120g-l21 Cor Preto",
+     "Hd Lexar Ssd Lns100-256rbna 256gb 2.5",
+     "Disco Sólido Interno Kingston Suv400s37/240g 240gb Cor Preto"
+    ]
+   }
+  ],
+  "resumo": {
+   "mediana": 378.1,
+   "precoMedio": 385.8,
+   "pesosEfetivos": {
+    "peso_preco": 40,
+    "peso_entrega": 20,
+    "peso_fornecedor": 25,
+    "peso_marca": 15
+   },
+   "semVolume": 40
+  }
+ },
+ {
+  "nome": "rigoroso",
+  "volumeSintetico": false,
+  "criterios": {
+   "notaMinima": 4.8,
+   "exigirFull": true,
+   "precoMax": 350,
+   "origem": "nacional",
+   "pesoPreco": 90
+  },
+  "elegiveis": [
+   {
+    "titulo": "Ssd 120gb 2.5 Keepdata Kds120g-l21 Cor Preto",
+    "score": 90.2,
+    "parciais": {
+     "preco": 100,
+     "entrega": 100,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd 256gb Sata Iii 2.5 Polegadas Velocidade 550mb/s Preto Hd Sólido Universal Para Desktop, Notebook, Pc Gamer E Notebooks",
+    "score": 79.0,
+    "parciais": {
+     "preco": 76,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD 256gb interno PC e notebook sata3 armazenamento disco",
+    "score": 77.2,
+    "parciais": {
+     "preco": 76,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Hd Ssd Interno 256gb 2,5 Sata3 6gb/s Computador Pc Notebook",
+    "score": 75.7,
+    "parciais": {
+     "preco": 70,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Lexar 256GB NQ100 2.5'' SATA 6Gb/s Interno Preto",
+    "score": 73.6,
+    "parciais": {
+     "preco": 59,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD 256GB 2,5\" SATA III Knup KP-SS256 para PC e Notebook",
+    "score": 73.3,
+    "parciais": {
+     "preco": 66,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd 256gb 2,5 Sata Patriot P220 Cor Preto",
+    "score": 72.8,
+    "parciais": {
+     "preco": 55,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 100
+    },
+    "tier": "A",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Portátil Cloud Case UP Gamer 256GB, Externo Com USB-C Para PC e Console",
+    "score": 71.0,
+    "parciais": {
+     "preco": 63,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD 256GB Safe Gamer SATA III 2.5\" 550MB/s Preto",
+    "score": 68.1,
+    "parciais": {
+     "preco": 60,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Interno 256gb Sata 3 Alltek 530mb/s 3 Anos Garantia Nf-e",
+    "score": 66.6,
+    "parciais": {
+     "preco": 55,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   },
+   {
+    "titulo": "Disco Sólido Interno Ssd Sata 3 256gb Goldenfir Original Nf",
+    "score": 66.6,
+    "parciais": {
+     "preco": 58,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Sem marca",
+    "segmento": null
+   }
+  ],
+  "descartados": [
+   {
+    "titulo": "SSD EletroYou M.2 256GB PCIe 3.0 x4 NVMe Interno Preto",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "Ssd SATA III Interno 256gb Lancaster 2.5 Preto Gamer Notebook Pc Console",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "SSD M.2 256GB WinMemory PCIe 4.0 Gen3 NVMe Alta Velocidade",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "Ssd M2 256gb Sata 6gb Oem 2280 - Pc / Notebook Cv6-8q256 Cor Verde-escuro",
+    "motivo": "nota 4.6 abaixo do minimo 4.8"
+   },
+   {
+    "titulo": "SSD Macrovip MVGLD/256GB NVMe M.2 2280 PCIe 3.0 x4 2100MB/s Interno",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "Ssd M.2 Nvme 2280 Go! Memory De 256gb Gn-256 Notebook E Pc",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "Ssd M2 256gb Samsung Nvme Pci-e Gen3x4 - Mz-vlb256b Cor Preto - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Disco Sólido Interno Kingston Suv400s37/240g 240gb Cor Preto",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "Ssd Ssstc 256gb M.2 2242 Nvme Pcie 4.0 Gen4 X4 Lenovo Oem",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "SSD M.2 NVME 2280 Gen 3.0 x4 256gb Goldenfir Cor Preto",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "Ssd M.2 Nvme 256gb 2280 Adata Sm2p32a8-256gc Oem",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "Ssd Adata Legend 710 256gb Nvme M.2 2280 - Aleg-710-256gcs Cor Azul",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "A Unidade De Estado Sólido Sata De 256 Gb/2,5 ;;;",
+    "motivo": "envio internacional (China)"
+   },
+   {
+    "titulo": "SSD Patriot 256GB P300 M.2 NVMe PCIe Gen3x4 Interno Preto",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "Disco sólido interno KingSpec NE-256 256GB",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "Ssd M.2 256gb Pcie 3.0 X4 Nvme Interno Preto Lancaster",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "SSD NVMe ADATA 256GB PCIe Gen3x4 M.2 2230 para console",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "Disco Sólido Kingston 480gb Mais Velocidade 480gb",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "Ssd Gamerblack 256gb Para Notebook E Pc| Sata 3 2.5",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Hd Ssd Lexar 512gb Ns100 Sata Iii 6gb/s Leitura 550mb/s",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "SSD Puskill M.2 NVMe 256GB PCIe 3.0x4 - Leitura 3300MB/s - Para Notebook e PC",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "Ssd Nvme M.2 2230 256gb Pcie 3.0 X4 ? Adata Im2p33f3a-256g2 Cor Verde-escuro",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "Unidade de estado sólida Adata Su650 256gb Sata 520/450 Mbps 3dn e 2.5 SSD",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "Ssd M2 256gb Mz-vlq2560 Nvme Para Notebook Samsung - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd Samsung Pm981a 256gb M.2 Nvme Cor Verde-escuro - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Kit upgrade SSD 256gb + cooler PC desktop processador",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "SSD Kioxia 256GB M.2 2230 NVMe Interno para Notebook",
+    "motivo": "nota 4.6 abaixo do minimo 4.8"
+   },
+   {
+    "titulo": "Ssd 256gb, M.2 Nvme, 256 Gb, Cl1-8d256, 3c07120411 - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd 512gb 2.5 Keepdata Kds512g-l21",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "Disco Sólido Interno Goldenfir T650 256gb Preto Goldenfir Ssd 256gb",
+    "motivo": "nota 4.6 abaixo do minimo 4.8"
+   },
+   {
+    "titulo": "Ssd Sata Iii 256gb 550m/s Disco Solido Interno Pc Notebook",
+    "motivo": "nota 4.7 abaixo do minimo 4.8"
+   },
+   {
+    "titulo": "Ssd Gamer Gmog 256gb Sata 3 Interno",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "SSD Patriot 256GB M.2 2280 NVMe PCIe Gen3 x4 P300 Interno",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "Hd Lexar Ssd Lns100-256rbna 256gb 2.5",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "Ssd 256gb Sata Smark17/256gb Markvision - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd Sandisk 1tb Plus 2.5 Sata 3 - Sdssda-1t00-g28 Preto",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "interno Kingston SKC600/256G 256GB preto",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "Ssd Nvme 256gb Patri P2",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "Redragon Ember Ssd M.2 Nvme 256gb Pcie 3.0 Alta Velocidade Preto",
+    "motivo": "acima do teto de R$ 350.00"
+   },
+   {
+    "titulo": "SSD Kioxia 256GB M.2 2230 NVMe Interno para Notebook - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd M2 Nvme 256gb Samsung Pcie 4.0 X4 M.2 2280 Cor Preta Preto",
+    "motivo": "nao e enviado pelo FULL"
+   },
+   {
+    "titulo": "Ssd Netac 256gb Sata 3",
+    "motivo": "nao e enviado pelo FULL"
+   }
+  ],
+  "grupos": [
+   {
+    "rotulo": "Todos os resultados",
+    "qtd": 11,
+    "menorPreco": 187.53,
+    "precoMedio": 288.11,
+    "top3": [
+     "Ssd 120gb 2.5 Keepdata Kds120g-l21 Cor Preto",
+     "Ssd 256gb Sata Iii 2.5 Polegadas Velocidade 550mb/s Preto Hd Sólido Universal Para Desktop, Notebook, Pc Gamer E Notebooks",
+     "SSD 256gb interno PC e notebook sata3 armazenamento disco"
+    ]
+   }
+  ],
+  "resumo": {
+   "mediana": 299.99,
+   "precoMedio": 288.11,
+   "pesosEfetivos": {
+    "peso_preco": 60,
+    "peso_entrega": 13,
+    "peso_fornecedor": 17,
+    "peso_marca": 10
+   },
+   "semVolume": 11
+  }
+ },
+ {
+  "nome": "com_volume",
+  "volumeSintetico": true,
+  "criterios": {
+   "marcasPreferidas": "kingston, sandisk",
+   "deveConter": "256",
+   "pesoFornecedor": 50
+  },
+  "elegiveis": [
+   {
+    "titulo": "Ssd 256gb Sata Iii 2.5 Polegadas Velocidade 550mb/s Preto Hd Sólido Universal Para Desktop, Notebook, Pc Gamer E Notebooks",
+    "score": 92.2,
+    "parciais": {
+     "preco": 100,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD 256gb interno PC e notebook sata3 armazenamento disco",
+    "score": 88.1,
+    "parciais": {
+     "preco": 100,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Portátil Cloud Case UP Gamer 256GB, Externo Com USB-C Para PC e Console",
+    "score": 86.6,
+    "parciais": {
+     "preco": 82,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD 256GB 2,5\" SATA III Knup KP-SS256 para PC e Notebook",
+    "score": 85.0,
+    "parciais": {
+     "preco": 87,
+     "entrega": 100,
+     "fornecedor": 92,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Interno 256gb Sata 3 Alltek 530mb/s 3 Anos Garantia Nf-e",
+    "score": 82.7,
+    "parciais": {
+     "preco": 73,
+     "entrega": 100,
+     "fornecedor": 98,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Hd Ssd Interno 256gb 2,5 Sata3 6gb/s Computador Pc Notebook",
+    "score": 81.9,
+    "parciais": {
+     "preco": 93,
+     "entrega": 100,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD 256GB Safe Gamer SATA III 2.5\" 550MB/s Preto",
+    "score": 81.7,
+    "parciais": {
+     "preco": 80,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Disco Sólido Interno Ssd Sata 3 256gb Goldenfir Original Nf",
+    "score": 80.7,
+    "parciais": {
+     "preco": 76,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Macrovip MVGLD/256GB NVMe M.2 2280 PCIe 3.0 x4 2100MB/s Interno",
+    "score": 80.3,
+    "parciais": {
+     "preco": 65,
+     "entrega": 100,
+     "fornecedor": 98,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Sata Iii 256gb 550m/s Disco Solido Interno Pc Notebook",
+    "score": 78.7,
+    "parciais": {
+     "preco": 83,
+     "entrega": 100,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Redragon Ember Ssd M.2 Nvme 256gb Pcie 3.0 Alta Velocidade Preto",
+    "score": 78.3,
+    "parciais": {
+     "preco": 56,
+     "entrega": 100,
+     "fornecedor": 100,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd M.2 256gb Pcie 3.0 X4 Nvme Interno Preto Lancaster",
+    "score": 77.7,
+    "parciais": {
+     "preco": 62,
+     "entrega": 100,
+     "fornecedor": 94,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Gamer Gmog 256gb Sata 3 Interno",
+    "score": 77.0,
+    "parciais": {
+     "preco": 80,
+     "entrega": 60,
+     "fornecedor": 94,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Puskill M.2 NVMe 256GB PCIe 3.0x4 - Leitura 3300MB/s - Para Notebook e PC",
+    "score": 76.8,
+    "parciais": {
+     "preco": 62,
+     "entrega": 100,
+     "fornecedor": 92,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Nvme M.2 2230 256gb Pcie 3.0 X4 ? Adata Im2p33f3a-256g2 Cor Verde-escuro",
+    "score": 76.3,
+    "parciais": {
+     "preco": 65,
+     "entrega": 100,
+     "fornecedor": 88,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Disco sólido interno KingSpec NE-256 256GB",
+    "score": 75.5,
+    "parciais": {
+     "preco": 58,
+     "entrega": 100,
+     "fornecedor": 92,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Lexar 256GB NQ100 2.5'' SATA 6Gb/s Interno Preto",
+    "score": 74.6,
+    "parciais": {
+     "preco": 78,
+     "entrega": 100,
+     "fornecedor": 74,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Kioxia 256GB M.2 2230 NVMe Interno para Notebook",
+    "score": 73.9,
+    "parciais": {
+     "preco": 73,
+     "entrega": 100,
+     "fornecedor": 76,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Adata Legend 710 256gb Nvme M.2 2280 - Aleg-710-256gcs Cor Azul",
+    "score": 72.8,
+    "parciais": {
+     "preco": 52,
+     "entrega": 100,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD M.2 256GB WinMemory PCIe 4.0 Gen3 NVMe Alta Velocidade",
+    "score": 71.9,
+    "parciais": {
+     "preco": 69,
+     "entrega": 100,
+     "fornecedor": 74,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Ssstc 256gb M.2 2242 Nvme Pcie 4.0 Gen4 X4 Lenovo Oem",
+    "score": 71.6,
+    "parciais": {
+     "preco": 71,
+     "entrega": 60,
+     "fornecedor": 88,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "interno Kingston SKC600/256G 256GB preto",
+    "score": 70.0,
+    "parciais": {
+     "preco": 44,
+     "entrega": 60,
+     "fornecedor": 86,
+     "marca": 100
+    },
+    "tier": "Preferida",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd M2 256gb Sata 6gb Oem 2280 - Pc / Notebook Cv6-8q256 Cor Verde-escuro",
+    "score": 69.1,
+    "parciais": {
+     "preco": 73,
+     "entrega": 100,
+     "fornecedor": 64,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Unidade de estado sólida Adata Su650 256gb Sata 520/450 Mbps 3dn e 2.5 SSD",
+    "score": 68.9,
+    "parciais": {
+     "preco": 62,
+     "entrega": 60,
+     "fornecedor": 88,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD Patriot 256GB M.2 2280 NVMe PCIe Gen3 x4 P300 Interno",
+    "score": 67.4,
+    "parciais": {
+     "preco": 55,
+     "entrega": 60,
+     "fornecedor": 90,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd Netac 256gb Sata 3",
+    "score": 66.5,
+    "parciais": {
+     "preco": 65,
+     "entrega": 60,
+     "fornecedor": 80,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD M.2 NVME 2280 Gen 3.0 x4 256gb Goldenfir Cor Preto",
+    "score": 66.4,
+    "parciais": {
+     "preco": 62,
+     "entrega": 60,
+     "fornecedor": 82,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "Ssd M.2 Nvme 256gb 2280 Adata Sm2p32a8-256gc Oem",
+    "score": 64.9,
+    "parciais": {
+     "preco": 50,
+     "entrega": 60,
+     "fornecedor": 88,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   },
+   {
+    "titulo": "SSD NVMe ADATA 256GB PCIe Gen3x4 M.2 2230 para console",
+    "score": 64.6,
+    "parciais": {
+     "preco": 51,
+     "entrega": 100,
+     "fornecedor": 70,
+     "marca": 35
+    },
+    "tier": "Outra",
+    "segmento": null
+   }
+  ],
+  "descartados": [
+   {
+    "titulo": "SSD EletroYou M.2 256GB PCIe 3.0 x4 NVMe Interno Preto",
+    "motivo": "menos de 100 unidades vendidas"
+   },
+   {
+    "titulo": "Ssd SATA III Interno 256gb Lancaster 2.5 Preto Gamer Notebook Pc Console",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Ssd M.2 Nvme 2280 Go! Memory De 256gb Gn-256 Notebook E Pc",
+    "motivo": "menos de 100 unidades vendidas"
+   },
+   {
+    "titulo": "Ssd M2 256gb Samsung Nvme Pci-e Gen3x4 - Mz-vlb256b Cor Preto - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Disco Sólido Interno Kingston Suv400s37/240g 240gb Cor Preto",
+    "motivo": "titulo nao contem: 256"
+   },
+   {
+    "titulo": "A Unidade De Estado Sólido Sata De 256 Gb/2,5 ;;;",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "SSD Patriot 256GB P300 M.2 NVMe PCIe Gen3x4 Interno Preto",
+    "motivo": "menos de 100 unidades vendidas"
+   },
+   {
+    "titulo": "Disco Sólido Kingston 480gb Mais Velocidade 480gb",
+    "motivo": "titulo nao contem: 256"
+   },
+   {
+    "titulo": "Ssd Gamerblack 256gb Para Notebook E Pc| Sata 3 2.5",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Hd Ssd Lexar 512gb Ns100 Sata Iii 6gb/s Leitura 550mb/s",
+    "motivo": "titulo nao contem: 256"
+   },
+   {
+    "titulo": "Ssd M2 256gb Mz-vlq2560 Nvme Para Notebook Samsung - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd 256gb 2,5 Sata Patriot P220 Cor Preto",
+    "motivo": "menos de 100 unidades vendidas"
+   },
+   {
+    "titulo": "Ssd Samsung Pm981a 256gb M.2 Nvme Cor Verde-escuro - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Kit upgrade SSD 256gb + cooler PC desktop processador",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "Ssd 256gb, M.2 Nvme, 256 Gb, Cl1-8d256, 3c07120411 - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd 512gb 2.5 Keepdata Kds512g-l21",
+    "motivo": "titulo nao contem: 256"
+   },
+   {
+    "titulo": "Disco Sólido Interno Goldenfir T650 256gb Preto Goldenfir Ssd 256gb",
+    "motivo": "menos de 100 unidades vendidas"
+   },
+   {
+    "titulo": "Ssd 120gb 2.5 Keepdata Kds120g-l21 Cor Preto",
+    "motivo": "titulo nao contem: 256"
+   },
+   {
+    "titulo": "Hd Lexar Ssd Lns100-256rbna 256gb 2.5",
+    "motivo": "menos de 100 unidades vendidas"
+   },
+   {
+    "titulo": "Ssd 256gb Sata Smark17/256gb Markvision - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd Sandisk 1tb Plus 2.5 Sata 3 - Sdssda-1t00-g28 Preto",
+    "motivo": "titulo nao contem: 256"
+   },
+   {
+    "titulo": "Ssd Nvme 256gb Patri P2",
+    "motivo": "vendedor sem avaliacao publica"
+   },
+   {
+    "titulo": "SSD Kioxia 256GB M.2 2230 NVMe Interno para Notebook - Excelente (Recondicionado)",
+    "motivo": "produto recondicionado"
+   },
+   {
+    "titulo": "Ssd M2 Nvme 256gb Samsung Pcie 4.0 X4 M.2 2280 Cor Preta Preto",
+    "motivo": "menos de 100 unidades vendidas"
+   }
+  ],
+  "grupos": [
+   {
+    "rotulo": "Todos os resultados",
+    "qtd": 29,
+    "menorPreco": 247.38,
+    "precoMedio": 369.33,
+    "top3": [
+     "Ssd 256gb Sata Iii 2.5 Polegadas Velocidade 550mb/s Preto Hd Sólido Universal Para Desktop, Notebook, Pc Gamer E Notebooks",
+     "SSD 256gb interno PC e notebook sata3 armazenamento disco",
+     "SSD Portátil Cloud Case UP Gamer 256GB, Externo Com USB-C Para PC e Console"
+    ]
+   }
+  ],
+  "resumo": {
+   "mediana": 359.0,
+   "precoMedio": 369.33,
+   "pesosEfetivos": {
+    "peso_preco": 32,
+    "peso_entrega": 16,
+    "peso_fornecedor": 40,
+    "peso_marca": 12
+   },
+   "semVolume": 7
+  }
+ }
+]

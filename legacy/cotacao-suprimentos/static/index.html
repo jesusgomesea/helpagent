@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Cotação · R Damásio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230B3A5C'/%3E%3Ctext x='16' y='23' font-family='Archivo,Arial' font-size='19' font-weight='900' fill='%23FAF6EE' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo__inner">
+    <div class="marca">
+      <span class="marca__nome">R DAMÁSIO</span>
+      <span class="marca__div"></span>
+      <span class="marca__sub">Suprimentos</span>
+    </div>
+    <span class="topo__tag">Cotação assistida · Mercado Livre</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============================================ BUSCA -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="rd-eyebrow">Compras · Análise de mercado</div>
+      <h1 class="rd-h1">O melhor fornecedor,<br>com o critério que <em>você</em> define.</h1>
+      <p class="rd-lead">
+        Digite o item. O sistema varre os anúncios, corta quem não atende aos requisitos
+        mínimos e ordena o que sobrou pelo peso que você deu a preço, prazo, reputação e marca.
+      </p>
+
+      <form id="form-busca" class="busca" autocomplete="off">
+        <div class="busca__campo">
+          <label class="rd-label" for="termo">Produto a cotar</label>
+          <input class="rd-input rd-input--hero" id="termo" name="termo"
+                 placeholder="ex.: ssd 256gb, mouse sem fio logitech, monitor 24 polegadas"
+                 required>
+        </div>
+        <button class="rd-btn rd-btn--primary rd-btn--lg" type="submit" id="btn-cotar">
+          <span class="btn-txt">Cotar agora</span>
+        </button>
+      </form>
+
+      <div class="sugestoes">
+        <span class="rd-caption">Testar com</span>
+        <button class="chip" data-termo="ssd 256gb" data-conter="256" data-seg="M.2, SATA">ssd 256gb</button>
+        <button class="chip" data-termo="mouse sem fio logitech" data-conter="logitech">mouse sem fio logitech</button>
+        <button class="chip" data-termo="monitor 24 polegadas" data-conter="24">monitor 24 polegadas</button>
+        <button class="chip" data-termo="teclado mecanico abnt2" data-conter="">teclado mecânico abnt2</button>
+      </div>
+
+      <!-- ====================================== CRITÉRIOS -->
+      <details class="criterios" id="criterios">
+        <summary>
+          <span class="criterios__titulo">Critérios de decisão</span>
+          <span class="criterios__resumo" id="criterios-resumo">padrão · preço 40 · entrega 20 · fornecedor 25 · marca 15</span>
+          <span class="criterios__seta" aria-hidden="true"></span>
+        </summary>
+
+        <div class="criterios__corpo">
+
+          <div class="bloco">
+            <div class="bloco__cab">
+              <h3 class="rd-h3">Pesos do score</h3>
+              <p class="rd-small">O que mais importa nesta compra. A soma é normalizada: o que vale é a proporção.</p>
+            </div>
+            <div class="pesos" id="pesos">
+              <div class="peso" data-k="peso_preco">
+                <div class="peso__top"><label for="peso_preco">Preço</label><output id="out_peso_preco">40%</output></div>
+                <input type="range" id="peso_preco" min="0" max="100" step="5" value="40">
+              </div>
+              <div class="peso" data-k="peso_entrega">
+                <div class="peso__top"><label for="peso_entrega">Entrega rápida</label><output id="out_peso_entrega">20%</output></div>
+                <input type="range" id="peso_entrega" min="0" max="100" step="5" value="20">
+              </div>
+              <div class="peso" data-k="peso_fornecedor">
+                <div class="peso__top"><label for="peso_fornecedor">Fornecedor confiável</label><output id="out_peso_fornecedor">25%</output></div>
+                <input type="range" id="peso_fornecedor" min="0" max="100" step="5" value="25">
+              </div>
+              <div class="peso" data-k="peso_marca">
+                <div class="peso__top"><label for="peso_marca">Marca</label><output id="out_peso_marca">15%</output></div>
+                <input type="range" id="peso_marca" min="0" max="100" step="5" value="15">
+              </div>
+            </div>
+            <div class="barra-pesos" id="barra-pesos" aria-hidden="true"></div>
+          </div>
+
+          <div class="bloco">
+            <div class="bloco__cab">
+              <h3 class="rd-h3">Eliminatórios</h3>
+              <p class="rd-small">Aplicados <strong>antes</strong> do score. Quem não passa aqui não compete por preço.</p>
+            </div>
+            <div class="grade">
+              <div class="campo">
+                <label class="rd-label" for="nota_minima">Nota mínima do vendedor</label>
+                <select class="rd-input" id="nota_minima">
+                  <option value="0">sem exigência</option>
+                  <option value="4">4,0</option>
+                  <option value="4.5" selected>4,5 (padrão)</option>
+                  <option value="4.8">4,8</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label class="rd-label" for="vendidos_minimo">Mínimo de unidades vendidas</label>
+                <select class="rd-input" id="vendidos_minimo">
+                  <option value="0">sem exigência</option>
+                  <option value="25">25</option>
+                  <option value="100" selected>100 (padrão)</option>
+                  <option value="500">500</option>
+                  <option value="1000">1.000</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label class="rd-label" for="origem">Origem do envio</label>
+                <select class="rd-input" id="origem">
+                  <option value="qualquer" selected>Qualquer origem (padrão)</option>
+                  <option value="nacional">Só nacional</option>
+                  <option value="internacional">Só internacional</option>
+                </select>
+                <span class="dica">internacional costuma ser mais barato e demorar semanas</span>
+              </div>
+              <div class="campo">
+                <label class="rd-label" for="preco_max">Teto de preço (R$)</label>
+                <input class="rd-input" id="preco_max" type="number" min="0" step="10" placeholder="sem teto">
+              </div>
+              <div class="campo">
+                <label class="rd-label" for="deve_conter">Título deve conter</label>
+                <input class="rd-input" id="deve_conter" placeholder="ex.: 256, abnt2">
+                <span class="dica">separe por vírgula · garante que é o item certo</span>
+              </div>
+              <div class="campo">
+                <label class="rd-label" for="nao_pode_conter">Título não pode conter</label>
+                <input class="rd-input" id="nao_pode_conter" placeholder="ex.: kit, usado, adaptador">
+                <span class="dica">corta combos e acessórios parecidos</span>
+              </div>
+              <div class="campo campo--switches">
+                <label class="switch">
+                  <input type="checkbox" id="exigir_full">
+                  <span class="switch__ui"></span>
+                  <span class="switch__txt">Só com envio FULL</span>
+                </label>
+                <label class="switch">
+                  <input type="checkbox" id="aceita_recondicionado">
+                  <span class="switch__ui"></span>
+                  <span class="switch__txt">Aceitar recondicionado</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="bloco">
+            <div class="bloco__cab">
+              <h3 class="rd-h3">Refinos</h3>
+              <p class="rd-small">Quando aplicável. Em branco, o sistema usa o padrão.</p>
+            </div>
+            <div class="grade">
+              <div class="campo">
+                <label class="rd-label" for="marcas_preferidas">Marcas preferidas</label>
+                <input class="rd-input" id="marcas_preferidas" placeholder="ex.: samsung, kingston, wd">
+                <span class="dica">em branco: lista padrão de marcas de TI</span>
+              </div>
+              <div class="campo">
+                <label class="rd-label" for="segmentos">Segmentar o ranking por</label>
+                <input class="rd-input" id="segmentos" placeholder="ex.: M.2, SATA">
+                <span class="dica">gera um top 3 por segmento — evita comparar peças incompatíveis</span>
+              </div>
+              <div class="campo">
+                <label class="rd-label" for="paginas">Profundidade da busca</label>
+                <select class="rd-input" id="paginas">
+                  <option value="1" selected>1 página (~50 anúncios, mais rápido)</option>
+                  <option value="2">2 páginas (~100 anúncios)</option>
+                  <option value="3">3 páginas (~150 anúncios)</option>
+                </select>
+              </div>
+            </div>
+            <button type="button" class="rd-btn rd-btn--ghost rd-btn--sm" id="btn-padrao">Restaurar padrão</button>
+          </div>
+
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============================================ ESTADOS -->
+  <section class="wrap" id="estado" hidden>
+    <div class="carregando">
+      <div class="carregando__barra"><i></i></div>
+      <p class="carregando__txt" id="carregando-txt">Abrindo o navegador…</p>
+      <p class="rd-small">A primeira busca é mais lenta: o Chrome precisa subir uma vez.</p>
+    </div>
+  </section>
+
+  <section class="wrap" id="erro" hidden>
+    <div class="aviso aviso--erro">
+      <strong id="erro-titulo">Não foi possível cotar.</strong>
+      <span id="erro-detalhe"></span>
+    </div>
+  </section>
+
+  <!-- ============================================ RESULTADO -->
+  <section id="resultado" hidden>
+
+    <div class="wrap">
+      <div class="resultado__cab">
+        <div>
+          <div class="rd-eyebrow">Resultado</div>
+          <h2 class="rd-h2" id="res-termo"></h2>
+          <p class="rd-small" id="res-meta"></p>
+        </div>
+        <button class="rd-btn rd-btn--outline" id="btn-xlsx">Baixar planilha</button>
+      </div>
+
+      <div class="kpis" id="kpis"></div>
+      <div id="avisos"></div>
+    </div>
+
+    <div class="wrap" id="grupos"></div>
+
+    <div class="wrap">
+      <details class="descartados" id="box-descartados">
+        <summary>
+          <span id="desc-titulo">Descartados</span>
+          <span class="criterios__seta" aria-hidden="true"></span>
+        </summary>
+        <div id="desc-corpo"></div>
+      </details>
+    </div>
+  </section>
+
+</main>
+
+<footer class="rodape">
+  <div class="wrap rodape__inner">
+    <span>R Damásio · Suprimentos — cotação assistida</span>
+    <span class="rd-mono" id="rodape-nota">preços voláteis · confirme no anúncio antes de comprar</span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

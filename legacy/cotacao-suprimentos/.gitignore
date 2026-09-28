@@ -1,0 +1,12 @@
+# perfil do Chrome criado em runtime (~330 MB, contem cookies de sessao)
+.navegador/
+
+__pycache__/
+*.pyc
+
+# artefatos de teste e validacao
+_shot_*.png
+_teste.xlsx
+_baixado.xlsx
+_servidor.log
+Cotacao_*.xlsx

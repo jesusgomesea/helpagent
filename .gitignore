@@ -1,0 +1,24 @@
+# segredos locais
+backend/config/
+.env
+
+# backend
+backend/target/
+backend/dados/
+
+# frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# IDE / SO
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+.claude/
+
+# piloto da cotação (legacy): perfil do Chrome tem cookies de sessão
+legacy/cotacao-suprimentos/.navegador/
+__pycache__/

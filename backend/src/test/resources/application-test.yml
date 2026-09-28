@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:helpagent;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+
+helpagent:
+  gemini:
+    api-key: chave-de-teste
+    backoff: 0ms
+  armazenamento:
+    diretorio: ./target/arquivos-teste
+  seguranca:
+    habilitada: false

@@ -1,0 +1,13 @@
+# Cotacao Assistida - dependencias
+#
+# Instalar:  python -m pip install --user -r requirements.txt
+#
+# NAO rode "playwright install": a aplicacao usa o Google Chrome ja instalado
+# na estacao (channel="chrome"), nao o Chromium baixado pelo Playwright.
+
+playwright==1.63.0
+openpyxl==3.1.5
+
+# Trazidas automaticamente como dependencia (nao precisa instalar a parte):
+#   greenlet 3.5.6, pyee 13.0.1   <- playwright
+#   et-xmlfile                    <- openpyxl
