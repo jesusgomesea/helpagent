@@ -151,13 +151,23 @@ public class ColetorCotacao {
         return new Coleta(limpos, avisos, aproveitados);
     }
 
-    /** Print de uma página de produto: a imagem da janela (PNG) ou, se não deu, o motivo para a tela. */
-    public record Captura(byte[] png, String falha) {
+    /** Página de produto a fotografar e o preço à vista coletado, que o print precisa mostrar. */
+    public record PaginaProduto(String url, Double preco) {
+    }
+
+    /**
+     * Print de uma página de produto: a imagem da janela (PNG) ou, se não deu, o motivo para a tela.
+     *
+     * @param alerta o print saiu, mas a conferência não achou o preço coletado visível nele (aviso por cima, preço
+     *               diferente na página…). null = conferido. A tela e o resumo do PDF mostram, para o atendente decidir
+     */
+    public record Captura(byte[] png, String falha, String alerta) {
     }
 
     /** Há um preço em reais na página: é o sinal de que o produto (e não um erro ou captcha) carregou. */
     private static final String TEM_PRECO = "() => !!document.body && /R\\$\\s?\\d/.test(document.body.innerText)";
     private static final String PREPARAR_PRINT = FonteComScript.carregarScript("/cotacao/preparar-print.js");
+    private static final String VALIDAR_PRINT = FonteComScript.carregarScript("/cotacao/validar-print.js");
 
     /**
      * Tira o print da janela de cada página de produto, para o orçamento por cotação (a validação manual exige o
@@ -166,8 +176,12 @@ public class ColetorCotacao {
      *
      * <p>A janela tem 1440×900: cabe título, preço à vista e vendedor em todas as lojas testadas. Falha de uma
      * página não derruba as outras; vira {@link Captura#falha()}, e a tela oferece tirar de novo ou anexar à mão.
+     *
+     * <p>Antes de fotografar, confere que o preço coletado está visível e sem nada por cima (ver
+     * {@code validar-print.js}); se não estiver, o print sai com {@link Captura#alerta()}.
      */
-    public List<Captura> capturar(List<String> urls) {
+    public List<Captura> capturar(List<PaginaProduto> paginas) {
+        List<String> urls = paginas.stream().map(PaginaProduto::url).toList();
         return usarContexto(ctx -> {
             List<Page> abas = new ArrayList<>();
             List<String> erros = new ArrayList<>();
@@ -188,15 +202,15 @@ public class ColetorCotacao {
             for (int i = 0; i < abas.size(); i++) {
                 Page aba = abas.get(i);
                 if (aba == null) {
-                    capturas.add(new Captura(null, erros.get(i)));
+                    capturas.add(new Captura(null, erros.get(i), null));
                     continue;
                 }
                 try {
-                    capturas.add(new Captura(fotografar(aba), null));
+                    capturas.add(fotografar(aba, paginas.get(i).preco()));
                 } catch (RuntimeException e) {
                     log.warn("Print: {} falhou: {}", urls.get(i), primeiraLinha(e));
                     capturas.add(new Captura(null, e instanceof PaginaSemProduto ? e.getMessage()
-                            : "não consegui fotografar a página"));
+                            : "não consegui fotografar a página", null));
                 } finally {
                     aba.close();
                 }
@@ -205,7 +219,7 @@ public class ColetorCotacao {
         });
     }
 
-    private static byte[] fotografar(Page aba) {
+    private static Captura fotografar(Page aba, Double preco) {
         aba.waitForLoadState(LoadState.DOMCONTENTLOADED, new Page.WaitForLoadStateOptions().setTimeout(45_000));
         try {
             aba.waitForFunction(TEM_PRECO, null, new Page.WaitForFunctionOptions().setTimeout(25_000));
@@ -216,7 +230,26 @@ public class ColetorCotacao {
         // o aviso de cookies some com animação e as imagens do produto chegam depois do preço
         aba.waitForTimeout(1_500);
         aba.bringToFront(); // aba de fundo pode sair em branco em alguns Chromes
-        return aba.screenshot(new Page.ScreenshotOptions().setType(ScreenshotType.PNG));
+        String alerta = conferir(aba, preco);
+        return new Captura(aba.screenshot(new Page.ScreenshotOptions().setType(ScreenshotType.PNG)), null, alerta);
+    }
+
+    /**
+     * Esconde aviso de cookies que ficou aberto e confere se o preço coletado aparece, sem nada por cima.
+     * @return null se conferiu; senão o alerta para a tela
+     */
+    private static String conferir(Page aba, Double preco) {
+        try {
+            if (!(aba.evaluate(VALIDAR_PRINT, preco) instanceof Map<?, ?> r)) return "não consegui conferir o print";
+            if (Boolean.TRUE.equals(r.get("rolou")) || r.get("avisos") instanceof Number n && n.intValue() > 0) {
+                aba.waitForTimeout(400); // rolagem suave e o aviso escondido saindo da tela
+            }
+            if (Boolean.TRUE.equals(r.get("precoVisivel"))) return null;
+            return "o preço coletado não foi localizado visível no print — confira a imagem";
+        } catch (PlaywrightException e) {
+            log.warn("Print: conferência falhou: {}", primeiraLinha(e));
+            return "não consegui conferir o print";
+        }
     }
 
     /** A página abriu, mas sem o produto: o motivo vai direto para a tela. */

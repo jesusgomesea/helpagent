@@ -101,7 +101,17 @@ final class PaginaResumoCotacao {
         texto(normal, 9, X_TITULO, y, caber(o.titulo(), normal, 9, X_PRECO_FIM - wPreco - X_TITULO - 10));
         cor(0.4f, 0.4f, 0.4f);
         String rodape = (o.capturadoEm() == null ? "" : "print " + o.capturadoEm() + " · ") + o.url();
-        texto(normal, 7, X_LOJA, y - 10, caber(rodape, normal, 7, X_PRECO_FIM - X_LOJA));
+        if (o.alerta() != null) {
+            // quem valida precisa saber que a conferência automática não achou o preço no print
+            cor(0.64f, 0.09f, 0.11f);
+            String aviso = "CONFERIR PRINT · ";
+            texto(negrito, 7, X_LOJA, y - 10, aviso);
+            float w = negrito.getStringWidth(aviso) / 1000 * 7;
+            cor(0.4f, 0.4f, 0.4f);
+            texto(normal, 7, X_LOJA + w, y - 10, caber(rodape, normal, 7, X_PRECO_FIM - X_LOJA - w));
+        } else {
+            texto(normal, 7, X_LOJA, y - 10, caber(rodape, normal, 7, X_PRECO_FIM - X_LOJA));
+        }
         y -= LINHA_OPCAO;
     }
 

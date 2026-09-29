@@ -67,7 +67,8 @@ import { CotacaoApi } from '../cotacao/cotacao.api';
                 }
                 <div class="oc-opcoes">
                   @for (o of item.opcoes; track o.printId; let j = $index) {
-                    <figure class="oc-opcao" [class.oc-escolhida]="j === 0" [class.oc-falhou]="o.situacao === 'FALHOU'">
+                    <figure class="oc-opcao" [class.oc-escolhida]="j === 0" [class.oc-falhou]="o.situacao === 'FALHOU'"
+                      [class.oc-alerta]="o.situacao === 'PRONTO' && o.alerta">
                       <figcaption>
                         <span class="oc-rotulo">{{ j === 0 ? 'Escolhida' : 'Opção ' + (j + 1) }}</span>
                         <b>{{ o.fonte }}</b>
@@ -81,6 +82,9 @@ import { CotacaoApi } from '../cotacao/cotacao.api';
                         <div class="oc-thumb oc-espera"><span class="oc-girando"></span>tirando o print…</div>
                       } @else {
                         <div class="oc-thumb oc-erro">Não saiu: {{ o.motivo }}</div>
+                      }
+                      @if (o.situacao === 'PRONTO' && o.alerta) {
+                        <p class="oc-aviso-print" title="Abra o print e confira se o preço aparece; senão, tire de novo ou anexe o seu">⚠ {{ o.alerta }}</p>
                       }
                       <p class="oc-titulo" [title]="o.titulo">{{ o.titulo }}</p>
                       <div class="oc-acoes">
@@ -192,6 +196,9 @@ import { CotacaoApi } from '../cotacao/cotacao.api';
           <div class="card-body">
             @if (cesta.capturando()) {
               <div class="status alerta"><b>Aguarde os prints:</b> {{ cesta.capturando() }} ainda sendo tirado{{ cesta.capturando() > 1 ? 's' : '' }} (≈15 s por item).</div>
+            }
+            @if (cesta.alertas()) {
+              <div class="status alerta"><b>{{ cesta.alertas() }} print{{ cesta.alertas() > 1 ? 's' : '' }} para conferir:</b> a conferência automática não achou o preço coletado visível. Abra a imagem; se estiver certa, pode gerar (o resumo do PDF marca "conferir print"), senão tire de novo ou anexe o seu.</div>
             }
             @if (cesta.falhas()) {
               <div class="status erro"><b>{{ cesta.falhas() }} print{{ cesta.falhas() > 1 ? 's' : '' }} não saiu.</b> Tire de novo, anexe o seu print ou tire o item da cesta.</div>

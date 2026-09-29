@@ -63,12 +63,19 @@ public class PrintsCotacao {
     /**
      * @param preco       preço à vista coletado (o que o print deve mostrar)
      * @param capturadoEm quando a imagem foi tirada ou anexada; null enquanto captura
+     * @param alerta      o print saiu, mas a conferência automática não achou o preço visível nele (null = conferido;
+     *                    sempre null no print anexado à mão, que é responsabilidade de quem anexou)
      */
     public record Print(String id, String url, String fonte, String titulo, Double preco, Situacao situacao,
-            String motivo, Instant capturadoEm) {
+            String motivo, Instant capturadoEm, String alerta) {
 
+        /** Nova situação; o alerta só vale para o print automático que acabou de sair (ver {@link #comAlerta}). */
         Print com(Situacao s, String m, Instant quando) {
-            return new Print(id, url, fonte, titulo, preco, s, m, quando);
+            return new Print(id, url, fonte, titulo, preco, s, m, quando, null);
+        }
+
+        Print comAlerta(String a) {
+            return new Print(id, url, fonte, titulo, preco, situacao, motivo, capturadoEm, a);
         }
 
         public boolean temImagem() {
@@ -112,7 +119,7 @@ public class PrintsCotacao {
             Anuncio a = c.anuncios().stream().filter(x -> x.url().equals(url)).findFirst()
                     .orElseThrow(() -> new ErroNegocio("Anúncio fora desta cotação — refaça a busca.", List.of(url)));
             novos.add(new Print(UUID.randomUUID().toString(), a.url(), a.fonte(), a.titulo(), a.preco(),
-                    Situacao.CAPTURANDO, null, null));
+                    Situacao.CAPTURANDO, null, null, null));
         }
         novos.forEach(this::gravar);
         limparVencidos();
@@ -177,7 +184,8 @@ public class PrintsCotacao {
     private void enfileirar(List<Print> lote) {
         fila.submit(() -> {
             try {
-                List<ColetorCotacao.Captura> capturas = coletor.capturar(lote.stream().map(Print::url).toList());
+                List<ColetorCotacao.Captura> capturas = coletor.capturar(
+                        lote.stream().map(p -> new ColetorCotacao.PaginaProduto(p.url(), p.preco())).toList());
                 for (int i = 0; i < lote.size(); i++) concluir(lote.get(i), capturas.get(i));
             } catch (RuntimeException e) {
                 log.warn("Prints: o Chrome falhou: {}", e.getMessage());
@@ -193,7 +201,8 @@ public class PrintsCotacao {
         }
         Instant agora = Instant.now();
         escrever(arquivoImagem(p.id()), CarimboPrint.aplicar(c.png(), p.fonte() + " · capturado em " + quando(agora), p.url()));
-        gravar(p.com(Situacao.PRONTO, null, agora));
+        if (c.alerta() != null) log.info("Print {} ({}) com alerta: {}", p.id(), p.fonte(), c.alerta());
+        gravar(p.com(Situacao.PRONTO, null, agora).comAlerta(c.alerta()));
     }
 
     private void gravar(Print p) {

@@ -512,6 +512,21 @@ Revisão (/orcamento-cotacao): itens, prints,
 - **"Página pronta" sem seletor por loja:** espera aparecer um preço em reais no texto da página (`TEM_PRECO`) e
   só então fecha o aviso de cookies (`preparar-print.js`, clica em "Entendi/Aceitar…" só dentro de bloco que fala de
   cookies/privacidade). Sem preço em 25 s → falha "produto indisponível ou verificação anti-robô".
+- **Conferência do print** (`validar-print.js`, logo antes de fotografar): aviso de cookies/privacidade que continue
+  fixo na tela é **escondido** (não aceita nada); depois procura o menor elemento com o preço coletado no formato
+  da loja ("1.657,25", comparando o texto sem espaços, porque o site quebra o preço em vários `<span>`), rola até ele
+  se estiver fora da janela e confere com `elementFromPoint` que nada está desenhado por cima. Não achou → o print sai
+  com `alerta`, que a revisão mostra em laranja e o resumo do PDF marca "CONFERIR PRINT". **Não bloqueia a geração**:
+  a página pode mostrar outro preço por CEP/promoção, e quem decide é o atendente (tirar de novo, anexar à mão ou seguir).
+- **EM ABERTO (29/09/2026): a conferência dá falso alerta na Kabum e na Terabyte.** Teste com perfil novo: o aviso de
+  cookies foi fechado nas 3 lojas e o preço aparece nos 3 prints, mas só a Pichau passou na conferência.
+  - *Kabum:* o preço principal é um componente animado `<number-flow-react>` com *shadow DOM*, que desenha cada casa
+    com os dígitos 0–9 (texto "R$ 0123456789…"). O texto da página nunca contém "149,99"; o valor real está no
+    atributo `data` (JSON com `integer`/`fraction`). Caminho: reconstruir o número a partir desse JSON (a biblioteca
+    number-flow é comum) ou procurar o preço também dentro de shadow roots abertos.
+  - *Terabyte:* o preço está em `p#valVista` ("R$ 299,90", texto normal), então o problema é outro — provavelmente
+    na rolagem até ele ou no `elementFromPoint`. Reproduzir com o `validar-print.js` na página e ver qual passo falha.
+  - Enquanto isso o alerta não bloqueia a geração; só pede para o atendente abrir o print.
 - **Carimbo na imagem, não só no PDF:** o print do Chrome não tem barra de endereço. A faixa com loja, hora da captura
   e link vai na própria imagem; o carimbo âmbar do PDF marca a hora em que o PDF foi montado.
 - **JPEG e página deitada:** 10 itens = 30 prints; em PNG o PDF passaria de 10 MB. No PDF, os prints entram em A4

@@ -173,7 +173,7 @@ public class OrcamentoService {
                 String rotulo = rotuloOpcao(j);
                 opcoes.add(new DadosImpresso.OpcaoCotada(rotulo, j == 0, p.fonte(), p.titulo(),
                         p.preco() == null ? "—" : Dinheiro.formatar(BigDecimal.valueOf(p.preco())), p.url(),
-                        p.capturadoEm() == null ? null : prints.quando(p.capturadoEm())));
+                        p.capturadoEm() == null ? null : prints.quando(p.capturadoEm()), p.alerta()));
                 imagens.add(new DadosImpresso.Anexo(new Documento("image/jpeg", prints.imagem(p.id())),
                         "Item " + ordem + " · " + (j == 0 ? "ESCOLHIDA" : rotulo) + " · " + p.fonte(), true));
             }

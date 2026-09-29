@@ -19,6 +19,8 @@ export interface OpcaoCesta {
   situacao: SituacaoPrint;
   motivo: string | null;
   capturadoEm: string | null;
+  /** Conferência automática não achou o preço visível no print (null = conferido). Cesta antiga: undefined. */
+  alerta?: string | null;
 }
 
 export interface ItemCesta {
@@ -48,6 +50,8 @@ export class CestaCotacao {
   readonly total = computed(() => this.itens().reduce((s, i) => s + i.quantidade * i.valorUnitario, 0));
   readonly capturando = computed(() => this.itens().flatMap((i) => i.opcoes).filter((o) => o.situacao === 'CAPTURANDO').length);
   readonly falhas = computed(() => this.itens().flatMap((i) => i.opcoes).filter((o) => o.situacao === 'FALHOU').length);
+  /** Prints que saíram mas não passaram na conferência do preço — não impedem gerar, mas pedem um olhar. */
+  readonly alertas = computed(() => this.itens().flatMap((i) => i.opcoes).filter((o) => o.situacao === 'PRONTO' && o.alerta).length);
   /** Pronto para gerar: tem item e todo print tem imagem. */
   readonly pronta = computed(() => this.itens().length > 0 && this.capturando() === 0 && this.falhas() === 0);
   /** URLs já escolhidas — a tela da cotação marca "na cesta". */
@@ -170,7 +174,7 @@ function carregar(): ItemCesta[] {
 
 function opcaoDe(p: PrintCotacao): OpcaoCesta {
   return { printId: p.id, fonte: p.fonte, titulo: p.titulo, preco: p.preco, url: p.url, situacao: p.situacao,
-    motivo: p.motivo, capturadoEm: p.capturadoEm };
+    motivo: p.motivo, capturadoEm: p.capturadoEm, alerta: p.alerta };
 }
 
 /** "ssd 480gb" → "SSD 480GB": o termo da busca costuma ser o nome curto do item no impresso. */

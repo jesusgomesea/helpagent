@@ -62,8 +62,14 @@ public record DadosImpresso(
     /**
      * @param rotulo      "Escolhida", "Opção 2", "Opção 3" — o mesmo do carimbo do print
      * @param capturadoEm "28/09/2026 21:40:12"; null quando o print foi anexado à mão sem captura
+     * @param alerta      conferência automática não achou o preço visível no print; null = conferido
      */
     public record OpcaoCotada(String rotulo, boolean escolhida, String loja, String titulo, String preco, String url,
-            String capturadoEm) {
+            String capturadoEm, String alerta) {
+
+        public OpcaoCotada(String rotulo, boolean escolhida, String loja, String titulo, String preco, String url,
+                String capturadoEm) {
+            this(rotulo, escolhida, loja, titulo, preco, url, capturadoEm, null);
+        }
     }
 }

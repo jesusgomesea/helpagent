@@ -155,6 +155,11 @@ export interface PrintCotacao {
   /** Por que falhou ("o preço não apareceu na página…"); null nas demais situações */
   motivo: string | null;
   capturadoEm: string | null;
+  /**
+   * O print saiu, mas a conferência automática não achou o preço coletado visível nele (aviso de cookies por cima,
+   * preço diferente na página…). null = conferido.
+   */
+  alerta: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

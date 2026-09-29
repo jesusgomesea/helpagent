@@ -593,6 +593,8 @@ details[open] > summary .cot-seta { transform: rotate(-135deg); }
   figcaption { display: flex; align-items: baseline; gap: 8px; font-size: 13px; b { color: var(--primaria); } .mono { margin-left: auto; font-family: var(--mono); } } }
 .oc-opcao.oc-escolhida { border: 2px solid var(--primaria); background: var(--surface); .oc-rotulo { background: var(--destaque); color: #fff; } }
 .oc-opcao.oc-falhou { border-color: var(--vermelho-erro); }
+.oc-opcao.oc-alerta { border-color: #b86e00; }
+.oc-aviso-print { margin: 0; padding: 6px 8px; border-radius: var(--radius-sm); background: #fff4e0; color: #7a4a00; font-size: 12px; font-weight: 600; }
 .oc-rotulo { padding: 2px 8px; border-radius: var(--radius-sm); background: var(--rd-cream-2); color: var(--primaria);
   font-size: 10px; font-weight: 700; letter-spacing: var(--rd-tracking-wider); text-transform: uppercase; }
 .oc-thumb { display: block; aspect-ratio: 1440 / 958; overflow: hidden; border-radius: var(--radius-sm); background: var(--surface3);
