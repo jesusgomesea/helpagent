@@ -64,8 +64,15 @@ public class PdfOrcamentoService {
 
             PDFont negrito = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
             PDFont normal = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
-            for (DadosImpresso.Anexo anexo : d.anexos()) {
-                anexar(doc, anexo, negrito, normal, origens);
+            for (DadosImpresso.Apendice ap : d.anexos()) {
+                switch (ap) {
+                    case DadosImpresso.Anexo anexo -> anexar(doc, anexo, negrito, normal, origens);
+                    case DadosImpresso.ResumoCotacao resumo -> {
+                        for (PDPage p : PaginaResumoCotacao.desenhar(doc, resumo, negrito, normal)) {
+                            carimbar(doc, p, "Resumo da cotação", negrito, normal);
+                        }
+                    }
+                }
             }
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -147,7 +154,8 @@ public class PdfOrcamentoService {
                 if (primeira != null) carimbar(doc, primeira, anexo.rotulo(), negrito, normal);
             } else if (arq.ehImagem()) {
                 PDImageXObject img = imagem(doc, arq);
-                PDPage page = new PDPage(PDRectangle.A4);
+                PDRectangle a4 = PDRectangle.A4;
+                PDPage page = new PDPage(anexo.paisagem() ? new PDRectangle(a4.getHeight(), a4.getWidth()) : a4);
                 doc.addPage(page);
                 float maxW = page.getMediaBox().getWidth() - MARGEM * 2;
                 float maxH = page.getMediaBox().getHeight() - MARGEM * 2 - CABECALHO;

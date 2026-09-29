@@ -51,7 +51,13 @@
           },
           "configurations": {
             "production": { "buildTarget": "helpagent:build:production" },
-            "development": { "buildTarget": "helpagent:build:development" }
+            "development": { "buildTarget": "helpagent:build:development" },
+            "homologacao": {
+              "buildTarget": "helpagent:build:development",
+              "proxyConfig": "proxy.homologacao.json",
+              "host": "127.0.0.1",
+              "port": 4201
+            }
           },
           "defaultConfiguration": "development"
         },

@@ -25,12 +25,45 @@ public record DadosImpresso(
         String total,
         String observacoes,
         String variacao,
-        List<Anexo> anexos) {
+        /** Na ordem em que entram depois do formulário. */
+        List<Apendice> anexos) {
 
     public record Linha(String produto, String descricao, String quantidade, String unitario, String total) {
     }
 
-    /** Documento anexado depois do formulário, com o rótulo carimbado no topo da primeira página. */
-    public record Anexo(Documento documento, String rotulo) {
+    /** O que vem depois do formulário: um documento, ou páginas que o próprio sistema gera. */
+    public sealed interface Apendice permits Anexo, ResumoCotacao {
+    }
+
+    /**
+     * Documento anexado depois do formulário, com o rótulo carimbado no topo da primeira página.
+     *
+     * @param paisagem imagem em página A4 deitada. Os prints da cotação são da janela inteira (1440 px de largura):
+     *                 em pé, o texto da loja sairia com ~6 pt; deitado, ~9 pt, legível no papel
+     */
+    public record Anexo(Documento documento, String rotulo, boolean paisagem) implements Apendice {
+
+        public Anexo(Documento documento, String rotulo) {
+            this(documento, rotulo, false);
+        }
+    }
+
+    /**
+     * Orçamento por cotação: página com as 3 opções de cada item lado a lado, a escolhida marcada. Vem antes dos
+     * prints, para quem valida ver o quadro inteiro e depois conferir cada print.
+     */
+    public record ResumoCotacao(List<ItemCotado> itens) implements Apendice {
+    }
+
+    /** @param quantidade como sai no impresso ("2") */
+    public record ItemCotado(String ordem, String produto, String quantidade, List<OpcaoCotada> opcoes) {
+    }
+
+    /**
+     * @param rotulo      "Escolhida", "Opção 2", "Opção 3" — o mesmo do carimbo do print
+     * @param capturadoEm "28/09/2026 21:40:12"; null quando o print foi anexado à mão sem captura
+     */
+    public record OpcaoCotada(String rotulo, boolean escolhida, String loja, String titulo, String preco, String url,
+            String capturadoEm) {
     }
 }

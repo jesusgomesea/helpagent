@@ -48,6 +48,8 @@ export interface Parametros {
   maxItens: number;
   requerentePadrao: string;
   gestorPadrao: string;
+  /** "" na produção; "homologacao" no ambiente de testes (a tela mostra uma faixa) */
+  ambiente: string;
 }
 
 /** JSON devolvido pela IA — valores como texto no formato brasileiro. */
@@ -96,7 +98,8 @@ export interface GerarOrcamentoRequest {
   dataEmissao: string; // yyyy-MM-dd
   validade: string | null; // yyyy-MM-dd
   chamadoNum: string | null;
-  itens: { produto: string; descricao: string; quantidade: number; valorUnitario: number }[];
+  /** prints: só no orçamento por cotação — ids dos prints das opções do item, a escolhida primeiro. */
+  itens: { produto: string; descricao: string; quantidade: number; valorUnitario: number; prints?: string[] }[];
   subtotal: number | null;
   frete: number | null;
   acrescimos: number | null;
@@ -117,7 +120,11 @@ export interface ItemHistorico {
   total: number;
   nomeArquivo: string;
   criadoPor: string;
+  /** COTACAO = montado pela cotação em lojas online (com os prints); DOCUMENTOS = fluxo de sempre. */
+  origem: OrigemOrcamento;
 }
+
+export type OrigemOrcamento = 'DOCUMENTOS' | 'COTACAO';
 
 export interface Pagina<T> {
   itens: T[];

@@ -4,7 +4,10 @@ import { mensagensDeErro, salvarArquivo } from '../../core/api';
 import { Avisos } from '../../core/avisos';
 import { Faixa } from '../../layout/faixa';
 import { Icone } from '../../layout/icone';
-import { CotacaoApi, CriteriosCotacao, GrupoLoja, LojaCotacao, NivelBusca, RespostaCotacao } from './cotacao.api';
+import { CurrencyPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { Avaliado, CotacaoApi, CriteriosCotacao, GrupoLoja, LojaCotacao, NivelBusca, RespostaCotacao } from './cotacao.api';
+import { CestaCotacao, MAX_ITENS_CESTA, alternativasPara } from './cesta.store';
 
 const ROTULO_GRUPO: Record<GrupoLoja, string> = {
   VAREJO_TI: 'Varejo de TI',
@@ -22,10 +25,13 @@ import { ResultadoCotacaoView } from './resultado';
  * Fluxo: "Cotar" coleta (as lojas em paralelo; uma cotação por vez no servidor). Com resultado na tela, mexer
  * num critério só reavalia os mesmos anúncios (instantâneo). Termo, lojas ou páginas novos → nova coleta.
  * Nada é gravado: o resultado vale 30 min para baixar a planilha.
+ *
+ * Orçamento por cotação: "escolher para o orçamento" põe o anúncio na cesta ({@link CestaCotacao}) com mais 2
+ * opções para comparar, e o servidor fotografa as 3 páginas. A barra no rodapé leva à tela de revisão e geração.
  */
 @Component({
   selector: 'ha-cotacao',
-  imports: [Faixa, Icone, CriteriosCotacaoPainel, ResultadoCotacaoView],
+  imports: [Faixa, Icone, CriteriosCotacaoPainel, ResultadoCotacaoView, RouterLink, CurrencyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ha-faixa sobretitulo="Compras · Análise de mercado" titulo="Cotação"
@@ -87,15 +93,30 @@ import { ResultadoCotacaoView } from './resultado';
       <ha-criterios-cotacao [padrao]="padrao()" (alterado)="criteriosMudaram($event)" />
 
       @if (resposta(); as r) {
-        <ha-resultado-cotacao [resposta]="r" [atualizando]="reavaliando()" (baixarPlanilha)="baixarPlanilha()" />
+        <ha-resultado-cotacao [resposta]="r" [atualizando]="reavaliando()" (baixarPlanilha)="baixarPlanilha()"
+          [escolhidas]="cesta.urlsEscolhidas()" [cestaCheia]="cesta.itens().length >= maxItens" (escolher)="escolher(r, $event)" />
       }
     </main>
+
+    @if (cesta.itens().length) {
+      <aside class="cesta-barra" aria-label="Orçamento por cotação">
+        <div class="cesta-info">
+          <b>Orçamento por cotação</b>
+          <span>{{ cesta.itens().length }}/{{ maxItens }} ite{{ cesta.itens().length > 1 ? 'ns' : 'm' }} · {{ cesta.total() | currency: 'BRL' }}</span>
+          @if (cesta.capturando()) { <span class="cesta-capturando">tirando {{ cesta.capturando() }} print{{ cesta.capturando() > 1 ? 's' : '' }}…</span> }
+          @if (cesta.falhas()) { <span class="cesta-falha">{{ cesta.falhas() }} print{{ cesta.falhas() > 1 ? 's' : '' }} com falha</span> }
+        </div>
+        <a class="btn-acao" routerLink="/orcamento-cotacao">Revisar e gerar →</a>
+      </aside>
+    }
   `,
 })
 export class CotacaoPage {
   private readonly api = inject(CotacaoApi);
   private readonly avisos = inject(Avisos);
   private readonly painel = viewChild.required(CriteriosCotacaoPainel);
+  protected readonly cesta = inject(CestaCotacao);
+  protected readonly maxItens = MAX_ITENS_CESTA;
 
   /** Carregado uma vez: trocar o padrão reaplica no painel e apagaria os critérios que o usuário ajustou. */
   protected readonly padrao = signal<CriteriosCotacao | null>(null);
@@ -229,6 +250,16 @@ export class CotacaoPage {
       if (seq === this.seqReavaliacao) this.erros.set(await mensagensDeErro(e));
     } finally {
       if (seq === this.seqReavaliacao) this.reavaliando.set(false);
+    }
+  }
+
+  protected async escolher(r: RespostaCotacao, a: Avaliado): Promise<void> {
+    const alternativas = alternativasPara(r.resultado, a);
+    try {
+      await this.cesta.adicionar(r.id, r.termo, a, alternativas);
+      this.avisos.toast(`Item ${this.cesta.itens().length} no orçamento · tirando ${alternativas.length + 1} prints`);
+    } catch (e) {
+      this.avisos.toast(e instanceof Error ? e.message : (await mensagensDeErro(e)).join(' '), '⚠');
     }
   }
 

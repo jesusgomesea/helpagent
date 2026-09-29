@@ -22,5 +22,11 @@ export const routes: Routes = [
     title: 'HELP-AGENT — Cotação',
     loadComponent: () => import('./features/cotacao/cotacao.page').then((m) => m.CotacaoPage),
   },
+  {
+    path: 'orcamento-cotacao',
+    title: 'HELP-AGENT — Orçamento por cotação',
+    loadComponent: () =>
+      import('./features/orcamento-cotacao/orcamento-cotacao.page').then((m) => m.OrcamentoCotacaoPage),
+  },
   { path: '**', redirectTo: '' },
 ];

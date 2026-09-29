@@ -71,13 +71,18 @@ public record HelpAgentProperties(
      * @param maxPaginas     teto de páginas de busca por cotação (~50 anúncios cada)
      * @param cacheResultado quanto tempo o último resultado de cada termo fica disponível para baixar a planilha
      * @param janelaVisivel  true mostra a janela do Chrome na tela — só para diagnosticar (MANUTENCAO §7)
+     * @param prints         pasta dos prints das páginas de produto (orçamento por cotação), fora do git
+     * @param validadePrints quanto tempo um print fica guardado esperando virar orçamento. Uma cesta costuma ser
+     *                       montada ao longo do dia; depois de gerado, o print já está dentro do PDF
      */
     public record Cotacao(
             @DefaultValue("chrome") String canal,
             @DefaultValue("./dados/navegador") Path perfil,
             @DefaultValue("3") int maxPaginas,
             @DefaultValue("30m") Duration cacheResultado,
-            @DefaultValue("false") boolean janelaVisivel) {
+            @DefaultValue("false") boolean janelaVisivel,
+            @DefaultValue("./dados/prints") Path prints,
+            @DefaultValue("7d") Duration validadePrints) {
     }
 
     /**

@@ -1,14 +1,26 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError, map, of } from 'rxjs';
+import { Api } from '../core/api';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MARCAS, MarcaService } from '../core/marca';
+import { CestaCotacao } from '../features/cotacao/cesta.store';
 import { Icone } from './icone';
 
-/** Cabeçalho fixo: logo da marca ativa, navegação e o seletor de visual (Damásio × TD). */
+/**
+ * Cabeçalho fixo: logo da marca ativa, navegação e o seletor de visual (Damásio × TD). Fora da produção
+ * (homologação), uma faixa acima avisa em que ambiente se está.
+ */
 @Component({
   selector: 'ha-cabecalho',
   imports: [RouterLink, RouterLinkActive, Icone],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    @if (ambiente()) {
+      <div class="faixa-ambiente" role="status">
+        Ambiente de {{ ambiente() === 'homologacao' ? 'homologação' : ambiente() }} · dados de teste, separados da produção
+      </div>
+    }
     <header class="header">
       <a class="logo" routerLink="/" aria-label="Início">
         <img [src]="marca.info().logoBranca" [class.branca]="marca.info().filtrarParaBranco" [alt]="marca.info().nome">
@@ -22,8 +34,9 @@ import { Icone } from './icone';
         <a routerLink="/historico" routerLinkActive="ativo" title="Histórico" aria-label="Histórico">
           <ha-icone nome="historico" [tamanho]="15" /><span>Histórico</span>
         </a>
-        <a routerLink="/cotacao" routerLinkActive="ativo" title="Cotação no Mercado Livre" aria-label="Cotação">
+        <a routerLink="/cotacao" routerLinkActive="ativo" title="Cotação em lojas online" aria-label="Cotação">
           <ha-icone nome="busca" [tamanho]="15" /><span>Cotação</span>
+          @if (cesta.itens().length) { <b class="nav-contador" title="Itens no orçamento por cotação">{{ cesta.itens().length }}</b> }
         </a>
         <a routerLink="/lojas" routerLinkActive="ativo" title="Lojas" aria-label="Lojas">
           <ha-icone nome="loja" [tamanho]="15" /><span>Lojas</span>
@@ -42,5 +55,9 @@ import { Icone } from './icone';
 })
 export class Cabecalho {
   protected readonly marca = inject(MarcaService);
+  protected readonly cesta = inject(CestaCotacao);
+  protected readonly ambiente = toSignal(inject(Api).parametros().pipe(map((p) => p.ambiente ?? ''), catchError(() => of(''))), {
+    initialValue: '',
+  });
   protected readonly marcas = Object.values(MARCAS);
 }

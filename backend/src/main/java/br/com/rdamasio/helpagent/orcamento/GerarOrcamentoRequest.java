@@ -26,10 +26,23 @@ public record GerarOrcamentoRequest(
         @Size(max = 120) String requerente,
         @Size(max = 120) String gestor) {
 
+    /**
+     * @param prints só no orçamento por cotação: ids dos prints das opções do item, a escolhida primeiro
+     *               (ver {@code cotacao.PrintsCotacao}). Ausente = linha comum.
+     */
     public record Item(
             @Size(max = 200) String produto,
             @Size(max = 500) String descricao,
             @PositiveOrZero BigDecimal quantidade,
-            @PositiveOrZero BigDecimal valorUnitario) {
+            @PositiveOrZero BigDecimal valorUnitario,
+            @Size(max = 3) List<String> prints) {
+
+        public Item(String produto, String descricao, BigDecimal quantidade, BigDecimal valorUnitario) {
+            this(produto, descricao, quantidade, valorUnitario, null);
+        }
+
+        public boolean cotado() {
+            return prints != null && !prints.isEmpty();
+        }
     }
 }

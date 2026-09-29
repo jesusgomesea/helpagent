@@ -56,5 +56,7 @@ helpagent:
     max-paginas: 3
     cache-resultado: 30m
     janela-visivel: false            # true só para diagnosticar bloqueio/captcha (MANUTENCAO §7)
+    prints: ${COTACAO_PRINTS:./dados/prints}  # prints das páginas de produto (orçamento por cotação)
+    validade-prints: 7d              # print não usado em orçamento some depois disso
   seguranca:
     habilitada: ${SEGURANCA_HABILITADA:true}

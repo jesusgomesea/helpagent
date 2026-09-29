@@ -8,6 +8,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import br.com.rdamasio.helpagent.orcamento.ModoAquisicao;
+import br.com.rdamasio.helpagent.orcamento.OrigemOrcamento;
 
 /**
  * Formato do backup do histórico (versão 3; a 2 é lida também).
@@ -45,12 +46,15 @@ public record BackupHistorico(int versao, String origem, Instant exportadoEm, Li
             Instant criadoEm,
             List<Item> itens,
             /** Jackson grava/lê byte[] como base64. */
-            byte[] pdf) {
+            byte[] pdf,
+            /** Ausente em backups anteriores ao orçamento por cotação: vale DOCUMENTOS. */
+            OrigemOrcamento origem) {
     }
 
+    /** {@code fornecedor}, {@code url} e {@code coletadoEm}: só nas linhas vindas da cotação (null nas demais). */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Item(int ordem, String produto, String descricao, BigDecimal quantidade,
-            BigDecimal valorUnitario, BigDecimal valorTotal) {
+            BigDecimal valorUnitario, BigDecimal valorTotal, String fornecedor, String url, Instant coletadoEm) {
     }
 
     /** Formato exportado pelo modal de histórico do HTML v3.5 (IndexedDB). */

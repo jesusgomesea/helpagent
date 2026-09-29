@@ -325,7 +325,8 @@ img.branca { filter: brightness(0) invert(1); }
   .ativo .contagem { background: var(--primaria); color: #fff; } }
 .selo-tipo { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: var(--radius-sm); font-size: 10px; font-weight: 700;
   letter-spacing: var(--rd-tracking-wider); text-transform: uppercase; color: #fff; background: var(--cinza-coroa);
-  &.selo-REQUISICAO { background: var(--rd-blue-700); } &.selo-OPEX { background: #b86e00; } &.selo-CAPEX { background: #2c7a4b; } }
+  &.selo-REQUISICAO { background: var(--rd-blue-700); } &.selo-OPEX { background: #b86e00; } &.selo-CAPEX { background: #2c7a4b; }
+  &.selo-COTACAO { background: transparent; color: var(--primaria); border: 1px solid var(--primaria); } }
 .paginacao { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 16px; font-size: 13px; color: var(--text2);
   span { font-family: var(--mono); font-size: 12px; }
   button { border: 1px solid var(--border2); background: var(--surface); color: var(--primaria); border-radius: var(--pilula);
@@ -552,6 +553,63 @@ details[open] > summary .cot-seta { transform: rotate(-135deg); }
     > span:first-child { flex: 1; } }
   .cot-tabela { margin: 0; border: 0; border-radius: 0; border-top: 1px solid var(--border); } }
 
+// faixa de ambiente (homologação): listrada, para não passar despercebida
+.faixa-ambiente { padding: 6px 16px; text-align: center; font-size: 12px; font-weight: 700; letter-spacing: var(--rd-tracking-wider);
+  text-transform: uppercase; color: #3d2a00;
+  background: repeating-linear-gradient(-45deg, #ffc93c, #ffc93c 14px, #ffb703 14px, #ffb703 28px); }
+
+// ---------- orçamento por cotação ----------
+// botão "escolher para o orçamento" nos cartões e nas tabelas da cotação
+.cot-escolher { border: 1px solid var(--primaria); background: var(--primaria); color: var(--rd-paper); border-radius: var(--pilula);
+  padding: 9px 14px; font-weight: 700; font-size: 11px; letter-spacing: var(--rd-tracking-wider); text-transform: uppercase;
+  &:hover:not(:disabled) { background: var(--primaria-escura); }
+  &.curto { padding: 2px 8px; font-size: 10px; letter-spacing: 0.04em; margin-left: 6px; } }
+.cot-na-cesta { font-size: 11px; font-weight: 700; color: var(--success); letter-spacing: 0.04em; text-transform: uppercase; margin-left: 6px; }
+.cot-cartao > .cot-na-cesta { margin: 0; text-align: center; padding: 8px; border: 1px dashed var(--success); border-radius: var(--pilula); }
+.cot-acoes-linha { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; }
+// as colunas "Anúncio" ganham espaço para o botão ao lado do "abrir"
+.cot-linha { grid-template-columns: 34px minmax(0, 1fr) 104px 104px 60px 48px 76px 110px 128px; }
+.cot-linha.melhor { grid-template-columns: 120px minmax(0, 1fr) 110px 64px 128px; }
+// barra fixa no rodapé da cotação: resumo da cesta e o caminho para gerar
+.cesta-barra { position: sticky; bottom: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  flex-wrap: wrap; padding: 12px max(16px, calc((100% - 1100px) / 2 + 16px)); background: var(--surface); border-top: 2px solid var(--primaria);
+  box-shadow: 0 -6px 18px rgba(5, 26, 43, 0.1);
+  .btn-acao { background: var(--primaria); color: var(--rd-paper); &:hover { background: var(--primaria-escura); } } }
+.cesta-info { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--text2);
+  b { font-family: var(--titulo); font-weight: 800; font-size: 15px; color: var(--primaria); } }
+.cesta-capturando { font-family: var(--mono); font-size: 12px; color: var(--rd-blue-600); }
+.cesta-falha { font-family: var(--mono); font-size: 12px; color: var(--vermelho-erro); font-weight: 600; }
+.nav-contador { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 2px; border-radius: var(--pilula);
+  background: var(--destaque); color: #fff; font-family: var(--mono); font-size: 10.5px; font-weight: 600; }
+// tela de revisão: um bloco por item com as 3 opções lado a lado
+.oc-item { padding: 18px 0 22px; border-bottom: 1px solid var(--border); &:first-child { padding-top: 0; } }
+.oc-item-cab { display: grid; grid-template-columns: 30px 1fr 1.6fr 76px 120px 110px 28px; gap: 10px; align-items: end;
+  .item-ord { padding-bottom: 12px; } label { font-size: 12px; color: var(--muted); } }
+.oc-total { padding-bottom: 12px; font-family: var(--titulo); font-weight: 900; color: var(--primaria); text-align: right; }
+.oc-nota { margin: 8px 0 0 40px; font-size: 12px; color: #b86e00; }
+.oc-opcoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 14px 0 0 40px; }
+.oc-opcao { margin: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-alt);
+  figcaption { display: flex; align-items: baseline; gap: 8px; font-size: 13px; b { color: var(--primaria); } .mono { margin-left: auto; font-family: var(--mono); } } }
+.oc-opcao.oc-escolhida { border: 2px solid var(--primaria); background: var(--surface); .oc-rotulo { background: var(--destaque); color: #fff; } }
+.oc-opcao.oc-falhou { border-color: var(--vermelho-erro); }
+.oc-rotulo { padding: 2px 8px; border-radius: var(--radius-sm); background: var(--rd-cream-2); color: var(--primaria);
+  font-size: 10px; font-weight: 700; letter-spacing: var(--rd-tracking-wider); text-transform: uppercase; }
+.oc-thumb { display: block; aspect-ratio: 1440 / 958; overflow: hidden; border-radius: var(--radius-sm); background: var(--surface3);
+  img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; } }
+.oc-espera, .oc-erro { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; text-align: center; font-size: 12.5px; }
+.oc-espera { color: var(--rd-blue-600); }
+.oc-erro { color: var(--rd-red-700); background: var(--error-dim); }
+.oc-girando { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--rd-blue-200); border-top-color: var(--rd-blue-600);
+  animation: oc-gira 0.9s linear infinite; }
+@keyframes oc-gira { to { transform: rotate(360deg); } }
+.oc-titulo { margin: 0; font-size: 12px; color: var(--text2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.oc-acoes { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; font-size: 12px;
+  a { color: var(--rd-blue-600); font-weight: 700; } .btn-link { font-size: 12px; } }
+.oc-anexar { cursor: pointer; }
+.oc-quando { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.oc-chamados { margin: 18px 0 6px; .anexos { align-items: center; } .btn-add { margin: 0; cursor: pointer; } }
+
 // =====================================================================================================
 // Telas estreitas
 // =====================================================================================================
@@ -571,6 +629,9 @@ details[open] > summary .cot-seta { transform: rotate(-135deg); }
   .cot-linha.desc { grid-template-columns: minmax(0, 1fr) 96px 56px;
     > span:nth-child(2), > span:nth-child(4) { display: none; } }
   .cot-onde { padding: 14px; }
+  .oc-item-cab { grid-template-columns: 1fr 1fr; .item-ord { display: none; } }
+  .oc-opcoes { grid-template-columns: 1fr; margin-left: 0; }
+  .oc-nota { margin-left: 0; }
   .linha-loja { grid-template-columns: 50px 1fr auto; span:nth-child(3), span:nth-child(4), span:nth-child(5) { display: none; } }
   .linha-loja.cabecalho { display: none; }
 }

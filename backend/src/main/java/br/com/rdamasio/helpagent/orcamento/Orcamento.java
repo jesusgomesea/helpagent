@@ -35,6 +35,10 @@ public class Orcamento {
     @Column(nullable = false, length = 10)
     private ModoAquisicao modo;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 12)
+    private OrigemOrcamento origem = OrigemOrcamento.DOCUMENTOS;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "loja_id")
     private Loja loja;
@@ -120,6 +124,10 @@ public class Orcamento {
         this.validade = validade;
     }
 
+    public void definirOrigem(OrigemOrcamento origem) {
+        this.origem = origem == null ? OrigemOrcamento.DOCUMENTOS : origem;
+    }
+
     public void registrarPdf(String nomeArquivo, String pdfRef) {
         this.nomeArquivo = nomeArquivo;
         this.pdfRef = pdfRef;
@@ -127,6 +135,7 @@ public class Orcamento {
 
     public Long getId() { return id; }
     public ModoAquisicao getModo() { return modo; }
+    public OrigemOrcamento getOrigem() { return origem; }
     public Loja getLoja() { return loja; }
     public String getTitulo() { return titulo; }
     public LocalDate getDataEmissao() { return dataEmissao; }

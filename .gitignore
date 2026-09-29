@@ -5,6 +5,7 @@ backend/config/
 # backend
 backend/target/
 backend/dados/
+backend/dados-homologacao/
 
 # frontend
 frontend/node_modules/

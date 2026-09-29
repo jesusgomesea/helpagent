@@ -11,8 +11,10 @@ frontend/               Angular 22 · standalone + signals · zoneless
 tools/                  extrair_legado.py (lojas e templates do HTML legado) · avaliar_extracao.py · paridade_cotacao.py
 legacy/                 o HTML v3.5 original e o piloto em Python da cotação (com o HANDOFF), só para referência
 docs/                   escopo e plano de migração · guia de manutenção
-iniciar-helpagent.bat   sobe backend + frontend para uso na rede
+iniciar-helpagent.bat   sobe backend + frontend para uso na rede (produção)
 parar-helpagent.bat     derruba os dois
+iniciar-homologacao.bat sobe a homologação só nesta máquina (http://localhost:4201), com dados separados
+parar-homologacao.bat   derruba a homologação
 ```
 
 **Vai mexer no código?** Leia primeiro [docs/MANUTENCAO.md](docs/MANUTENCAO.md): fluxo, mapa do código,
@@ -98,6 +100,27 @@ A primeira cotação depois de subir o backend é mais lenta, porque o Chrome cr
 `backend/dados/navegador/`. Lojas, fontes dos dados, diagnóstico e como acrescentar uma loja:
 [docs/MANUTENCAO.md](docs/MANUTENCAO.md) §7.
 
+## Orçamento por cotação
+
+Monta o impresso a partir da cotação, com o print de cada opção para a validação:
+
+1. Na tela **Cotação**, pesquise o item e clique em **"Escolher para o orçamento"** no anúncio que vai para o
+   impresso. O sistema fotografa a página dele e das **2 melhores alternativas** do mesmo grupo, em segundo plano
+   (~15 s). Pode pesquisar o próximo item enquanto isso.
+2. A barra no rodapé mostra os itens escolhidos (até 10, as linhas do impresso). **Revisar e gerar** abre a tela
+   **Orçamento por cotação**: quantidade, nome no impresso, os 3 prints de cada item (tirar de novo ou anexar o seu
+   print se a loja bloquear), loja, chamado e responsáveis.
+3. **Gerar e guardar o orçamento**: o PDF sai com o impresso, o chamado (se anexado), o **Resumo da cotação** (as 3
+   opções de cada item, a escolhida em destaque) e os prints, e fica no **Histórico** com o selo "por cotação".
+
+Detalhes técnicos e decisões: [docs/MANUTENCAO.md](docs/MANUTENCAO.md) §8.
+
+## Homologação
+
+Para testar mudanças sem mexer na produção: pasta da branch `homologacao` → **`iniciar-homologacao.bat`** →
+http://localhost:4201. Portas (4201/8091), banco, PDFs, prints e perfil do Chrome são próprios, e a tela mostra a faixa
+"Ambiente de homologação". Como montar a pasta e levar para a produção: [docs/MANUTENCAO.md](docs/MANUTENCAO.md) §9.
+
 ## Visual
 
 **Design System R Damásio**: fundo claro, marinho e vermelho, fontes Archivo e JetBrains Mono. O seletor no
@@ -114,7 +137,7 @@ continua sendo o da loja escolhida.
 | GET | `/api/historico/por-chamado?numeros=` | orçamentos já gerados para os chamados (aviso de duplicidade) |
 | GET | `/api/parametros` | máx. de itens, requerente/gestor padrão |
 | POST | `/api/extracoes` (multipart: `modo`, `chamados[]`, `orcamentos[]`) | leitura por IA + avisos A2/C2 |
-| POST | `/api/orcamentos` (multipart: `dados` JSON + arquivos) | valida (A1), gera e devolve o PDF, grava no histórico |
+| POST | `/api/orcamentos` (multipart: `dados` JSON + arquivos) | valida (A1), gera e devolve o PDF, grava no histórico; itens com `prints` = orçamento por cotação |
 | GET/DELETE | `/api/historico?modo=&busca=&pagina=&tamanho=` · `/api/historico/{id}/pdf` | histórico central, filtrável por tipo |
 | GET | `/api/historico/contagem?busca=` | quantos de cada tipo (`REQUISICAO`, `OPEX`, `CAPEX`, `TODOS`), para as abas |
 | GET | `/api/historico/exportar` | backup JSON (versão 3) com todos os orçamentos, itens e PDFs em base64 |
@@ -123,6 +146,9 @@ continua sendo o da loja escolhida.
 | POST | `/api/cotacao` `{termo, paginas, fontes, criterios}` | coleta nas lojas (`fontes` vazio = nível 1) e devolve o ranking com um `id` e `porFonte` |
 | POST | `/api/cotacao/{id}/reavaliar` `{criterios}` | mesmos anúncios, critérios novos (sem nova coleta) |
 | GET | `/api/cotacao/{id}/planilha` | `.xlsx` com Resumo, Critérios, Análise e Descartados |
+| POST | `/api/cotacao/{id}/prints` `{urls}` | orçamento por cotação: fotografa as páginas (a escolhida primeiro, até 3); responde na hora, em `CAPTURANDO` |
+| GET | `/api/cotacao/prints?ids=` · `/api/cotacao/prints/{id}/imagem` | situação dos prints · a imagem (JPEG com loja, hora e link) |
+| POST · PUT | `/api/cotacao/prints/{id}/recapturar` · `/api/cotacao/prints/{id}/imagem` (multipart `arquivo`) | tirar de novo · anexar o print à mão |
 
 **Antes de atualizar a versão ou trocar de banco**: Histórico → *Exportar JSON*. Depois: *Importar JSON*.
 

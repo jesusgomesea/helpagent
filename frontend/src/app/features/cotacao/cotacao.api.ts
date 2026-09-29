@@ -141,6 +141,22 @@ export interface EstadoCotacao {
   niveis: NivelBusca[];
 }
 
+/** Situação de um print (PrintsCotacao.Situacao). MANUAL = o atendente anexou o próprio print no lugar. */
+export type SituacaoPrint = 'CAPTURANDO' | 'PRONTO' | 'FALHOU' | 'MANUAL';
+
+/** Print da página de produto de uma opção cotada (orçamento por cotação). */
+export interface PrintCotacao {
+  id: string;
+  url: string;
+  fonte: string;
+  titulo: string;
+  preco: number | null;
+  situacao: SituacaoPrint;
+  /** Por que falhou ("o preço não apareceu na página…"); null nas demais situações */
+  motivo: string | null;
+  capturadoEm: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CotacaoApi {
   private readonly http = inject(HttpClient);
@@ -161,6 +177,34 @@ export class CotacaoApi {
   /** Mesmos anúncios, critérios novos: só o motor roda, resposta na hora. */
   reavaliar(id: string, criterios: CriteriosCotacao): Observable<RespostaCotacao> {
     return this.http.post<RespostaCotacao>(`/api/cotacao/${id}/reavaliar`, { criterios });
+  }
+
+  /**
+   * Pede ao servidor os prints das opções de um item (a escolhida primeiro). Volta na hora, com os prints em
+   * CAPTURANDO: o Chrome fotografa em segundo plano (~15 s por item) e a cesta acompanha por situacaoPrints.
+   */
+  solicitarPrints(cotacaoId: string, urls: string[]): Observable<PrintCotacao[]> {
+    return this.http.post<PrintCotacao[]>(`/api/cotacao/${cotacaoId}/prints`, { urls });
+  }
+
+  situacaoPrints(ids: string[]): Observable<PrintCotacao[]> {
+    return this.http.get<PrintCotacao[]>('/api/cotacao/prints', { params: { ids: ids.join(',') } });
+  }
+
+  recapturar(id: string): Observable<PrintCotacao> {
+    return this.http.post<PrintCotacao>(`/api/cotacao/prints/${id}/recapturar`, {});
+  }
+
+  /** Troca o print automático por um que o atendente tirou (loja bloqueou o robô, página diferente…). */
+  anexarPrint(id: string, arquivo: Blob, nome: string): Observable<PrintCotacao> {
+    const form = new FormData();
+    form.append('arquivo', arquivo, nome);
+    return this.http.put<PrintCotacao>(`/api/cotacao/prints/${id}/imagem`, form);
+  }
+
+  /** @param versao muda quando a imagem do mesmo id muda (tirar de novo, anexar à mão) — fura o cache */
+  urlImagem(id: string, versao: string | null): string {
+    return `/api/cotacao/prints/${id}/imagem?v=${encodeURIComponent(versao ?? '')}`;
   }
 
   planilha(id: string): Observable<ArquivoBaixado> {

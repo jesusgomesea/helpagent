@@ -1,6 +1,7 @@
 package br.com.rdamasio.helpagent.orcamento;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -45,6 +46,18 @@ public class OrcamentoItem {
     @Column(name = "valor_total", nullable = false, precision = 14, scale = 2)
     private BigDecimal valorTotal;
 
+    /** Loja onde o preço foi cotado (só nas linhas vindas da cotação). */
+    @Column(length = 60)
+    private String fornecedor;
+
+    /** Página do produto na loja. */
+    @Column(length = 1000)
+    private String url;
+
+    /** Momento do print da opção escolhida. */
+    @Column(name = "coletado_em")
+    private Instant coletadoEm;
+
     protected OrcamentoItem() {
     }
 
@@ -58,6 +71,13 @@ public class OrcamentoItem {
         this.valorTotal = valorTotal;
     }
 
+    /** Linha vinda da cotação: guarda onde e quando o preço foi visto, para a auditoria. */
+    public void registrarCotacao(String fornecedor, String url, Instant coletadoEm) {
+        this.fornecedor = fornecedor;
+        this.url = url != null && url.length() > 1000 ? url.substring(0, 1000) : url;
+        this.coletadoEm = coletadoEm;
+    }
+
     void vincular(Orcamento orcamento) {
         this.orcamento = orcamento;
     }
@@ -68,4 +88,7 @@ public class OrcamentoItem {
     public BigDecimal getQuantidade() { return quantidade; }
     public BigDecimal getValorUnitario() { return valorUnitario; }
     public BigDecimal getValorTotal() { return valorTotal; }
+    public String getFornecedor() { return fornecedor; }
+    public String getUrl() { return url; }
+    public Instant getColetadoEm() { return coletadoEm; }
 }

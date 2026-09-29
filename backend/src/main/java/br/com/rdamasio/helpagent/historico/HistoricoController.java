@@ -33,6 +33,7 @@ import br.com.rdamasio.helpagent.orcamento.ModoAquisicao;
 import br.com.rdamasio.helpagent.orcamento.Orcamento;
 import br.com.rdamasio.helpagent.orcamento.OrcamentoController;
 import br.com.rdamasio.helpagent.orcamento.OrcamentoRepository;
+import br.com.rdamasio.helpagent.orcamento.OrigemOrcamento;
 
 /** Histórico central — qualquer máquina vê o que a equipe gerou, com quem gerou. */
 @RestController
@@ -40,12 +41,13 @@ import br.com.rdamasio.helpagent.orcamento.OrcamentoRepository;
 public class HistoricoController {
 
     public record Item(Long id, Instant criadoEm, ModoAquisicao modo, String titulo, int lojaNumero, String lojaNome,
-            String empresa, String chamadoNum, BigDecimal total, String nomeArquivo, String criadoPor) {
+            String empresa, String chamadoNum, BigDecimal total, String nomeArquivo, String criadoPor,
+            OrigemOrcamento origem) {
 
         static Item de(Orcamento o) {
             return new Item(o.getId(), o.getCriadoEm(), o.getModo(), o.getTitulo(), o.getLoja().getNumero(),
                     o.getLoja().getNome(), o.getLoja().getEmpresa(), o.getChamadoNum(), o.getTotal(),
-                    o.getNomeArquivo(), o.getCriadoPor());
+                    o.getNomeArquivo(), o.getCriadoPor(), o.getOrigem());
         }
     }
 

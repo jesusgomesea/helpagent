@@ -36,7 +36,7 @@ class ColetaRealManualTest {
         List<String> fontes = Arrays.stream(System.getProperty("cotacao.fontes",
                 String.join(",", TODAS.stream().map(FonteCotacao::id).toList())).split(",")).map(String::strip).toList();
         var cfg = new HelpAgentProperties.Cotacao("chrome", Path.of("dados/navegador"), 3, Duration.ofMinutes(30),
-                Boolean.getBoolean("cotacao.visivel"));
+                Boolean.getBoolean("cotacao.visivel"), Path.of("target/prints"), Duration.ofDays(7));
         var props = new HelpAgentProperties(null, null, null, null, cfg, null, List.of());
         var coletor = new ColetorCotacao(TODAS, new ResolvedorPatrocinados(), props);
 

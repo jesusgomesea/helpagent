@@ -44,7 +44,7 @@ class ExplorarLojaManualTest {
             alvos.put(kv[0].strip(), kv[1].strip());
         }
         var cfg = new HelpAgentProperties.Cotacao("chrome", Path.of("dados/navegador"), 3, Duration.ofMinutes(30),
-                Boolean.getBoolean("cotacao.visivel"));
+                Boolean.getBoolean("cotacao.visivel"), Path.of("target/prints"), Duration.ofDays(7));
         var props = new HelpAgentProperties(null, null, null, null, cfg, null, List.of());
         var coletor = new ColetorCotacao(List.of(), new ResolvedorPatrocinados(), props);
         Path saida = Files.createDirectories(Path.of("target/exploracao"));

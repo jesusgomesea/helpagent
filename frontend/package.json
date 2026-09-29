@@ -6,6 +6,7 @@
     "ng": "ng",
     "start": "ng serve",
     "start:rede": "ng serve --host 0.0.0.0",
+    "start:homologacao": "ng serve --configuration homologacao",
     "build": "ng build",
     "test": "ng test"
   },

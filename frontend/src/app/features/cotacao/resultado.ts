@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { Icone } from '../../layout/icone';
 import { PESOS } from './criterios';
@@ -7,11 +7,11 @@ import { Anuncio, Avaliado, RespostaCotacao } from './cotacao.api';
 /**
  * Resultado da cotação: números do resumo, lojas consultadas, avisos, o melhor de cada loja, top 3 de cada grupo
  * (segmento) em cartões, a tabela dos demais e os descartados com o motivo. Só exibe — toda regra (eliminatórios,
- * score) é do servidor.
+ * score) é do servidor. Cada anúncio elegível tem "escolher para o orçamento" (orçamento por cotação).
  */
 @Component({
   selector: 'ha-resultado-cotacao',
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, Icone],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, NgTemplateOutlet, Icone],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let r = resposta().resultado;
@@ -73,7 +73,10 @@ import { Anuncio, Avaliado, RespostaCotacao } from './cotacao.api';
                 <span class="cot-prod" [title]="a.anuncio.titulo">{{ a.anuncio.titulo }}</span>
                 <span class="mono">{{ a.anuncio.preco | currency: 'BRL' }}</span>
                 <span class="mono">{{ a.score | number: '1.1-1' }}</span>
-                <span>@if (a.anuncio.url) { <a [href]="a.anuncio.url" target="_blank" rel="noopener">abrir</a> }</span>
+                <span class="cot-acoes-linha">
+                  @if (a.anuncio.url) { <a [href]="a.anuncio.url" target="_blank" rel="noopener">abrir</a> }
+                  <ng-container *ngTemplateOutlet="botaoEscolher; context: { $implicit: a, curto: true }" />
+                </span>
               </div>
             }
           </div>
@@ -114,6 +117,7 @@ import { Anuncio, Avaliado, RespostaCotacao } from './cotacao.api';
                     <a [href]="a.anuncio.url" target="_blank" rel="noopener" [title]="a.anuncio.patrocinado ? 'anúncio patrocinado' : ''">Ver na loja{{ a.anuncio.patrocinado ? ' (ad)' : '' }}</a>
                   } @else { <span class="cot-sem-link">sem link</span> }
                 </div>
+                <ng-container *ngTemplateOutlet="botaoEscolher; context: { $implicit: a, curto: false }" />
               </article>
             }
           </div>
@@ -131,9 +135,10 @@ import { Anuncio, Avaliado, RespostaCotacao } from './cotacao.api';
                   <span class="mono">{{ a.anuncio.nota === null ? '—' : (a.anuncio.nota | number: '1.1-1') }}</span>
                   <span class="mono">{{ a.anuncio.vendidos === null ? '—' : (a.anuncio.vendidos | number) }}</span>
                   <span [class.cot-int]="a.anuncio.internacional">{{ entrega(a.anuncio) }}{{ a.anuncio.internacional ? ' · ' + origem(a.anuncio) : '' }}</span>
-                  <span>
+                  <span class="cot-acoes-linha">
                     @if (a.anuncio.url) { <a [href]="a.anuncio.url" target="_blank" rel="noopener">abrir</a>@if (a.anuncio.patrocinado) {<span class="cot-ad">ad</span>} }
                     @else { <span class="cot-sem-link">sem link</span> }
+                    <ng-container *ngTemplateOutlet="botaoEscolher; context: { $implicit: a, curto: true }" />
                   </span>
                 </div>
               }
@@ -163,6 +168,20 @@ import { Anuncio, Avaliado, RespostaCotacao } from './cotacao.api';
         </details>
       }
     </section>
+
+    <!-- Orçamento por cotação: a escolhida vira a linha do impresso; o sistema fotografa ela e mais 2 opções. -->
+    <ng-template #botaoEscolher let-a let-curto="curto">
+      @if (a.anuncio.url) {
+        @if (escolhidas().has(a.anuncio.url)) {
+          <span class="cot-na-cesta" title="Já está no orçamento por cotação">✓ {{ curto ? 'na cesta' : 'No orçamento' }}</span>
+        } @else {
+          <button type="button" [class]="curto ? 'cot-escolher curto' : 'cot-escolher'" [disabled]="cestaCheia()" (click)="escolher.emit(a)"
+            [title]="cestaCheia() ? 'O impresso tem 10 linhas: a cesta está cheia' : 'Põe no orçamento por cotação e tira os prints desta e de mais 2 opções'">
+            + {{ curto ? 'orçamento' : 'Escolher para o orçamento' }}
+          </button>
+        }
+      }
+    </ng-template>
   `,
 })
 export class ResultadoCotacaoView {
@@ -170,6 +189,11 @@ export class ResultadoCotacaoView {
   /** Reavaliando com critérios novos: a tela esmaece em vez de sumir. */
   readonly atualizando = input(false);
   readonly baixarPlanilha = output<void>();
+  /** URLs que já estão na cesta do orçamento por cotação. */
+  readonly escolhidas = input<Set<string>>(new Set());
+  readonly cestaCheia = input(false);
+  /** "Escolher para o orçamento": a página calcula as alternativas e põe na cesta. */
+  readonly escolher = output<Avaliado>();
 
   protected readonly pesos = PESOS;
 

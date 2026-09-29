@@ -62,7 +62,8 @@ class DiagnosticoTempoManualTest {
     @Test
     void medir() {
         String termo = System.getProperty("cotacao.termo", "ssd 256gb");
-        var cfg = new HelpAgentProperties.Cotacao("chrome", Path.of("dados/navegador"), 3, Duration.ofMinutes(30), false);
+        var cfg = new HelpAgentProperties.Cotacao("chrome", Path.of("dados/navegador"), 3, Duration.ofMinutes(30), false,
+                Path.of("target/prints"), Duration.ofDays(7));
         var coletor = new ColetorCotacao(List.of(), new ResolvedorPatrocinados(),
                 new HelpAgentProperties(null, null, null, null, cfg, null, List.of()));
         // modo 0 = como a coleta faz hoje (navigate COMMIT, uma aba de cada vez)

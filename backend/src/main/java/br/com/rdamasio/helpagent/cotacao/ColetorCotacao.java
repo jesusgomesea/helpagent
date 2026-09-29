@@ -19,6 +19,8 @@ import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.PlaywrightException;
+import com.microsoft.playwright.options.LoadState;
+import com.microsoft.playwright.options.ScreenshotType;
 import com.microsoft.playwright.options.WaitUntilState;
 
 import br.com.rdamasio.helpagent.config.HelpAgentProperties;
@@ -147,6 +149,85 @@ public class ColetorCotacao {
         porFonte.keySet().forEach(k -> aproveitados.put(k, 0));
         limpos.forEach(a -> aproveitados.merge(a.fonte(), 1, Integer::sum));
         return new Coleta(limpos, avisos, aproveitados);
+    }
+
+    /** Print de uma página de produto: a imagem da janela (PNG) ou, se não deu, o motivo para a tela. */
+    public record Captura(byte[] png, String falha) {
+    }
+
+    /** Há um preço em reais na página: é o sinal de que o produto (e não um erro ou captcha) carregou. */
+    private static final String TEM_PRECO = "() => !!document.body && /R\\$\\s?\\d/.test(document.body.innerText)";
+    private static final String PREPARAR_PRINT = FonteComScript.carregarScript("/cotacao/preparar-print.js");
+
+    /**
+     * Tira o print da janela de cada página de produto, para o orçamento por cotação (a validação manual exige o
+     * print de cada opção cotada). Mesma técnica da coleta: dispara as abas em paralelo e fotografa uma por uma,
+     * sob a mesma trava — uma busca pedida durante a captura espera na fila.
+     *
+     * <p>A janela tem 1440×900: cabe título, preço à vista e vendedor em todas as lojas testadas. Falha de uma
+     * página não derruba as outras; vira {@link Captura#falha()}, e a tela oferece tirar de novo ou anexar à mão.
+     */
+    public List<Captura> capturar(List<String> urls) {
+        return usarContexto(ctx -> {
+            List<Page> abas = new ArrayList<>();
+            List<String> erros = new ArrayList<>();
+            for (String url : urls) {
+                Page aba = ctx.newPage();
+                try {
+                    aba.navigate(url, new Page.NavigateOptions().setWaitUntil(WaitUntilState.COMMIT).setTimeout(45_000));
+                    abas.add(aba);
+                    erros.add(null);
+                } catch (PlaywrightException e) {
+                    log.warn("Print: {} não abriu: {}", url, primeiraLinha(e));
+                    aba.close();
+                    abas.add(null);
+                    erros.add("a página da loja não abriu");
+                }
+            }
+            List<Captura> capturas = new ArrayList<>();
+            for (int i = 0; i < abas.size(); i++) {
+                Page aba = abas.get(i);
+                if (aba == null) {
+                    capturas.add(new Captura(null, erros.get(i)));
+                    continue;
+                }
+                try {
+                    capturas.add(new Captura(fotografar(aba), null));
+                } catch (RuntimeException e) {
+                    log.warn("Print: {} falhou: {}", urls.get(i), primeiraLinha(e));
+                    capturas.add(new Captura(null, e instanceof PaginaSemProduto ? e.getMessage()
+                            : "não consegui fotografar a página"));
+                } finally {
+                    aba.close();
+                }
+            }
+            return capturas;
+        });
+    }
+
+    private static byte[] fotografar(Page aba) {
+        aba.waitForLoadState(LoadState.DOMCONTENTLOADED, new Page.WaitForLoadStateOptions().setTimeout(45_000));
+        try {
+            aba.waitForFunction(TEM_PRECO, null, new Page.WaitForFunctionOptions().setTimeout(25_000));
+        } catch (PlaywrightException semPreco) {
+            throw new PaginaSemProduto("o preço não apareceu na página (produto indisponível ou verificação anti-robô)");
+        }
+        aba.evaluate(PREPARAR_PRINT);
+        // o aviso de cookies some com animação e as imagens do produto chegam depois do preço
+        aba.waitForTimeout(1_500);
+        aba.bringToFront(); // aba de fundo pode sair em branco em alguns Chromes
+        return aba.screenshot(new Page.ScreenshotOptions().setType(ScreenshotType.PNG));
+    }
+
+    /** A página abriu, mas sem o produto: o motivo vai direto para a tela. */
+    private static final class PaginaSemProduto extends RuntimeException {
+        PaginaSemProduto(String motivo) {
+            super(motivo);
+        }
+    }
+
+    private static String primeiraLinha(RuntimeException e) {
+        return String.valueOf(e.getMessage()).lines().findFirst().orElse("");
     }
 
     private static void registrarFalha(Map<String, String> falhas, Alvo a, String motivo, RuntimeException e) {

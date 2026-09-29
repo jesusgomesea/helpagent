@@ -73,8 +73,9 @@ public class BackupService {
                 o.getTotal(), o.getObservacoes(), o.getRequerente(), o.getGestor(), o.getNomeArquivo(), o.getCriadoPor(),
                 o.getCriadoEm(),
                 o.getItens().stream().map(i -> new BackupHistorico.Item(i.getOrdem(), i.getProduto(), i.getDescricao(),
-                        i.getQuantidade(), i.getValorUnitario(), i.getValorTotal())).toList(),
-                pdf);
+                        i.getQuantidade(), i.getValorUnitario(), i.getValorTotal(), i.getFornecedor(), i.getUrl(),
+                        i.getColetadoEm())).toList(),
+                pdf, o.getOrigem());
     }
 
     /**
@@ -122,9 +123,14 @@ public class BackupService {
                     padrao(r.gestor(), props.orcamento().gestorPadrao()),
                     padrao(r.criadoPor(), "importado"), r.criadoEm());
             o.definirValidade(r.validade());
+            o.definirOrigem(r.origem());
             if (r.itens() != null) {
-                r.itens().forEach(it -> o.adicionarItem(new OrcamentoItem(it.ordem(), it.produto(), it.descricao(),
-                        it.quantidade(), it.valorUnitario(), it.valorTotal())));
+                r.itens().forEach(it -> {
+                    OrcamentoItem item = new OrcamentoItem(it.ordem(), it.produto(), it.descricao(),
+                            it.quantidade(), it.valorUnitario(), it.valorTotal());
+                    if (it.fornecedor() != null) item.registrarCotacao(it.fornecedor(), it.url(), it.coletadoEm());
+                    o.adicionarItem(item);
+                });
             }
             salvar(o, padrao(r.nomeArquivo(), "Orçamento importado.pdf"), r.pdf());
             c.importados++;

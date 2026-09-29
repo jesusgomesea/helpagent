@@ -70,6 +70,7 @@ const POR_PAGINA = 20;
                 <div class="hist-titulo">{{ r.titulo }}</div>
                 <div class="hist-meta">
                   @if (aba() === 'TODOS') { <span class="selo-tipo selo-{{ r.modo }}">{{ rotulo(r.modo) }}</span> }
+                  @if (r.origem === 'COTACAO') { <span class="selo-tipo selo-COTACAO" title="Montado pela cotação em lojas online, com os prints anexados">por cotação</span> }
                   Loja {{ r.lojaNumero }} · {{ r.lojaNome }} · Chamado {{ r.chamadoNum || '—' }}@if (r.criadoPor !== 'anonimo') { · por {{ r.criadoPor }} }
                 </div>
               </div>

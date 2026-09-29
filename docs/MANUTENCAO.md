@@ -81,10 +81,11 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 | `pdf` | Montagem do PDF com PDFBox (preenchimento, anexos, carimbo, página de erro) |
 | `armazenamento` | Onde os PDFs gerados ficam (hoje: disco local) |
 | `historico` | Consulta, download, exclusão, backup JSON (exportar/importar) |
-| `cotacao` | Cotação em 7 lojas online, à parte do orçamento: Chrome via Playwright, uma `Fonte*` por loja, motor de ranking, planilha (§7) |
+| `cotacao` | Cotação em 7 lojas online: Chrome via Playwright, uma `Fonte*` por loja, motor de ranking, planilha (§7); prints das páginas de produto para o orçamento por cotação (`PrintsCotacao`, §8) |
 
 Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem PostgreSQL e sem login),
-`db/migration/` (Flyway), `prompts/extracao.txt`, `pdf-templates/*.pdf`, `cotacao/extrair-<loja>.js` (um por loja da cotação).
+`db/migration/` (Flyway), `prompts/extracao.txt`, `pdf-templates/*.pdf`, `cotacao/extrair-<loja>.js` (um por loja da cotação),
+`cotacao/preparar-print.js` (fecha o aviso de cookies antes do print).
 
 ### Frontend — `frontend/src/app/`
 
@@ -95,7 +96,8 @@ Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem Post
 | `features/novo-orcamento/` | Página principal: `orcamento.store.ts` (estado com signals), `composer.ts` (card 1), `revisao.ts` (cards 2 e 3) |
 | `features/historico/` | Lista, busca, download, backup JSON |
 | `features/lojas/` | Cadastro de lojas |
-| `features/cotacao/` | Cotação em lojas online: `cotacao.api.ts` (tipos + HTTP, separados do `core/api.ts`), `cotacao.page.ts`, `criterios.ts`, `resultado.ts` |
+| `features/cotacao/` | Cotação em lojas online: `cotacao.api.ts` (tipos + HTTP, separados do `core/api.ts`), `cotacao.page.ts`, `criterios.ts`, `resultado.ts`, `cesta.store.ts` (itens escolhidos para o orçamento por cotação) |
+| `features/orcamento-cotacao/` | Tela de revisão e geração do orçamento por cotação (§8) |
 
 Estilo: **um único** `src/styles.scss`, no **Design System R Damásio** (o mesmo do piloto de cotação de
 Suprimentos, adotado em 28/09/2026: papel claro, marinho `#0B3A5C` + vermelho `#CB2028`, fontes Archivo e
@@ -233,6 +235,9 @@ arrisca errar valores pequenos. Avaliar com a ferramenta acima antes.
 - **Cotação: o Chrome não sobe.** O backend precisa rodar com um usuário logado na máquina, porque na sessão 0
   do Windows (Serviço, ou Tarefa Agendada "executar estando conectado ou não") o Chrome não abre. Bloquear a tela
   (Win+L) não atrapalha; fazer logoff, sim. Detalhes na §7.
+- **Dois Chromes no mesmo perfil não sobem.** O perfil da cotação (`helpagent.cotacao.perfil`) fica travado pelo
+  Chrome que o abriu. Por isso a homologação usa `backend/dados-homologacao/navegador` (§9): se apontar para o perfil
+  da produção, a cotação de uma das duas falha enquanto a outra estiver rodando.
 - **Arquivo `.java` com BOM não compila** (`illegal character: '\ufeff'`). O `Set-Content`/`Out-File` do
   PowerShell 5 grava UTF-8 com BOM. Edite pelo editor ou use `-Encoding utf8NoBOM` (PowerShell 7).
 - **`&` em argumento do `mvnw.cmd` quebra o comando.** O `mvnw.cmd` passa pelo `cmd`, que lê o `&` como
@@ -475,3 +480,77 @@ seguidas, sem relação com o modo. Parece variação do próprio site; vale con
    seletor que indica "lista pronta" e as URLs de busca. Veja `FonteKabum` como modelo.
 4. Acrescente a loja na tabela acima e, se entrar num grupo novo, em `CotacaoService.NIVEIS`.
 5. Rode a coleta isolada com `-Dcotacao.fontes=<id>` e confira preço, "de", nota e link de 2 ou 3 produtos na loja.
+
+## 8. Orçamento por cotação (tela `/orcamento-cotacao`, desde 29/09/2026)
+
+O impresso nasce da cotação em vez de orçamentos de fornecedor. A validação manual exige o print de cada cotação,
+então cada item leva **3 prints de página de produto**: a opção escolhida (a que vai para a linha do impresso) e 2
+alternativas para comparar. Lojas diferentes podem se misturar no mesmo impresso.
+
+```
+Cotação (/cotacao)                                  Servidor
+──────────────────                                  ────────
+"Escolher para o orçamento" num anúncio ─────────▶ POST /api/cotacao/{id}/prints {urls: [escolhida, alt1, alt2]}
+  alternativas = 2 de maior score do mesmo grupo      PrintsCotacao: confere que as URLs são desta cotação,
+  (alternativasPara, cesta.store.ts)                  enfileira; ColetorCotacao.capturar abre as 3 abas,
+                                                      espera "R$ 1…" na página, fecha cookies, fotografa;
+cesta (localStorage) consulta a cada 2,5 s ◀────── CarimboPrint grava loja + hora + link na imagem (JPEG)
+  GET /api/cotacao/prints?ids=…                       dados/prints/<id>.jpg + <id>.json (7 dias)
+Revisão (/orcamento-cotacao): itens, prints,
+  tirar de novo / anexar print à mão, dados ────────▶ POST /api/orcamentos (itens[].prints = ids)
+                                                      OrcamentoService: todo print com imagem? (senão 422)
+                                                      PDF: formulário → chamado → Resumo da cotação → prints
+                                                      grava origem=COTACAO e fornecedor/url/coletado_em por linha
+```
+
+- **Por que o servidor só aceita URL da própria cotação:** o Chrome do servidor abriria qualquer endereço que a
+  tela mandasse (inclusive da rede interna). `PrintsCotacao.solicitar` procura cada URL nos anúncios da cotação
+  guardada; se ela expirou (30 min), a tela pede para refazer a busca.
+- **Captura em segundo plano, fila única:** o atendente segue pesquisando enquanto o Chrome fotografa. Os prints
+  dividem a trava do Chrome com a coleta: uma busca pedida durante a captura espera (~15 s por item, medido em
+  29/09/2026 nas 3 lojas do nível 1).
+- **"Página pronta" sem seletor por loja:** espera aparecer um preço em reais no texto da página (`TEM_PRECO`) e
+  só então fecha o aviso de cookies (`preparar-print.js`, clica em "Entendi/Aceitar…" só dentro de bloco que fala de
+  cookies/privacidade). Sem preço em 25 s → falha "produto indisponível ou verificação anti-robô".
+- **Carimbo na imagem, não só no PDF:** o print do Chrome não tem barra de endereço. A faixa com loja, hora da captura
+  e link vai na própria imagem; o carimbo âmbar do PDF marca a hora em que o PDF foi montado.
+- **JPEG e página deitada:** 10 itens = 30 prints; em PNG o PDF passaria de 10 MB. No PDF, os prints entram em A4
+  paisagem (`DadosImpresso.Anexo.paisagem`), o que deixa o texto da loja ~60% maior que em pé.
+- **Print anexado à mão** (`PUT /api/cotacao/prints/{id}/imagem`) ganha o mesmo carimbo com "print anexado à mão em…"
+  e fica como `MANUAL`. Serve quando a loja bloqueia o robô (Amazon, Mercado Livre) ou a página sai diferente.
+- **Reinício do backend:** o print é relido do disco; o que estava capturando vira falha ("o servidor reiniciou") e a
+  tela oferece tirar de novo.
+- **Unitário editável:** começa no preço coletado. Se o atendente mudar, a revisão avisa, e o resumo do PDF continua
+  mostrando o coletado (é o que o print prova).
+- **Banco (V5):** `orcamento.origem` (`DOCUMENTOS` | `COTACAO`) e, por linha, `fornecedor`, `url`, `coletado_em`.
+  O backup JSON leva os campos novos (versão 3 continua: são opcionais e backups antigos importam como `DOCUMENTOS`).
+- **Lojas testadas:** Kabum, Pichau e Terabyte (29/09/2026, print com o preço à vista visível e igual ao coletado).
+  Amazon, Mercado Livre, Dell e Lenovo usam o mesmo código, sem ajuste por loja ainda: conferir com a captura real
+  antes de liberar (é o próximo passo).
+
+### Testes
+- `ResumoCotacaoPdfTest`: o resumo vem logo depois do formulário, com a escolhida marcada; cada print tem o rótulo
+  "Item 01 · ESCOLHIDA · Kabum"; grava `target/resumo-cotacao.pdf` e PNGs das páginas para conferir a olho.
+- A captura real (`ColetorCotacao.capturar`) roda contra os sites; conferir subindo a homologação (§9) e escolhendo um
+  item de cada loja.
+
+## 9. Homologação (testar antes de ir para a produção)
+
+Branch **`homologacao`**, rodando numa pasta própria (git worktree) e aberta por **`iniciar-homologacao.bat`**:
+
+| | Produção | Homologação |
+|---|---|---|
+| Pasta | a do repositório, branch `main` | `..\HelpAgent-homologacao`, branch `homologacao` (`git worktree add`) |
+| Abrir / parar | `iniciar-helpagent.bat` / `parar-helpagent.bat` | `iniciar-homologacao.bat` / `parar-homologacao.bat` |
+| Endereço | http://helpagent.rdamasio.com.br (porta 80, rede) | http://localhost:4201 (só a própria máquina) |
+| Backend | 127.0.0.1:8080 | 127.0.0.1:8091 |
+| Dados | `backend/dados/` | `backend/dados-homologacao/` (banco, PDFs, prints, logs, perfil do Chrome) |
+
+- O `.bat` passa tudo por variável de ambiente (`PORT`, `SPRING_DATASOURCE_URL`, `ARMAZENAMENTO_DIR`, `COTACAO_PRINTS`,
+  `COTACAO_PERFIL`, `LOGGING_FILE_NAME`, `HELPAGENT_AMBIENTE`), sem arquivo de configuração novo. O frontend usa a
+  configuração `homologacao` do `ng serve` (`angular.json`: `127.0.0.1:4201`, `proxy.homologacao.json` → 8091).
+- `HELPAGENT_AMBIENTE=homologacao` faz a tela mostrar a faixa listrada "Ambiente de homologação" (`/api/parametros`).
+- **Fluxo:** desenvolver na branch `homologacao` → testar pela homologação → juntar na `main`
+  (`git merge homologacao`) → reiniciar a produção. Migration nova roda no banco de homologação primeiro, que é
+  justamente o teste; antes de juntar, exportar o backup JSON da produção (§3).
+- A chave do Gemini fica em `backend/config/application-local.yml` de **cada pasta** (fora do git).
