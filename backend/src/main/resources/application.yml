@@ -51,6 +51,11 @@ logging:
 
 helpagent:
   fuso: America/Sao_Paulo
+  # Liga/desliga por recurso (config/Recursos, docs/INTEGRACAO.md §5). A cotação precisa de um Chrome com janela:
+  # num contêiner/servidor sem desktop, RECURSO_COTACAO=false. Desligado → 503 nas rotas e a tela esconde o recurso.
+  recursos:
+    ia: ${RECURSO_IA:true}
+    cotacao: ${RECURSO_COTACAO:true}
   cors-origens: ${CORS_ORIGENS:http://localhost:4200}
   gemini:
     # Só no servidor. Nunca commitar; em produção vem de secret/cofre.

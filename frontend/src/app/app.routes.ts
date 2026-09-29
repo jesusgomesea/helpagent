@@ -1,6 +1,10 @@
 import { Routes } from '@angular/router';
+import { recursoLigado } from './core/recursos';
 
-/** Rotas. As páginas são carregadas sob demanda (lazy) para a primeira tela abrir rápido. */
+/**
+ * Rotas. As páginas são carregadas sob demanda (lazy) para a primeira tela abrir rápido. Cotação e Uso da IA só
+ * existem se o servidor tiver o recurso ligado (core/recursos.ts).
+ */
 export const routes: Routes = [
   {
     path: '',
@@ -20,17 +24,20 @@ export const routes: Routes = [
   {
     path: 'cotacao',
     title: 'HELP-AGENT — Cotação',
+    canMatch: [recursoLigado('cotacao')],
     loadComponent: () => import('./features/cotacao/cotacao.page').then((m) => m.CotacaoPage),
   },
   {
     path: 'orcamento-cotacao',
     title: 'HELP-AGENT — Orçamento por cotação',
+    canMatch: [recursoLigado('cotacao')],
     loadComponent: () =>
       import('./features/orcamento-cotacao/orcamento-cotacao.page').then((m) => m.OrcamentoCotacaoPage),
   },
   {
     path: 'uso-ia',
     title: 'HELP-AGENT — Uso da IA',
+    canMatch: [recursoLigado('ia')],
     loadComponent: () => import('./features/uso-ia/uso-ia.page').then((m) => m.UsoIaPage),
   },
   { path: '**', redirectTo: '' },

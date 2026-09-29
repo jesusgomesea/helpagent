@@ -59,6 +59,14 @@ public class TratadorErros {
         return comId(pd);
     }
 
+    /** Recurso desligado neste servidor (helpagent.recursos.*): 503, com o que fazer em {@code problemas}. */
+    @ExceptionHandler(RecursoDesligado.class)
+    ProblemDetail desligado(RecursoDesligado e) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
+        pd.setProperty("problemas", e.problemas());
+        return comId(pd);
+    }
+
     @ExceptionHandler(FalhaIa.class)
     ProblemDetail ia(FalhaIa e) {
         log.warn("Extração com IA falhou após {} tentativa(s): {}", e.tentativas(), e.getMessage());

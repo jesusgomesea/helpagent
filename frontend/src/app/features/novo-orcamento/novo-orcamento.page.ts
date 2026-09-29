@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { Api, mensagensDeErro, salvarArquivo } from '../../core/api';
 import { Avisos } from '../../core/avisos';
+import { Recursos } from '../../core/recursos';
 import { DICA_MODO, GerarOrcamentoRequest, MODOS, ROTULO_MODO } from '../../core/modelos';
 import { Etapas } from '../../layout/etapas';
 import { Faixa } from '../../layout/faixa';
@@ -31,6 +32,13 @@ import { Revisao } from './revisao';
       </div>
     </div>
 
+    @if (!recursos.ia() && !mostrarRevisao()) {
+      <!-- servidor sem IA (helpagent.recursos.ia=false): o fluxo manual é o caminho -->
+      <div class="status alerta">
+        A leitura por IA está desligada neste servidor. Anexe os documentos e preencha o orçamento à mão.
+        <button class="btn-link" (click)="preencherManualmente()">Preencher manualmente</button>
+      </div>
+    }
     <ha-composer [extraindo]="extraindo()" (extrair)="extrair()" />
 
     @if (erroExtracao().length) {
@@ -65,6 +73,7 @@ export class NovoOrcamentoPage {
   protected readonly rotulos = ROTULO_MODO;
   protected readonly dicas = DICA_MODO;
   private readonly api = inject(Api);
+  protected readonly recursos = inject(Recursos);
   private readonly avisos = inject(Avisos);
 
   protected readonly lojas = toSignal(this.api.lojas());

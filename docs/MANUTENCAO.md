@@ -72,7 +72,7 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 
 | Pacote | Responsabilidade |
 |---|---|
-| `config` | `HelpAgentProperties` (tudo que é configurável, prefixo `helpagent.*`), segurança/CORS, usuário atual, `/api/parametros`, `OpenApiConfig` (contrato em `/v3/api-docs`) |
+| `config` | `HelpAgentProperties` (tudo que é configurável, prefixo `helpagent.*`), segurança/CORS, usuário atual, `/api/parametros`, `OpenApiConfig` (contrato em `/v3/api-docs`), `Recursos` + `GuardaRecursos` (liga/desliga IA e cotação; desligado → 503) |
 | `common` | `Dinheiro` (BRL ↔ `BigDecimal`), `Documento` (arquivo enviado), `OrigemRequisicao` (IP para os logs de auditoria), `IdRequisicaoFiltro` (X-Request-Id no log e no erro), erros de negócio e o `TratadorErros` (ProblemDetail) |
 | `loja` | Cadastro de lojas e busca por número/nome |
 | `template` | Os 4 impressos: `TemplateCodigo`, nomes dos campos AcroForm (`CamposImpresso`) e leitura do PDF em branco |
@@ -92,7 +92,7 @@ Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem Post
 
 | Pasta | Conteúdo |
 |---|---|
-| `core/` | `api.ts` (todas as chamadas HTTP), `modelos.ts` (tipos da API), `dinheiro.ts`, `arquivos.ts` (anexos, texto→imagem), `avisos.ts` (toasts e overlay), `marca.ts` (visual Damásio × TD) |
+| `core/` | `api.ts` (todas as chamadas HTTP), `modelos.ts` (tipos da API), `recursos.ts` (o que o servidor oferece; esconde menu/rotas desligados), `dinheiro.ts`, `arquivos.ts` (anexos, texto→imagem), `avisos.ts` (toasts e overlay), `marca.ts` (visual Damásio × TD) |
 | `layout/` | Cabeçalho, faixa de abertura, etapas, overlay de carregamento, toasts, ícones SVG |
 | `features/novo-orcamento/` | Página principal: `orcamento.store.ts` (estado com signals), `composer.ts` (card 1), `revisao.ts` (cards 2 e 3) |
 | `features/historico/` | Lista, busca, download, backup JSON |

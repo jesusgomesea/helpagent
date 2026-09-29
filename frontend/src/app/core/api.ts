@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpEvent, HttpEventType, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, filter, map, tap } from 'rxjs';
+import { Observable, filter, map, shareReplay, tap } from 'rxjs';
 import {
   Anexo,
   GerarOrcamentoRequest,
@@ -51,8 +51,11 @@ export class Api {
     return this.http.get<ItemHistorico[]>('/api/historico/por-chamado', { params: { numeros } });
   }
 
+  /** Uma chamada só por carga da página: cabeçalho, telas e guardas de rota leem o mesmo resultado. */
+  private readonly parametros$ = this.http.get<Parametros>('/api/parametros').pipe(shareReplay(1));
+
   parametros(): Observable<Parametros> {
-    return this.http.get<Parametros>('/api/parametros');
+    return this.parametros$;
   }
 
   /**

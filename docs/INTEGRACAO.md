@@ -58,6 +58,23 @@ Alerta sugerido: `helpagent_ia_cota_dia_usada / helpagent_ia_cota_dia_limite > 0
 | `ACTUATOR_EXPOR` | `health,info` | endpoints do Actuator expostos (ex.: `health,info,prometheus`) |
 | `ACTUATOR_DETALHES` | `never` | detalhes da saúde |
 | `API_DOCS` | `true` | contrato OpenAPI e Swagger UI |
+| `RECURSO_IA` | `true` | leitura por IA e painel "Uso da IA" (§5) |
+| `RECURSO_COTACAO` | `true` | cotação em lojas online e orçamento por cotação (§5) |
+
+## 5. Recursos que dependem do ambiente
+
+O núcleo (orçamento, impresso PDF, histórico, lojas) roda em qualquer servidor Java 21 com PostgreSQL. Dois
+recursos não:
+
+| Recurso | Depende de | Se o servidor não tiver |
+|---|---|---|
+| **Cotação** (`RECURSO_COTACAO`) | um **Chrome com janela**, numa sessão de desktop: o Mercado Livre bloqueia navegador headless e o Chromium do Playwright (MANUTENCAO §7), e o perfil do Chrome fica em disco | desligue; ou rode uma instância só para a cotação numa máquina Windows com usuário logado |
+| **IA** (`RECURSO_IA`) | chave do Gemini e saída HTTPS para `generativelanguage.googleapis.com` | desligue: o atendente preenche o orçamento à mão |
+
+Desligado (`config/Recursos`, `config/GuardaRecursos`):
+- as rotas do recurso respondem **503** com `problemas` explicando (não 500 lá de dentro);
+- `GET /api/parametros` devolve `recursos: {ia, cotacao}`, e o frontend esconde o link do menu, barra a rota
+  (volta ao início) e, sem IA, oferece "Preencher manualmente" na tela de novo orçamento.
 
 ## Decisões em aberto
 

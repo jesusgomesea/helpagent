@@ -4,6 +4,7 @@ import { catchError, map, of } from 'rxjs';
 import { Api } from '../core/api';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MARCAS, MarcaService } from '../core/marca';
+import { Recursos } from '../core/recursos';
 import { CestaCotacao } from '../features/cotacao/cesta.store';
 import { Icone } from './icone';
 
@@ -31,16 +32,20 @@ import { Icone } from './icone';
         <a routerLink="/" routerLinkActive="ativo" [routerLinkActiveOptions]="{ exact: true }" title="Novo orçamento" aria-label="Novo orçamento">
           <ha-icone nome="novo" [tamanho]="15" /><span>Novo<span class="so-desktop"> orçamento</span></span>
         </a>
-        <a routerLink="/cotacao" routerLinkActive="ativo" title="Cotação em lojas online" aria-label="Cotação">
-          <ha-icone nome="busca" [tamanho]="15" /><span>Cotação</span>
-          @if (cesta.itens().length) { <b class="nav-contador" title="Itens no orçamento por cotação">{{ cesta.itens().length }}</b> }
-        </a>
+        @if (recursos.cotacao()) {
+          <a routerLink="/cotacao" routerLinkActive="ativo" title="Cotação em lojas online" aria-label="Cotação">
+            <ha-icone nome="busca" [tamanho]="15" /><span>Cotação</span>
+            @if (cesta.itens().length) { <b class="nav-contador" title="Itens no orçamento por cotação">{{ cesta.itens().length }}</b> }
+          </a>
+        }
         <a routerLink="/lojas" routerLinkActive="ativo" title="Lojas" aria-label="Lojas">
           <ha-icone nome="loja" [tamanho]="15" /><span>Lojas</span>
         </a>
-        <a routerLink="/uso-ia" routerLinkActive="ativo" title="Uso da IA (cota do Gemini)" aria-label="Uso da IA">
-          <ha-icone nome="grafico" [tamanho]="15" /><span>Uso da IA</span>
-        </a>
+        @if (recursos.ia()) {
+          <a routerLink="/uso-ia" routerLinkActive="ativo" title="Uso da IA (cota do Gemini)" aria-label="Uso da IA">
+            <ha-icone nome="grafico" [tamanho]="15" /><span>Uso da IA</span>
+          </a>
+        }
         <!-- Histórico por último, colado ao seletor de visual (pedido do helpdesk, 29/09/2026) -->
         <a routerLink="/historico" routerLinkActive="ativo" title="Histórico" aria-label="Histórico">
           <ha-icone nome="historico" [tamanho]="15" /><span>Histórico</span>
@@ -60,6 +65,8 @@ import { Icone } from './icone';
 export class Cabecalho {
   protected readonly marca = inject(MarcaService);
   protected readonly cesta = inject(CestaCotacao);
+  /** Cotação e Uso da IA somem do menu quando o servidor não os oferece. */
+  protected readonly recursos = inject(Recursos);
   protected readonly ambiente = toSignal(inject(Api).parametros().pipe(map((p) => p.ambiente ?? ''), catchError(() => of(''))), {
     initialValue: '',
   });

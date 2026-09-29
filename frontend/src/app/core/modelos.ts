@@ -59,6 +59,15 @@ export interface Parametros {
   gestorPadrao: string;
   /** "" na produção; "homologacao" no ambiente de testes (a tela mostra uma faixa) */
   ambiente: string;
+  /** O que este servidor oferece (helpagent.recursos); ver core/recursos.ts */
+  recursos: RecursosLigados;
+}
+
+export interface RecursosLigados {
+  /** Leitura por IA e painel "Uso da IA" */
+  ia: boolean;
+  /** Cotação em lojas online e orçamento por cotação */
+  cotacao: boolean;
 }
 
 /** JSON devolvido pela IA — valores como texto no formato brasileiro. */
