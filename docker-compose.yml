@@ -1,0 +1,54 @@
+# Sistema inteiro em contêineres — para testar a integração ou servir num servidor sem Windows (docs/INTEGRACAO.md §7).
+#
+#   GEMINI_API_KEY=... docker compose up --build        → http://localhost:8081
+#
+# O que muda em relação ao iniciar-helpagent.bat:
+#  - banco PostgreSQL de verdade (volume "banco"), em vez do H2 em arquivo;
+#  - cotação DESLIGADA: precisa de um Chrome com janela, que o contêiner não tem (MANUTENCAO §7);
+#  - login DESLIGADO aqui só para testar. Em produção: SEGURANCA_HABILITADA=true e o issuer do provedor OIDC
+#    (SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI) — ver INTEGRACAO §4.
+# A chave do Gemini vem do ambiente ou de um arquivo .env ao lado (fora do git); sem ela, use RECURSO_IA=false.
+
+services:
+  banco:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: helpagent
+      POSTGRES_USER: helpagent
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-helpagent}
+    volumes:
+      - banco:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helpagent -d helpagent"]
+      interval: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    depends_on:
+      banco:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://banco:5432/helpagent
+      DB_USER: helpagent
+      DB_PASSWORD: ${DB_PASSWORD:-helpagent}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      RECURSO_IA: ${RECURSO_IA:-true}
+      RECURSO_COTACAO: "false"
+      SEGURANCA_HABILITADA: ${SEGURANCA_HABILITADA:-false}
+      ACTUATOR_EXPOR: health,info,prometheus
+    volumes:
+      - arquivos:/app/dados
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    environment:
+      BACKEND_URL: http://backend:8080
+    ports:
+      - "8081:80"
+
+volumes:
+  banco:
+  arquivos:

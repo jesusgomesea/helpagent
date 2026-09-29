@@ -101,6 +101,24 @@ O mesmo build serve sozinho, atrás de um gateway ou dentro de um portal, **sem 
 - O visual vem todo de `src/styles.scss` (tokens `--rd-*` e semânticos); os componentes não têm CSS próprio. Dentro
   de um app maior, os estilos globais podem colidir — é um dos pontos da decisão em aberto abaixo.
 
+## 7. Contêineres e CI
+
+| Arquivo | O quê |
+|---|---|
+| `backend/Dockerfile` | compila com Maven e roda no JRE 21 como usuário sem privilégio; `/app/dados` (PDFs, prints) é volume; **`RECURSO_COTACAO=false`** (não há Chrome nem desktop na imagem) |
+| `frontend/Dockerfile` + `nginx.conf.template` | compila o Angular (`--build-arg BASE_HREF=/helpagent/` para sub-caminho) e serve com nginx, que encaminha `/api` para `BACKEND_URL` (mesma origem, sem CORS), aceita envio de até 250 MB e espera a IA até 120 s |
+| `docker-compose.yml` | PostgreSQL + backend + frontend em `http://localhost:8081`, para testar a integração; login desligado **só** ali |
+| `.github/workflows/ci.yml` | a cada push: testes do backend (inclusive a aplicação subindo inteira e as migrations num **PostgreSQL de verdade**, `MigracoesPostgresTest`), build do frontend e das duas imagens |
+
+```bash
+GEMINI_API_KEY=... docker compose up --build
+```
+
+A máquina de desenvolvimento atual não tem Docker: as imagens são montadas e conferidas pelo CI no GitHub.
+
+A cotação continua precisando de uma máquina Windows com usuário logado (o `iniciar-helpagent.bat` de hoje). Numa
+integração, dá para manter uma instância só para ela e desligá-la nas demais.
+
 ## Decisões em aberto
 
 - Como o backend entra (serviço próprio × módulo de um backend maior) e como o frontend entra (sub-rota de um

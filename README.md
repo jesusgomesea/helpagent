@@ -164,6 +164,8 @@ Contrato completo, gerado do código: `/v3/api-docs` (OpenAPI) e `/swagger-ui.ht
 `/actuator/health`, `/actuator/info`. Para integrar com outra aplicação (id de requisição, métricas, variáveis de
 ambiente): [docs/INTEGRACAO.md](docs/INTEGRACAO.md). Num servidor sem desktop (contêiner), desligue a cotação com
 `RECURSO_COTACAO=false`; sem chave do Gemini, `RECURSO_IA=false` (o orçamento é preenchido à mão).
+Em contêineres: `docker compose up --build` (PostgreSQL + backend + frontend, cotação desligada). O CI no GitHub
+testa tudo a cada push.
 
 **Antes de atualizar a versão ou trocar de banco**: Histórico → *Exportar JSON*. Depois: *Importar JSON*.
 

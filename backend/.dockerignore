@@ -1,0 +1,6 @@
+# Fora da imagem: build local, dados (banco H2, PDFs, perfil do Chrome) e segredos (config/ tem a chave do Gemini)
+target/
+dados/
+dados-homologacao/
+config/
+*.log

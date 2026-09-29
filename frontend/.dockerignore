@@ -1,0 +1,4 @@
+# Fora da imagem: dependências e build locais (a imagem faz npm ci e ng build do zero)
+node_modules/
+dist/
+.angular/

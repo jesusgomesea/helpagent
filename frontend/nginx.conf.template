@@ -1,0 +1,28 @@
+# nginx do frontend em contêiner (Dockerfile ao lado). A imagem oficial troca ${BACKEND_URL} pelo valor da variável.
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+
+    # backup do histórico leva todos os PDFs em base64 (spring.servlet.multipart: até 250 MB)
+    client_max_body_size 250m;
+
+    location /api/ {
+        proxy_pass ${BACKEND_URL};
+        # IP real de quem pediu: vai para o log de auditoria (OrigemRequisicao) e para o uso da IA
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $host;
+        # leitura por IA pode levar até ~60 s (prazo total do ExtratorIa)
+        proxy_read_timeout 120s;
+    }
+
+    # config.json nunca em cache: é ele que diz onde está a API
+    location = /config.json {
+        add_header Cache-Control "no-store";
+    }
+
+    # SPA: qualquer rota do Angular cai no index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
