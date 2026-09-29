@@ -33,6 +33,11 @@ export interface Loja {
   template: TemplateCodigo;
   templateRotulo: string;
   ativa: boolean;
+  /** Cadastro (não sai no impresso); null quando não informado. */
+  razaoSocial: string | null;
+  inscricaoEstadual: string | null;
+  cidade: string | null;
+  uf: string | null;
 }
 
 /** Cadastro/edição de loja (tela Lojas). O número não muda na edição. */
@@ -42,6 +47,10 @@ export interface LojaForm {
   cnpj: string;
   empresa: string;
   template: TemplateCodigo;
+  razaoSocial: string;
+  inscricaoEstadual: string;
+  cidade: string;
+  uf: string;
 }
 
 export interface Parametros {

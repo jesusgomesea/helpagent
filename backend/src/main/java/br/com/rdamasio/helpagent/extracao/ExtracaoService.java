@@ -61,6 +61,11 @@ public class ExtracaoService {
     }
 
     public Resposta extrair(ModoAquisicao modo, List<Documento> chamados, List<Documento> orcamentos) {
+        return extrair(modo, chamados, orcamentos, null);
+    }
+
+    /** @param origem IP de quem pediu (vai para o registro de uso da IA) */
+    public Resposta extrair(ModoAquisicao modo, List<Documento> chamados, List<Documento> orcamentos, String origem) {
         if (orcamentos.isEmpty()) throw new ErroNegocio("Suba pelo menos 1 orçamento.");
         if (modo.exigeChamado() && chamados.isEmpty()) {
             throw new ErroNegocio("Suba o chamado e pelo menos 1 orçamento.");
@@ -75,13 +80,13 @@ public class ExtracaoService {
         long inicio = System.currentTimeMillis();
         String textoPrompt = prompt.montar(modo, totalChamados, orcamentos.size());
         String chave = CacheExtracao.chave(modo.name(), textoPrompt, enviados);
-        var doCache = cache.buscar(chave);
-        ExtratorIa.Resultado r = doCache.orElseGet(() -> extrator.extrair(enviados, textoPrompt));
-        if (doCache.isEmpty()) cache.guardar(chave, r);
+        var contexto = new ExtratorIa.Contexto(modo.name(), origem);
+        CacheExtracao.Obtido obtido = cache.obter(chave, () -> extrator.extrair(enviados, textoPrompt, contexto));
+        ExtratorIa.Resultado r = obtido.resultado();
         long ms = System.currentTimeMillis() - inicio;
         long bytes = enviados.stream().mapToLong(d -> d.conteudo().length).sum();
-        log.info("Extração {} concluída: modelo={} tentativas={} duracaoMs={} arquivos={} tamanhoKB={} cache={}", modo,
-                r.modelo(), r.tentativas(), ms, enviados.size(), bytes / 1024, doCache.isPresent());
+        log.info("Extração {} concluída: modelo={} degrau={} tentativas={} duracaoMs={} arquivos={} tamanhoKB={} cache={}",
+                modo, r.modelo(), r.degrau(), r.tentativas(), ms, enviados.size(), bytes / 1024, obtido.reaproveitado());
 
         DadosExtraidos d = r.dados();
         // Rastro de auditoria: de onde a IA tirou cada valor. Não aparece na tela; serve para investigar
@@ -92,8 +97,14 @@ public class ExtracaoService {
         }
         LojaDto loja = lojas.resolver(d.lojaNum(), d.lojaNome()).map(LojaDto::de).orElse(null);
         var duplicados = modo.exigeChamado() ? jaOrcados.buscar(ChamadosJaOrcados.numeros(d.chamadoNum())) : List.<HistoricoController.Item>of();
-        return new Resposta(d, loja, RegrasExtracao.avisos(d, props.orcamento().maxItens()), r.modelo(), r.tentativas(),
-                ms, doCache.isPresent(), validadeSugerida(d, LocalDate.now(props.fuso())), duplicados);
+        List<String> avisos = new ArrayList<>(RegrasExtracao.avisos(d, props.orcamento().maxItens()));
+        if (r.degrau() > 0) {
+            // modelo de baixo erra mais: a revisão humana é a proteção, então ela precisa saber
+            avisos.add("Lido pelo modelo reserva " + r.modelo() + " (os de cima estavam sem cota ou sobrecarregados). "
+                    + "Confira valores e quantidades com atenção.");
+        }
+        return new Resposta(d, loja, avisos, r.modelo(), r.tentativas(),
+                ms, obtido.reaproveitado(), validadeSugerida(d, LocalDate.now(props.fuso())), duplicados);
     }
 
     private static final DateTimeFormatter DATA_BR = DateTimeFormatter.ofPattern("dd/MM/uuuu");

@@ -32,15 +32,29 @@ helpagent:
   gemini:
     # Só no servidor. Nunca commitar; em produção vem de secret/cofre.
     api-key: ${GEMINI_API_KEY:}
-    modelo-primario: ${GEMINI_MODELO_PRIMARIO:gemini-3.6-flash}
-    modelo-fallback: ${GEMINI_MODELO_FALLBACK:gemini-3.5-flash-lite}
+    # Cadeia de fallback, do melhor para o pior (MANUTENCAO §4). Esgotou/sobrecarregou → desce um degrau; volta a
+    # subir sozinho quando a pausa acaba. Limites = plano gratuito. O 20/dia do 3.6-flash veio do próprio 429 do
+    # Google; os demais são ESTIMATIVA até conferir no painel https://aistudio.google.com/rate-limit (o Google não
+    # publica nem devolve pela API). Quando o Google recusa com um limite menor, o servidor passa a usar o dele.
+    # Conferido em 29/09/2026 com uma chamada mínima a cada um: o 2.5-flash-lite aparece na lista de modelos mas
+    # responde 404 ("no longer available to new users") — ficou de fora; o 3.1-flash-lite entrou no lugar.
+    cadeia:
+      - { modelo: gemini-3.6-flash,      rpm: 5,  tpm: 250000, rpd: 20 }
+      - { modelo: gemini-3.5-flash,      rpm: 5,  tpm: 250000, rpd: 20 }
+      - { modelo: gemini-3.5-flash-lite, rpm: 10, tpm: 250000, rpd: 20 }
+      - { modelo: gemini-3.1-flash-lite, rpm: 15, tpm: 250000, rpd: 500 }
+      - { modelo: gemini-2.5-flash,      rpm: 10, tpm: 250000, rpd: 250 }
     modelo-forcado: ${GEMINI_MODELO_FORCADO:}
     max-tentativas: 3
     backoff: 1200ms
+    # Anti-rajada: no máximo N leituras ao mesmo tempo; a próxima espera vaga. E um teto de requisições por leitura.
+    max-simultaneas: 3
+    espera-vaga: 45s
+    max-chamadas-por-leitura: 4
     # Desempenho (ver docs/MANUTENCAO.md §4). Leitura normal: 5–12 s.
     timeout: 30s          # espera máxima por chamada; sobrecarregado, o Google já segurou 37 s até dar 503
-    reserva-apos: 12s     # principal lento → dispara o fallback em paralelo e vale a 1ª resposta (0 desliga)
-    nivel-raciocinio: low # thinkingLevel: minimal | low | medium | high
+    reserva-apos: 12s     # modelo da vez lento → dispara o degrau de baixo em paralelo (se tiver cota); vale a 1ª resposta
+    nivel-raciocinio: low # thinkingLevel (3.x): minimal | low | medium | high; nos 2.x vira thinkingBudget
     cache-extracao: 30m   # mesmos arquivos de novo → resposta na hora, sem gastar quota (0 desliga)
   orcamento:
     max-itens: 10

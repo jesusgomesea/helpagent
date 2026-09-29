@@ -31,15 +31,19 @@ import { Icone } from './icone';
         <a routerLink="/" routerLinkActive="ativo" [routerLinkActiveOptions]="{ exact: true }" title="Novo orçamento" aria-label="Novo orçamento">
           <ha-icone nome="novo" [tamanho]="15" /><span>Novo<span class="so-desktop"> orçamento</span></span>
         </a>
-        <a routerLink="/historico" routerLinkActive="ativo" title="Histórico" aria-label="Histórico">
-          <ha-icone nome="historico" [tamanho]="15" /><span>Histórico</span>
-        </a>
         <a routerLink="/cotacao" routerLinkActive="ativo" title="Cotação em lojas online" aria-label="Cotação">
           <ha-icone nome="busca" [tamanho]="15" /><span>Cotação</span>
           @if (cesta.itens().length) { <b class="nav-contador" title="Itens no orçamento por cotação">{{ cesta.itens().length }}</b> }
         </a>
         <a routerLink="/lojas" routerLinkActive="ativo" title="Lojas" aria-label="Lojas">
           <ha-icone nome="loja" [tamanho]="15" /><span>Lojas</span>
+        </a>
+        <a routerLink="/uso-ia" routerLinkActive="ativo" title="Uso da IA (cota do Gemini)" aria-label="Uso da IA">
+          <ha-icone nome="grafico" [tamanho]="15" /><span>Uso da IA</span>
+        </a>
+        <!-- Histórico por último, colado ao seletor de visual (pedido do helpdesk, 29/09/2026) -->
+        <a routerLink="/historico" routerLinkActive="ativo" title="Histórico" aria-label="Histórico">
+          <ha-icone nome="historico" [tamanho]="15" /><span>Histórico</span>
         </a>
       </nav>
       <div class="seletor-marca" role="radiogroup" aria-label="Visual">

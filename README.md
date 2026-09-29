@@ -115,6 +115,15 @@ Monta o impresso a partir da cotação, com o print de cada opção para a valid
 
 Detalhes técnicos e decisões: [docs/MANUTENCAO.md](docs/MANUTENCAO.md) §8.
 
+## Uso da IA (cota do Gemini)
+
+A leitura por IA percorre uma **cadeia de modelos**, do melhor para o pior (`helpagent.gemini.cadeia`): quando um
+esgota a cota ou está sobrecarregado, desce para o próximo, e volta a subir sozinho depois. O servidor conta a
+própria cota (por minuto e por dia) e desce **antes** de levar a recusa do Google. No máximo 3 leituras ao mesmo
+tempo e 4 requisições por leitura. A tela **Uso da IA** mostra a situação de cada modelo, o gasto do dia e as
+últimas chamadas; leitura feita por modelo reserva ganha um aviso na revisão. Limites e detalhes:
+[docs/MANUTENCAO.md](docs/MANUTENCAO.md) §4.
+
 ## Homologação
 
 Para testar mudanças sem mexer na produção: pasta da branch `homologacao` → **`iniciar-homologacao.bat`** →
@@ -137,6 +146,7 @@ continua sendo o da loja escolhida.
 | GET | `/api/historico/por-chamado?numeros=` | orçamentos já gerados para os chamados (aviso de duplicidade) |
 | GET | `/api/parametros` | máx. de itens, requerente/gestor padrão |
 | POST | `/api/extracoes` (multipart: `modo`, `chamados[]`, `orcamentos[]`) | leitura por IA + avisos A2/C2 |
+| GET | `/api/uso-ia` | painel de uso do Gemini: situação de cada modelo da cadeia, totais do dia do Google, últimas chamadas |
 | POST | `/api/orcamentos` (multipart: `dados` JSON + arquivos) | valida (A1), gera e devolve o PDF, grava no histórico; itens com `prints` = orçamento por cotação |
 | GET/DELETE | `/api/historico?modo=&busca=&pagina=&tamanho=` · `/api/historico/{id}/pdf` | histórico central, filtrável por tipo |
 | GET | `/api/historico/contagem?busca=` | quantos de cada tipo (`REQUISICAO`, `OPEX`, `CAPEX`, `TODOS`), para as abas |

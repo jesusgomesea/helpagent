@@ -1,7 +1,10 @@
 package br.com.rdamasio.helpagent.extracao;
 
+import java.time.Duration;
+
 /**
- * Falha ao falar com a IA.
+ * Falha ao falar com a IA. O tipo decide o que o {@link ExtratorIa} faz: repetir o mesmo modelo, descer um
+ * degrau da cadeia ou desistir.
  *
  * @param status HTTP devolvido pela API (0 quando nem houve resposta, ex.: rede)
  * @param retentavel se vale tentar de novo igual (429, 5xx, rede, JSON malformado)
@@ -13,6 +16,12 @@ public class FalhaIa extends RuntimeException {
     private int tentativas = 1;
     private boolean sobrecarga;
     private boolean cotaDiaria;
+    private boolean cotaPorMinuto;
+    private boolean modeloIndisponivel;
+    /** "Tente de novo em" que o Google manda no 429 (RetryInfo.retryDelay); null se não veio. */
+    private Duration tentarDepois;
+    /** Limite que o Google disse ter estourado (QuotaFailure.quotaValue, ex.: 20 por dia); null se não veio. */
+    private Integer limiteInformado;
 
     public FalhaIa(String mensagem, int status, boolean retentavel) {
         super(mensagem);
@@ -43,8 +52,37 @@ public class FalhaIa extends RuntimeException {
         return f;
     }
 
+    /**
+     * 429 da cota POR MINUTO (requisições ou tokens). Antes o sistema repetia o mesmo modelo 1,2 s depois — e
+     * levava outro 429, que também conta requisição: era assim que uma rajada se alimentava. Agora desce de degrau
+     * e o modelo descansa pelo tempo que o Google pediu.
+     */
+    public static FalhaIa cotaPorMinuto(String mensagem, Duration tentarDepois) {
+        FalhaIa f = new FalhaIa(mensagem, 429, true);
+        f.cotaPorMinuto = true;
+        f.tentarDepois = tentarDepois;
+        return f;
+    }
+
+    /** 404: o modelo não existe (ou saiu do ar) para esta chave. Desce de degrau e o tira da cadeia. */
+    public static FalhaIa modeloIndisponivel(String mensagem) {
+        FalhaIa f = new FalhaIa(mensagem, 404, false);
+        f.modeloIndisponivel = true;
+        return f;
+    }
+
+    FalhaIa comLimiteInformado(Integer limite, Duration tentarDepois) {
+        this.limiteInformado = limite;
+        if (tentarDepois != null) this.tentarDepois = tentarDepois;
+        return this;
+    }
+
     public boolean cotaDiaria() { return cotaDiaria; }
+    public boolean cotaPorMinuto() { return cotaPorMinuto; }
     public boolean sobrecarga() { return sobrecarga; }
+    public boolean modeloIndisponivel() { return modeloIndisponivel; }
+    public Duration tentarDepois() { return tentarDepois; }
+    public Integer limiteInformado() { return limiteInformado; }
     public int status() { return status; }
     public boolean retentavel() { return retentavel; }
     public int tentativas() { return tentativas; }

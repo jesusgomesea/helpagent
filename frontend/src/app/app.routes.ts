@@ -28,5 +28,10 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/orcamento-cotacao/orcamento-cotacao.page').then((m) => m.OrcamentoCotacaoPage),
   },
+  {
+    path: 'uso-ia',
+    title: 'HELP-AGENT — Uso da IA',
+    loadComponent: () => import('./features/uso-ia/uso-ia.page').then((m) => m.UsoIaPage),
+  },
   { path: '**', redirectTo: '' },
 ];

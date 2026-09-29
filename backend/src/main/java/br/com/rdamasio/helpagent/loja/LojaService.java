@@ -75,6 +75,7 @@ public class LojaService {
                     + " (se estiver desativada, reative-a em vez de cadastrar de novo)"));
         }
         Loja l = new Loja(f.numero(), normalizar(f.nome()), validarCnpj(f.cnpj()), normalizar(f.empresa()), f.template());
+        definirCadastro(l, f);
         repo.save(l);
         log.info("Loja {} CRIADA por {}: {}", l.getNumero(), origem, descrever(l));
         return l;
@@ -86,6 +87,7 @@ public class LojaService {
         Loja l = repo.findByNumero(numero).orElseThrow(() -> new NaoEncontrado("Loja " + numero + " não cadastrada"));
         String antes = descrever(l);
         l.atualizar(normalizar(f.nome()), validarCnpj(f.cnpj()), normalizar(f.empresa()), f.template());
+        definirCadastro(l, f);
         log.info("Loja {} ALTERADA por {}: antes [{}] depois [{}]", numero, origem, antes, descrever(l));
         return l;
     }
@@ -105,13 +107,23 @@ public class LojaService {
         return Cnpj.formatar(cnpj);
     }
 
+    private static void definirCadastro(Loja l, LojaForm f) {
+        l.definirCadastro(opcional(f.razaoSocial()), opcional(f.inscricaoEstadual()), opcional(f.cidade()), opcional(f.uf()));
+    }
+
+    /** Campo opcional: em branco vira nulo; preenchido segue o padrão em maiúsculas. */
+    private static String opcional(String s) {
+        return s == null || s.isBlank() ? null : normalizar(s);
+    }
+
     /** O cadastro existente é todo em maiúsculas (ex.: "DAMASIO PE"); mantém o padrão. */
     private static String normalizar(String s) {
         return s.trim().replaceAll("\\s+", " ").toUpperCase(Locale.ROOT);
     }
 
     private static String descrever(Loja l) {
-        return "nome=" + l.getNome() + " cnpj=" + l.getCnpj() + " empresa=" + l.getEmpresa() + " template=" + l.getTemplate();
+        return "nome=" + l.getNome() + " cnpj=" + l.getCnpj() + " empresa=" + l.getEmpresa() + " template=" + l.getTemplate()
+                + " razao=" + l.getRazaoSocial() + " ie=" + l.getInscricaoEstadual() + " cidade=" + l.getCidade() + "/" + l.getUf();
     }
 
     static Integer normalizarNumero(String valor) {

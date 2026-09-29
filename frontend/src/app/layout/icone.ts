@@ -16,6 +16,7 @@ const ICONES = {
   loja: 'M4 10v10h16V10M3 10l2-6h14l2 6H3ZM9 20v-6h6v6',
   alerta: 'M12 3 2 20h20L12 3ZM12 10v4M12 17h.01',
   busca: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM20 20l-4-4',
+  grafico: 'M4 20h16M7 16v-5M12 16V6M17 16v-8',
 } as const;
 
 export type NomeIcone = keyof typeof ICONES;

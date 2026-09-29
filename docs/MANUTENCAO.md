@@ -11,7 +11,7 @@ Navegador (Angular)                          Servidor (Spring Boot, 127.0.0.1:80
 1. Composer: cola/anexa chamado e orçamentos
 2. "Extrair dados com IA" ── multipart ────▶ POST /api/extracoes
                                                ExtracaoService → PromptExtracao (prompts/extracao.txt)
-                                               ExtratorIa (tentativas + fallback) → GeminiClient → Google
+                                               ExtratorIa (cadeia de modelos + cota) → GeminiClient → Google
                                                RegrasExtracao (avisos A2/C2) + LojaService.resolver
 3. Revisão: formulário preenchido ◀── JSON ─┘
 4. "Baixar PDF" ── multipart (dados+arquivos)▶ POST /api/orcamentos
@@ -76,7 +76,8 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 | `common` | `Dinheiro` (BRL ↔ `BigDecimal`), `Documento` (arquivo enviado), `OrigemRequisicao` (IP para os logs de auditoria), erros de negócio e o `TratadorErros` (ProblemDetail) |
 | `loja` | Cadastro de lojas e busca por número/nome |
 | `template` | Os 4 impressos: `TemplateCodigo`, nomes dos campos AcroForm (`CamposImpresso`) e leitura do PDF em branco |
-| `extracao` | Tudo da IA: prompt, cliente Gemini, política de tentativas, parser da resposta, avisos |
+| `extracao` | Tudo da IA: prompt, cliente Gemini, política de tentativas e cadeia de modelos, parser da resposta, avisos |
+| `usoia` | Controle de cota do Gemini por modelo (`ControleCotaIa`), registro de cada chamada (tabela `uso_ia`) e o painel `/api/uso-ia` (§4) |
 | `orcamento` | Entidades, cálculo, validação A1 e o serviço que gera o impresso |
 | `pdf` | Montagem do PDF com PDFBox (preenchimento, anexos, carimbo, página de erro) |
 | `armazenamento` | Onde os PDFs gerados ficam (hoje: disco local) |
@@ -98,6 +99,7 @@ Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem Post
 | `features/lojas/` | Cadastro de lojas |
 | `features/cotacao/` | Cotação em lojas online: `cotacao.api.ts` (tipos + HTTP, separados do `core/api.ts`), `cotacao.page.ts`, `criterios.ts`, `resultado.ts`, `cesta.store.ts` (itens escolhidos para o orçamento por cotação) |
 | `features/orcamento-cotacao/` | Tela de revisão e geração do orçamento por cotação (§8) |
+| `features/uso-ia/` | Painel "Uso da IA": cota de cada modelo da cadeia, totais do dia do Google, horas e últimas chamadas (§4) |
 
 Estilo: **um único** `src/styles.scss`, no **Design System R Damásio** (o mesmo do piloto de cotação de
 Suprimentos, adotado em 28/09/2026: papel claro, marinho `#0B3A5C` + vermelho `#CB2028`, fontes Archivo e
@@ -112,7 +114,9 @@ Os componentes usam as classes globais e não têm estilo próprio. Assim o visu
 
 ### Trocar a chave ou o modelo do Gemini
 - Chave: `backend/config/application-local.yml` → `helpagent.gemini.api-key` (fora do git). Em servidor: variável `GEMINI_API_KEY`.
-- Modelos: `GEMINI_MODELO_PRIMARIO` / `GEMINI_MODELO_FALLBACK`, ou os mesmos campos em `application.yml`. Para comparar modelos sem fallback: `GEMINI_MODELO_FORCADO`.
+- Modelos: a **cadeia** em `application.yml` → `helpagent.gemini.cadeia`, do melhor para o pior, com os limites
+  de cada um (ver §4 "Cadeia de modelos e controle de cota"). Para comparar modelos sem cadeia: `GEMINI_MODELO_FORCADO`.
+  (As antigas `GEMINI_MODELO_PRIMARIO`/`GEMINI_MODELO_FALLBACK` não existem mais.)
 - Reiniciar o backend (`parar-helpagent.bat` → `iniciar-helpagent.bat`).
 
 ### Mudar o que a IA devolve (novo campo)
@@ -139,7 +143,15 @@ Pela tela **Lojas** (menu do cabeçalho), sem mexer em código. Regras, validada
 
 Sem login, cada alteração vai para o log com o antes, o depois e o IP (`Loja 23 ALTERADA por 10.4.x.x: antes […] depois […]`).
 O IP do atendente chega pelo `X-Forwarded-For`, que o proxy do `ng serve` preenche (`xfwd` em `proxy.conf.json`).
-Não edite `V2__seed_lojas.sql`: o Flyway recusa migration já aplicada que foi alterada.
+Não edite `V2__seed_lojas.sql` nem `V6__cadastro_completo_lojas.sql`: o Flyway recusa migration já aplicada que foi alterada.
+
+**Cadastro completo (V6, 29/09/2026).** A planilha de lojas do grupo trouxe razão social, inscrição estadual, cidade e
+UF (colunas opcionais, só cadastro: o impresso continua saindo com `empresa` e `cnpj`). A V6 sobrescreveu nome e CNPJ
+das lojas existentes — o 123 mudou de `…/0002-38` para `…/0003-19` — sem mexer em empresa/impresso, e cadastrou as
+que faltavam. Para essas, empresa e impresso foram escolhidos na migration e devem ser conferidos pela tela:
+51 DAMASIO MT (DAM); 701–703 TDLM (TD); 905/907/913, cópias de 5/7/13 com outro número (TD); 800–806 RDS, hotéis,
+Lucano, RD Emp. e Rufino (RDAM, provisório: não são motopeças e não há impresso próprio). O 806 veio com o mesmo CNPJ
+do 804. O 53 DAMASIO MTS não está na planilha e ficou como estava.
 
 ### Trocar ou incluir um impresso (template PDF)
 1. Salve o PDF em `backend/src/main/resources/pdf-templates/<CODIGO>.pdf`.
@@ -175,24 +187,75 @@ sistema insistia nele. Onde o tempo vai e o que cada peça faz:
 |---|---|---|
 | Envio | Imagens reduzidas no navegador para no máximo 2000px e recomprimidas se passarem de 1,5 MB | `core/arquivos.ts` (`LADO_MAXIMO`, `BYTES_MAXIMO`) |
 | Espera por modelo lento | Limite de **30 s** por chamada (antes 90 s) | `helpagent.gemini.timeout` |
-| Modelo sobrecarregado (503/tempo esgotado) | Vai **direto para o modelo alternativo**, sem repetir o principal | `ExtratorIa` |
-| Os dois sobrecarregados | Depois de um 503 do principal, se o alternativo também travar, a próxima tentativa **volta ao principal** em vez de insistir no alternativo. Há um **prazo total de 60 s** para começar tentativas; depois disso a tela devolve o erro, e dá para preencher à mão | `ExtratorIa` (`alternarNaSobrecarga`, `PRAZO_TOTAL`) |
-| Principal lento (fila do Google) | Passou de **12 s** sem responder → dispara o alternativo **em paralelo** e vale a primeira resposta boa. Gasta requisição extra só quando já está lento | `ExtratorIa`, `helpagent.gemini.reserva-apos` |
-| Cota diária esgotada (plano gratuito: **20 leituras/dia** no principal) | Detectada pelo `quotaId` "PerDay" do erro, não pelo texto (o limite por minuto usa as mesmas palavras). O principal fica fora **15 min** e é sondado de novo, porque a cota libera antes da meia-noite e o 429 volta na hora | `ExtratorIa.PAUSA_COTA`, `FalhaIa.cotaDiaria` |
+| Modelo sobrecarregado (503/tempo esgotado) | **Desce um degrau** da cadeia, sem repetir o mesmo; o modelo "esfria" 60 s e as próximas leituras preferem o de baixo | `ExtratorIa`, `ControleCotaIa.RESFRIAMENTO` |
+| Todos já falharam nesta leitura | Volta ao melhor que ainda tem vez (sobrecarga é passageira: em 28/09 o principal deu 503 e, logo depois, respondia em 2–3 s). **Prazo total de 60 s** e **teto de 4 requisições** por leitura; depois a tela devolve o erro e dá para preencher à mão | `ExtratorIa` (`PRAZO_TOTAL`), `helpagent.gemini.max-chamadas-por-leitura` |
+| Modelo lento (fila do Google) | Passou de **12 s** sem responder → dispara o degrau de baixo **em paralelo** (só se ele tiver cota) e vale a primeira resposta boa. Vale em **qualquer** degrau, não só no primeiro | `ExtratorIa.comReserva`, `helpagent.gemini.reserva-apos` |
+| Cota diária esgotada (plano gratuito: **20/dia** no 3.6-flash) | Detectada pelo `quotaId` "PerDay" do erro, não pelo texto (o limite por minuto usa as mesmas palavras). Desce de degrau; o modelo fica fora **15 min** e é sondado de novo, porque a cota libera aos poucos | `ControleCotaIa.PAUSA_COTA_DIA`, `FalhaIa.cotaDiaria` |
+| Cota por minuto esgotada | Desce de degrau **na hora** e o modelo descansa o `retryDelay` que o Google mandou (5 s a 2 min). Antes repetia o mesmo modelo 1,2 s depois e levava outro 429 | `ControleCotaIa`, `FalhaIa.cotaPorMinuto` |
 | Resposta fora do formato | *Structured output* (`responseJsonSchema`): a API garante o JSON dos campos de `DadosExtraidos` | `GeminiClient.ESQUEMA_RESPOSTA` |
 | Mesmos arquivos de novo | Cache por conteúdo (SHA-256) por **30 min**: resposta na hora, sem gastar cota | `CacheExtracao`, `helpagent.gemini.cache-extracao` |
-| Raciocínio do modelo | `thinkingLevel` configurável (`low` padrão; `minimal` é mais rápido, testar a precisão antes) | `helpagent.gemini.nivel-raciocinio` |
+| Raciocínio do modelo | `thinkingLevel` configurável (`low` padrão; `minimal` é mais rápido, testar a precisão antes). Nos modelos **2.x** vira `thinkingBudget` (0 em `low`): eles recusam `thinkingLevel` com 400 | `helpagent.gemini.nivel-raciocinio`, `GeminiClient.configRaciocinio` |
+| Duplo clique / dois atendentes com o mesmo arquivo | A segunda leitura espera a primeira, **em andamento**, em vez de gastar outra requisição | `CacheExtracao.obter` |
 | Espera percebida | Overlay com fase ("Enviando · 60%" → "IA lendo…"), cronômetro, e o toast final informa o tempo | `Processando`, `NovoOrcamentoPage` |
 
 Medição depois das mudanças: leitura de 1 imagem pelo principal em 11,5 s (2.053 tokens de entrada, a
 maioria do prompt; 158 de saída), e repetição dos mesmos arquivos em **0,24 s** pelo cache. O que sobra
 no caminho normal é fila do lado do Google, e não tamanho de arquivo.
 
+### Cadeia de modelos e controle de cota (29/09/2026)
+
+**Por quê.** O RPM do projeto no Google subiu de repente. O servidor só descobria o limite levando 429, e o 429
+também conta requisição; numa leitura ruim eram até 6 chamadas. Duas coisas mudaram: o fallback virou uma
+**cadeia** de N modelos, e o servidor passou a **contar a própria cota** antes de chamar.
+
+**Cadeia** (`helpagent.gemini.cadeia`, do melhor para o pior). Esgotou ou sobrecarregou, desce um degrau; quando a
+pausa do modelo de cima acaba, as leituras voltam a ele sozinhas:
+
+| Degrau | Modelo | Limites configurados (rpm · rpd) | Observação |
+|---|---|---|---|
+| 1 | `gemini-3.6-flash` | 5 · 20 | 20/dia veio do próprio 429 do Google |
+| 2 | `gemini-3.5-flash` | 5 · 20 | estimativa; em 29/09 esgotou 30–40 s em 3 de 3 chamadas (sobrecarga no Google) |
+| 3 | `gemini-3.5-flash-lite` | 10 · 20 | estimativa |
+| 4 | `gemini-3.1-flash-lite` | 15 · 500 | estimativa; aceita o formato fixo (testado) |
+| 5 | `gemini-2.5-flash` | 10 · 250 | estimativa; aceita o formato fixo com `thinkingBudget` (testado) |
+
+Os limites acima são **estimativas** até alguém copiar os do painel https://aistudio.google.com/rate-limit (o Google
+não os publica nem os devolve pela API). Se o Google recusar com um limite diário menor, o servidor passa a usar o
+dele (log `[Cota IA] ... limite aprendido`). O `gemini-2.5-flash-lite` **ficou de fora**: aparece na lista de modelos,
+mas a API responde 404 "no longer available to new users" (testado em 29/09). Na subida, o servidor lista os
+modelos da chave (não gasta cota) e tira da cadeia os que não existem; um 404 em uso também tira o modelo até
+reiniciar. **Antes de pôr um modelo novo na cadeia**, rode `tools/avaliar_extracao.py` com ele forçado
+(`GEMINI_MODELO_FORCADO`): modelo menor erra mais valor.
+
+**Controle de cota** (`usoia/ControleCotaIa`), por modelo e em memória:
+- janela móvel de 60 s de requisições e tokens de entrada (RPM/TPM) e contagem do dia (RPD);
+- **o dia do Google vira à meia-noite do Pacífico** (4h ou 5h em Brasília), não à meia-noite daqui;
+- antes de cada chamada, **reserva** a vaga (duas leituras simultâneas não passam juntas pelo último lugar). Sem vaga,
+  desce de degrau **sem chamar** — conta como "pulo" no painel;
+- tokens: reserva uma estimativa (prompt ÷ 3,5 + ~1.100 por imagem ou página de PDF) e troca pelo que o Google contou;
+- a 80% do limite diário, avisa no log uma vez por dia e modelo.
+
+**Anti-rajada**: no máximo **3 leituras ao mesmo tempo** no servidor (`max-simultaneas`; a próxima espera até 45 s
+por vaga e então devolve "IA ocupada") e no máximo **4 requisições por leitura** (`max-chamadas-por-leitura`).
+
+**Registro** (tabela `uso_ia`, V7): uma linha por requisição enviada, com modelo, degrau, papel (principal,
+reserva, degrau, repetição), resultado, tokens, tempo, tipo de orçamento, nº de arquivos e IP. Guardado 90 dias. Na
+subida, os contadores do dia são remontados daqui, senão um reinício "devolveria" a cota já gasta.
+
+**Painel "Uso da IA"** (menu do cabeçalho, `/uso-ia`, atualiza a cada 15 s): situação de cada degrau, requisições e
+tokens do dia, **pico por minuto** (é o "RPM" do painel do Google), leituras que caíram em modelo reserva, colunas
+por hora e as 40 últimas chamadas. Quando a leitura sai de um modelo abaixo do primeiro, a revisão ganha o aviso
+"Lido pelo modelo reserva ...: confira valores e quantidades".
+
+**Limitação que não dá para resolver aqui:** o Google conta por **projeto**. Outra máquina com a mesma chave ou o
+HTML v3.5 (que tinha a chave embutida) gastam a mesma cota sem passar por este servidor. Se o AI Studio mostrar
+mais requisições que o painel, é isso — revogar a chave antiga resolve.
+
 **Incidente de 28/09/2026 ("extrator lento"):** o prompt estava intacto. O principal devolveu 503 e o
 alternativo (`flash-lite`) estourou 30 s três vezes seguidas: 95 s até o erro. Medido logo depois, a mesma
 leitura levou **2–3 s no principal**, com ou sem formato fixo, e **de 2 s a mais de 60 s no alternativo**, também
 com ou sem formato fixo. Ou seja, era instabilidade do alternativo no Google, e a política insistia nele. Hoje
-o sistema alterna entre os modelos (linha "Os dois sobrecarregados" acima).
+o sistema alterna entre os modelos (linha "Todos já falharam nesta leitura" acima).
 
 **Como diagnosticar lentidão:** o log fica em `backend/dados/logs/helpagent.log` (perfil local; gira em 10 MB,
 guarda 14 dias). O backend registra, para cada chamada,
@@ -200,7 +263,8 @@ guarda 14 dias). O backend registra, para cada chamada,
 `Extração … duracaoMs=… arquivos=… tamanhoKB=… cache=…`.
 - Muitos tokens de **entrada**: imagem ou PDF pesado (PDF multipágina conta cada página).
 - Muitos de **raciocínio**: baixar `nivel-raciocinio`.
-- `HTTP 503` ou "não respondeu": sobrecarga do Google. O fallback já cuida disso.
+- `HTTP 503` ou "não respondeu": sobrecarga do Google. A cadeia já cuida disso.
+- Leitura que caiu em modelo reserva, recusas e pico por minuto: tela **Uso da IA** ou `GET /api/uso-ia`.
 
 ### Avaliação com orçamentos reais (25/09/2026) — `tools/avaliar_extracao.py`
 

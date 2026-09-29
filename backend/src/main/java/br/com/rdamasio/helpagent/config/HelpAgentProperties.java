@@ -23,20 +23,28 @@ public record HelpAgentProperties(
         @DefaultValue("http://localhost:4200") List<String> corsOrigens) {
 
     /**
-     * @param modeloForcado   quando preenchido, pula a lógica de fallback (útil para comparar modelos)
+     * @param cadeia          modelos do melhor para o pior (docs/MANUTENCAO.md §4). A leitura usa o primeiro com
+     *                        cota; esgotou ou sobrecarregou, desce um degrau. Os limites de cada um são os do painel
+     *                        do AI Studio (o Google não os publica nem devolve pela API)
+     * @param modeloForcado   quando preenchido, pula a cadeia (útil para comparar modelos)
+     * @param maxTentativas   tentativas no MESMO modelo para erro transitório (500, rede, JSON quebrado)
      * @param backoff         espera base entre tentativas; a n-ésima espera {@code n * backoff}
      * @param timeout         espera máxima por uma chamada. Leitura normal leva 5–10 s; o Google, sobrecarregado,
      *                        chegou a segurar 37 s antes de devolver 503 — passar disso é esperar em vão
-     * @param nivelRaciocinio thinkingLevel do Gemini 3 ("minimal", "low", "medium", "high"); menor = mais rápido
+     * @param nivelRaciocinio thinkingLevel do Gemini 3 ("minimal", "low", "medium", "high"); menor = mais rápido.
+     *                        Nos modelos 2.x vira thinkingBudget (ver GeminiClient)
      * @param cacheExtracao   por quanto tempo reaproveitar a leitura dos mesmos arquivos (0 desliga)
-     * @param reservaApos     se o principal passar deste tempo sem responder, dispara o fallback em paralelo e
-     *                        fica com a primeira resposta (0 desliga). Só gasta quota extra em chamada já lenta
+     * @param reservaApos     se o modelo da vez passar deste tempo sem responder, dispara o degrau de baixo em
+     *                        paralelo e fica com a primeira resposta (0 desliga). Só se o degrau de baixo tiver cota
+     * @param maxSimultaneas  leituras ao mesmo tempo no servidor; a próxima espera vaga (evita rajada de RPM)
+     * @param esperaVaga      quanto a leitura espera por vaga antes de desistir com "IA ocupada"
+     * @param maxChamadasPorLeitura teto de requisições que UMA leitura pode gastar, somando degraus, repetições e
+     *                        reserva. Antes eram até 6 numa leitura ruim
      */
     public record Gemini(
             String apiKey,
             @DefaultValue("https://generativelanguage.googleapis.com/v1beta") String urlBase,
-            @DefaultValue("gemini-3.6-flash") String modeloPrimario,
-            @DefaultValue("gemini-3.5-flash-lite") String modeloFallback,
+            List<ModeloIa> cadeia,
             @DefaultValue("") String modeloForcado,
             @DefaultValue("3") int maxTentativas,
             @DefaultValue("1200ms") Duration backoff,
@@ -44,7 +52,29 @@ public record HelpAgentProperties(
             @DefaultValue("30s") Duration timeout,
             @DefaultValue("low") String nivelRaciocinio,
             @DefaultValue("30m") Duration cacheExtracao,
-            @DefaultValue("12s") Duration reservaApos) {
+            @DefaultValue("12s") Duration reservaApos,
+            @DefaultValue("3") int maxSimultaneas,
+            @DefaultValue("45s") Duration esperaVaga,
+            @DefaultValue("4") int maxChamadasPorLeitura) {
+
+        public Gemini {
+            cadeia = cadeia == null ? List.of() : List.copyOf(cadeia);
+        }
+    }
+
+    /**
+     * Um degrau da cadeia e os limites do plano para ele. O servidor não passa deles por conta própria (desce de
+     * degrau sem chamar), o que evita o 429 — que também conta como requisição e piora o RPM.
+     *
+     * @param rpm requisições por minuto
+     * @param tpm tokens de ENTRADA por minuto (é o que o Google limita)
+     * @param rpd requisições por dia (o dia do Google vira à meia-noite do Pacífico)
+     */
+    public record ModeloIa(
+            String modelo,
+            @DefaultValue("5") int rpm,
+            @DefaultValue("250000") int tpm,
+            @DefaultValue("20") int rpd) {
     }
 
     /**

@@ -36,6 +36,14 @@ import { Icone } from '../../layout/icone';
             <label>Nome <input formControlName="nome" placeholder="ex: DAMASIO PE"></label>
             <label>CNPJ <input formControlName="cnpj" placeholder="00.000.000/0000-00"></label>
           </div>
+          <div class="linha cols-2">
+            <label>Razão social <input formControlName="razaoSocial" placeholder="ex: DAMASIO DISTRIBUIDORA DE MOTOPECAS DO PE LTDA"></label>
+            <label>Inscrição estadual <input formControlName="inscricaoEstadual" placeholder="ex: 08.399.31-00 ou ISENTO"></label>
+          </div>
+          <div class="linha cols-2">
+            <label>Cidade <input formControlName="cidade" placeholder="ex: TERESINA"></label>
+            <label>UF <input formControlName="uf" maxlength="2" placeholder="ex: PI"></label>
+          </div>
           <div class="linha cols-3">
             <label>Empresa (sai no impresso) <input formControlName="empresa" placeholder="ex: DAMASIO-PE"></label>
             <label>Impresso
@@ -61,13 +69,15 @@ import { Icone } from '../../layout/icone';
           <span class="card-sub">{{ ativas() }} ativa(s) · {{ lojas().length - ativas() }} desativada(s)</span>
         </header>
         <div class="card-body">
-          <input class="busca" #b placeholder="Buscar por número, nome, empresa ou CNPJ..." (input)="termo.set(b.value)">
+          <input class="busca" #b placeholder="Buscar por número, nome, empresa, razão social, cidade ou CNPJ..." (input)="termo.set(b.value)">
           <div class="tabela-lojas">
             <div class="linha-loja cabecalho"><span>Nº</span><span>Nome</span><span>Empresa</span><span>CNPJ</span><span>Impresso</span><span></span></div>
             @for (l of filtradas(); track l.numero) {
               <div class="linha-loja" [class.inativa]="!l.ativa">
                 <span class="loja-num">{{ l.numero }}</span>
-                <span>{{ l.nome }} @if (!l.ativa) { <em>(desativada)</em> }</span>
+                <span>{{ l.nome }} @if (!l.ativa) { <em>(desativada)</em> }
+                  @if (detalhe(l); as d) { <span class="loja-sub">{{ d }}</span> }
+                </span>
                 <span>{{ l.empresa }}</span>
                 <span class="mono">{{ l.cnpj }}</span>
                 <span><span class="tmpl tmpl-{{ l.template }}">{{ l.templateRotulo }}</span></span>
@@ -115,6 +125,8 @@ export class LojasPage {
         String(l.numero) === t ||
         l.nome.toLowerCase().includes(t) ||
         l.empresa.toLowerCase().includes(t) ||
+        (l.razaoSocial ?? '').toLowerCase().includes(t) ||
+        (l.cidade ?? '').toLowerCase().includes(t) ||
         (soDigitos.length >= 4 && l.cnpj.replace(/\D/g, '').includes(soDigitos)),
     );
   });
@@ -125,6 +137,10 @@ export class LojasPage {
     cnpj: ['', Validators.required],
     empresa: ['', Validators.required],
     template: this.fb.control<TemplateCodigo>('DAM'),
+    razaoSocial: [''],
+    inscricaoEstadual: [''],
+    cidade: [''],
+    uf: ['', Validators.pattern(/^[A-Za-z]{0,2}$/)],
   });
 
   constructor() {
@@ -135,22 +151,35 @@ export class LojasPage {
     this.lojas.set(await firstValueFrom(this.api.lojasTodas()));
   }
 
-  protected editar(l: Loja): void {
+  /** Linha embaixo do nome: razão social · cidade/UF · IE (o que estiver preenchido). */
+  protected detalhe(l: Loja): string {
+    const local = l.cidade ? l.cidade + (l.uf ? '/' + l.uf : '') : '';
+    const ie = l.inscricaoEstadual ? 'IE ' + l.inscricaoEstadual : '';
+    return [l.razaoSocial, local, ie].filter(Boolean).join(' · ');
+  }
+
+    protected editar(l: Loja): void {
     this.editando.set(l.numero);
     this.erros.set([]);
-    this.form.setValue({ numero: l.numero, nome: l.nome, cnpj: l.cnpj, empresa: l.empresa, template: l.template });
+    this.form.setValue({
+      numero: l.numero, nome: l.nome, cnpj: l.cnpj, empresa: l.empresa, template: l.template,
+      razaoSocial: l.razaoSocial ?? '', inscricaoEstadual: l.inscricaoEstadual ?? '', cidade: l.cidade ?? '', uf: l.uf ?? '',
+    });
     scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   protected limpar(): void {
     this.editando.set(null);
     this.erros.set([]);
-    this.form.reset({ numero: null, nome: '', cnpj: '', empresa: '', template: 'DAM' });
+    this.form.reset({ numero: null, nome: '', cnpj: '', empresa: '', template: 'DAM', razaoSocial: '', inscricaoEstadual: '', cidade: '', uf: '' });
   }
 
   protected async salvar(): Promise<void> {
     const v = this.form.getRawValue();
-    const dados: LojaForm = { numero: v.numero!, nome: v.nome, cnpj: v.cnpj, empresa: v.empresa, template: v.template };
+    const dados: LojaForm = {
+      numero: v.numero!, nome: v.nome, cnpj: v.cnpj, empresa: v.empresa, template: v.template,
+      razaoSocial: v.razaoSocial, inscricaoEstadual: v.inscricaoEstadual, cidade: v.cidade, uf: v.uf,
+    };
     this.salvando.set(true);
     this.erros.set([]);
     try {

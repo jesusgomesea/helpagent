@@ -10,7 +10,10 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import org.springframework.stereotype.Component;
 
@@ -24,6 +27,10 @@ import br.com.rdamasio.helpagent.config.HelpAgentProperties;
  *
  * <p>Chave = SHA-256 de (modo + prompt + cada arquivo). Mudou o prompt, muda a chave: não serve resposta
  * velha depois de editar {@code prompts/extracao.txt}. Fica só em memória: reiniciar o backend limpa.
+ *
+ * <p>Também junta leituras <b>em andamento</b> ({@link #obter}): se os mesmos arquivos chegam enquanto a primeira
+ * leitura ainda espera a IA (duplo clique, dois atendentes), a segunda espera a mesma resposta em vez de gastar
+ * outra requisição. Vale mesmo com o cache desligado.
  */
 @Component
 public class CacheExtracao {
@@ -35,6 +42,11 @@ public class CacheExtracao {
     }
 
     private final Map<String, Entrada> entradas = new ConcurrentHashMap<>();
+    private final Map<String, CompletableFuture<ExtratorIa.Resultado>> emAndamento = new ConcurrentHashMap<>();
+
+    /** @param reaproveitado veio do cache ou de uma leitura igual em andamento (não gastou cota) */
+    public record Obtido(ExtratorIa.Resultado resultado, boolean reaproveitado) {
+    }
     private final Duration validade;
 
     public CacheExtracao(HelpAgentProperties props) {
@@ -53,6 +65,33 @@ public class CacheExtracao {
             return Optional.empty();
         }
         return Optional.of(e.resultado());
+    }
+
+    /** Cache → leitura igual em andamento → nova leitura com {@code ler}, nessa ordem. */
+    public Obtido obter(String chave, Supplier<ExtratorIa.Resultado> ler) {
+        Optional<ExtratorIa.Resultado> pronto = buscar(chave);
+        if (pronto.isPresent()) return new Obtido(pronto.get(), true);
+        CompletableFuture<ExtratorIa.Resultado> minha = new CompletableFuture<>();
+        CompletableFuture<ExtratorIa.Resultado> outra = emAndamento.putIfAbsent(chave, minha);
+        if (outra != null) {
+            try {
+                return new Obtido(outra.join(), true);
+            } catch (CompletionException e) {
+                if (e.getCause() instanceof RuntimeException r) throw r;
+                throw e;
+            }
+        }
+        try {
+            ExtratorIa.Resultado r = ler.get();
+            guardar(chave, r);
+            minha.complete(r);
+            return new Obtido(r, false);
+        } catch (RuntimeException e) {
+            minha.completeExceptionally(e);
+            throw e;
+        } finally {
+            emAndamento.remove(chave, minha);
+        }
     }
 
     public void guardar(String chave, ExtratorIa.Resultado resultado) {

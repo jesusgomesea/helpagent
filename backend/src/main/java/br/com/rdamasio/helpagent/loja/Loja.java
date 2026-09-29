@@ -12,7 +12,9 @@ import jakarta.persistence.Table;
 
 /**
  * Loja do grupo. Define qual impresso usar ({@link #getTemplate()}) e a empresa/CNPJ que saem nele.
- * O seed inicial vem de {@code V2__seed_lojas.sql}, gerado por {@code tools/extrair_legado.py}.
+ * O seed inicial vem de {@code V2__seed_lojas.sql}, gerado por {@code tools/extrair_legado.py}; razão social, IE,
+ * cidade e UF chegaram no {@code V6__cadastro_completo_lojas.sql} (planilha de lojas do grupo). Esses quatro são
+ * só cadastro: o impresso continua saindo com {@code empresa} e {@code cnpj}.
  */
 @Entity
 @Table(name = "loja")
@@ -43,6 +45,19 @@ public class Loja {
     @Column(nullable = false)
     private boolean ativa = true;
 
+    @Column(name = "razao_social", length = 120)
+    private String razaoSocial;
+
+    /** Como veio da planilha: com pontuação, ou "ISENTO". Vazio = não informada. */
+    @Column(name = "inscricao_estadual", length = 20)
+    private String inscricaoEstadual;
+
+    @Column(length = 60)
+    private String cidade;
+
+    @Column(length = 2)
+    private String uf;
+
     protected Loja() {
     }
 
@@ -52,6 +67,14 @@ public class Loja {
         this.cnpj = cnpj;
         this.empresa = empresa;
         this.template = template;
+    }
+
+    /** Dados cadastrais que não saem no impresso; nulos ficam em branco. */
+    public void definirCadastro(String razaoSocial, String inscricaoEstadual, String cidade, String uf) {
+        this.razaoSocial = razaoSocial;
+        this.inscricaoEstadual = inscricaoEstadual;
+        this.cidade = cidade;
+        this.uf = uf;
     }
 
     /** O número não muda: é a chave que o helpdesk e a IA usam. Trocou de número → cadastrar outra e desativar esta. */
@@ -74,4 +97,8 @@ public class Loja {
     public String getEmpresa() { return empresa; }
     public TemplateCodigo getTemplate() { return template; }
     public boolean isAtiva() { return ativa; }
+    public String getRazaoSocial() { return razaoSocial; }
+    public String getInscricaoEstadual() { return inscricaoEstadual; }
+    public String getCidade() { return cidade; }
+    public String getUf() { return uf; }
 }

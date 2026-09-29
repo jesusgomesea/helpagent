@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import br.com.rdamasio.helpagent.common.Documento;
+import br.com.rdamasio.helpagent.common.OrigemRequisicao;
 import br.com.rdamasio.helpagent.orcamento.ModoAquisicao;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * {@code POST /api/extracoes}: recebe os arquivos (multipart) e devolve o que a IA leu + avisos para revisão.
@@ -30,7 +32,8 @@ public class ExtracaoController {
     public ExtracaoService.Resposta extrair(
             @RequestParam ModoAquisicao modo,
             @RequestPart(name = "chamados", required = false) List<MultipartFile> chamados,
-            @RequestPart(name = "orcamentos", required = false) List<MultipartFile> orcamentos) {
-        return service.extrair(modo, Documento.de(chamados), Documento.de(orcamentos));
+            @RequestPart(name = "orcamentos", required = false) List<MultipartFile> orcamentos,
+            HttpServletRequest req) {
+        return service.extrair(modo, Documento.de(chamados), Documento.de(orcamentos), OrigemRequisicao.de(req));
     }
 }
