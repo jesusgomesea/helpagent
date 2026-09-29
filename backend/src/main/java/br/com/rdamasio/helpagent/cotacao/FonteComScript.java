@@ -23,6 +23,11 @@ import com.microsoft.playwright.options.WaitForSelectorState;
  * <p>O script é uma função sem argumentos que devolve uma lista de objetos com as chaves snake_case de
  * {@link Anuncio#doJs} ({@code titulo, preco, preco_de, nota, vendidos, full, loja_oficial, frete_gratis,
  * recondicionado, internacional, pais, vendedor, url, patrocinado, fonte, vendedor_proprio}).
+ *
+ * <p><b>Esgotado/indisponível:</b> o script não pula o produto em silêncio — devolve {@code {titulo, indisponivel: true}}
+ * com o sinal que a loja dá (Kabum {@code available}, Pichau {@code stock_status}, Terabyte {@code data-tss-estoque},
+ * Dell {@code data-is-sold-out}, Lenovo {@code marketingStatus}, texto "Esgotado"/"Indisponível" no cartão). Aqui ele
+ * é descartado antes de qualquer ranking e só entra na contagem, que vira aviso na tela.
  */
 public abstract class FonteComScript implements FonteCotacao {
 
@@ -60,7 +65,7 @@ public abstract class FonteComScript implements FonteCotacao {
     }
 
     @Override
-    public List<Anuncio> extrair(Page aba) {
+    public Extracao extrair(Page aba) {
         try {
             // o coletor navega sem esperar a página (para abrir as lojas em paralelo): primeiro o HTML inteiro...
             aba.waitForLoadState(LoadState.DOMCONTENTLOADED, new Page.WaitForLoadStateOptions().setTimeout(45_000));
@@ -68,15 +73,18 @@ public abstract class FonteComScript implements FonteCotacao {
             aba.waitForSelector(seletorPronto, new Page.WaitForSelectorOptions()
                     .setState(WaitForSelectorState.ATTACHED).setTimeout(30_000));
         } catch (PlaywrightException semLista) {
-            return List.of(); // sem resultados para o termo — ou verificação anti-robô (ver MANUTENCAO §7)
+            return new Extracao(List.of(), 0); // sem resultados para o termo — ou verificação anti-robô (MANUTENCAO §7)
         }
         List<Anuncio> anuncios = new ArrayList<>();
+        int indisponiveis = 0;
         if (aba.evaluate(script) instanceof List<?> lista) {
             for (Object o : lista) {
-                if (o instanceof Map<?, ?> m) anuncios.add(Anuncio.doJs(m));
+                if (!(o instanceof Map<?, ?> m)) continue;
+                if (Boolean.TRUE.equals(m.get("indisponivel"))) indisponiveis++;
+                else anuncios.add(Anuncio.doJs(m));
             }
         }
-        return anuncios;
+        return new Extracao(anuncios, indisponiveis);
     }
 
     /** Termo para a query string ("ssd 256gb" → "ssd+256gb"). */

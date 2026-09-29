@@ -1,7 +1,9 @@
 // Confere, logo antes do print, se o preço coletado está VISÍVEL na janela (ColetorCotacao.fotografar).
-// Recebe o preço à vista coletado (número) e devolve { avisos, precoVisivel, rolou }:
+// Recebe o preço à vista coletado (número) e devolve { avisos, precoVisivel, rolou, esgotado }:
 //  1) aviso de cookies/LGPD que continua na tela depois do preparar-print.js (fixo/sticky, com texto de cookies ou
 //     privacidade) é ESCONDIDO — não aceita nada, só tira da frente do print. "avisos" = quantos foram escondidos;
+//  1b) "esgotado" = há um aviso curto visível de esgotado/indisponível/avise-me E nenhum botão de comprar visível
+//     (o produto acabou entre a busca e a escolha — o print sai com alerta para trocar de anúncio);
 //  2) procura o menor elemento cujo texto contém o preço no formato da loja ("1.657,25"; o site pode quebrar o
 //     preço em vários <span>, por isso compara o texto sem espaços). Se ele está fora da janela, rola até ele;
 //  3) "visível" = dentro da janela e, no centro dele, o que está desenhado é ele mesmo (elementFromPoint) —
@@ -24,8 +26,24 @@
     avisos++;
   }
 
+  // 1b) produto esgotou entre a busca e o print? Só conta como esgotado se há um aviso curto de esgotado visível
+  //     E nenhum botão de comprar visível — "relacionados esgotados" no rodapé da página não disparam o alerta
+  const visivel = (el) => {
+    const r = el.getBoundingClientRect();
+    const st = getComputedStyle(el);
+    return r.width > 0 && r.height > 0 && st.visibility !== 'hidden' && st.display !== 'none';
+  };
+  const curtos = [...document.querySelectorAll('button, a, [role="button"], span, div, p, strong')]
+    .filter((el) => el.children.length <= 2 && (el.textContent || '').trim().length <= 60);
+  const temEsgotado = curtos.some((el) => /esgotad|indispon[íi]vel|sem estoque|avise-me|temporarily unavailable|sold out/i
+    .test(el.textContent) && visivel(el));
+  const temComprar = [...document.querySelectorAll('button, a, [role="button"], input[type="submit"]')]
+    .some((el) => /comprar|adicionar ao carrinho|add to cart|colocar no carrinho/i.test(el.textContent || el.value || '')
+      && visivel(el) && !el.disabled);
+  const esgotado = temEsgotado && !temComprar;
+
   // 2) onde está o preço
-  if (typeof preco !== 'number' || !(preco > 0)) return { avisos, precoVisivel: false, rolou: false };
+  if (typeof preco !== 'number' || !(preco > 0)) return { avisos, precoVisivel: false, rolou: false, esgotado };
   const alvo = preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   let melhor = null;
   for (const el of document.querySelectorAll('body *')) {
@@ -35,7 +53,7 @@
     if (r.width === 0 || r.height === 0) continue;
     if (!melhor || txt.length < semEspaco(melhor.textContent).length) melhor = el;
   }
-  if (!melhor) return { avisos, precoVisivel: false, rolou: false };
+  if (!melhor) return { avisos, precoVisivel: false, rolou: false, esgotado };
 
   let rolou = false;
   if (!naJanela(melhor.getBoundingClientRect())) {
@@ -45,8 +63,8 @@
 
   // 3) nada por cima do preço
   const r = melhor.getBoundingClientRect();
-  if (!naJanela(r)) return { avisos, precoVisivel: false, rolou };
+  if (!naJanela(r)) return { avisos, precoVisivel: false, rolou, esgotado };
   const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
   const precoVisivel = !!topo && (melhor === topo || melhor.contains(topo) || topo.contains(melhor));
-  return { avisos, precoVisivel, rolou };
+  return { avisos, precoVisivel, rolou, esgotado };
 }

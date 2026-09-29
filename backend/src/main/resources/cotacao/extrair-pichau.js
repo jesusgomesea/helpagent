@@ -27,7 +27,8 @@
   }
   if (!produtos) return [];
   const num = v => (typeof v === 'number' && v > 0 ? v : null);
-  return produtos.items.filter(p => p && p.stock_status !== 'OUT_OF_STOCK').map(p => {
+  return produtos.items.filter(p => p).map(p => {
+    if (p.stock_status === 'OUT_OF_STOCK') return { titulo: p.name || '', indisponivel: true };
     const pr = p.pichau_prices || {};
     const preco = num(pr.avista) || num(pr.final_price) || num(p.special_price);
     const de = num(pr.base_price);

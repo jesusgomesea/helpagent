@@ -332,6 +332,26 @@ layout muda. Tudo que depende do site fica em `resources/cotacao/extrair-<loja>.
 | Dell | atributo `data-product-detail` (JSON por cartão) | `dellPrice` | não tem | Dell | nome do atributo; título genérico + especificações do cartão |
 | Lenovo | cartões `.product_item[data-product-code]` | `.price-summary-info .price-title` | `.card-rating-container` | Lenovo | classes do preço |
 
+**Esgotado ou indisponível nunca entra no ranking** (desde 29/09/2026). O script de cada loja devolve o produto
+sem estoque como `{titulo, indisponivel: true}`; o `FonteComScript` descarta antes do motor e conta, e o
+`ColetorCotacao` transforma a contagem em aviso ("Terabyte: 223 anúncios esgotados ou indisponíveis ignorados";
+"Kabum: todos os N resultados estão esgotados..."). Como cada loja diz que acabou:
+
+| Loja | Sinal de esgotado/indisponível |
+|---|---|
+| Kabum | `available === false` no JSON. **Não** usar `quantity`: vem 0 em quase todos, inclusive em produto da KaBuM! com `available` verdadeiro |
+| Pichau | `stock_status === "OUT_OF_STOCK"` |
+| Terabyte | `data-tss-estoque="0"` ou etiqueta `.esgotadoL` ("Esgotado") — a busca lista os esgotados junto (223 de 300 em "ssd 256gb") |
+| Amazon | texto "Indisponível"/"Atualmente indisponível" no cartão; cartão sem preço já saía antes |
+| Dell | `data-is-sold-out="True"` |
+| Lenovo | `data-adobe-params` com `marketingStatus` diferente de `"Available"` (ex.: `"Temporarily Unavailable"`) |
+| Mercado Livre | a busca não lista anúncio sem estoque; o script (cópia do piloto) não foi alterado |
+
+No **print** do "Escolher para o orçamento", o `validar-print.js` também confere a página do produto: aviso curto
+visível de esgotado/indisponível/"avise-me" **e** nenhum botão de comprar visível → o print sai com o alerta
+"a página indica produto esgotado ou indisponível — escolha outro anúncio" (o produto acabou entre a busca e a
+escolha). A regra dupla evita falso alerta com "relacionados esgotados" no rodapé da página.
+
 Mercado Livre em detalhe (o script é o do piloto, sem alteração). **Use `textContent`, nunca `innerText`**: os
 dados acessíveis (`.andes-visually-hidden`) são escondidos por CSS, e `innerText` volta vazio.
 

@@ -14,7 +14,7 @@
     try { det = JSON.parse(c.getAttribute('data-product-detail')); } catch (e) { return; }
     const v = det && det[0] && det[0].Value;
     if (!v || !v.title) return;
-    if (c.getAttribute('data-is-sold-out') === 'True') return;
+    if (c.getAttribute('data-is-sold-out') === 'True') { out.push({ titulo: v.title, indisponivel: true }); return; }
     const preco = dinheiro(v.dellPrice);
     if (!preco) return;
     const de = dinheiro(v.marketPrice);

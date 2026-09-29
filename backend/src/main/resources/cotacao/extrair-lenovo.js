@@ -2,6 +2,7 @@
 //   data-dlp-url = caminho do produto · o nome completo vem com a configuração ("ThinkPad E14 Ryzen 5 16GB 256GB SSD")
 //   .strike-through-price = "de" · .price-summary-info .price-title = preço atual
 //   .card-rating-container "4.5 (96)" = nota e quantidade de avaliações · a Lenovo vende direto: vendedor próprio
+//   data-adobe-params {marketingStatus} diferente de "Available" (ex.: "Temporarily Unavailable") → indisponível
 () => {
   const txt = e => (e && e.textContent ? e.textContent.replace(/\s+/g, ' ').trim() : '');
   const dinheiro = s => {
@@ -17,6 +18,12 @@
       titulo = cmp ? cmp.getAttribute('aria-label').replace(/^Comparar\s+/i, '').replace(/\s+Product Information Button$/i, '') : '';
     }
     if (!titulo || !caminho) return;
+    let status = '';
+    try { status = (JSON.parse(c.getAttribute('data-adobe-params') || '{}').marketingStatus) || ''; } catch (e) { status = ''; }
+    if ((status && status !== 'Available') || /esgotad|indispon[íi]vel|sem estoque|avise-me|temporariamente indispon/i.test(txt(c.querySelector('.price-stack, [class*="stock"], [class*="cta"]')))) {
+      out.push({ titulo: titulo, indisponivel: true });
+      return;
+    }
     const riscado = c.querySelector('.strike-through-price');
     const de = dinheiro(txt(riscado));
     // preço atual: .price-summary-info .price-title. A varredura genérica de "R$" pegava frete/cupom

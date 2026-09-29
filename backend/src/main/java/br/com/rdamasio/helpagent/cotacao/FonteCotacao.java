@@ -36,8 +36,17 @@ public interface FonteCotacao {
     List<String> urls(String termo, int paginas);
 
     /**
-     * Espera a lista de resultados aparecer na aba (já navegada para uma das {@link #urls}) e extrai os anúncios.
-     * Página sem resultados devolve lista vazia; falha de estrutura (layout mudou) pode lançar exceção.
+     * O que uma página rendeu.
+     *
+     * @param anuncios      só os disponíveis para compra — produto esgotado ou indisponível nunca entra no ranking
+     * @param indisponiveis quantos a página mostrou mas foram ignorados por estarem esgotados/indisponíveis
      */
-    List<Anuncio> extrair(Page aba);
+    record Extracao(List<Anuncio> anuncios, int indisponiveis) {
+    }
+
+    /**
+     * Espera a lista de resultados aparecer na aba (já navegada para uma das {@link #urls}) e extrai os anúncios
+     * disponíveis. Página sem resultados devolve lista vazia; falha de estrutura (layout mudou) pode lançar exceção.
+     */
+    Extracao extrair(Page aba);
 }

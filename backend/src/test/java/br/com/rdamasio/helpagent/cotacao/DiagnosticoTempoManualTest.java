@@ -136,7 +136,7 @@ class DiagnosticoTempoManualTest {
                         m.lista = ms(t0);
                     }
                     long te = System.nanoTime();
-                    m.itens = m.semLista ? 0 : LOJAS.get(i).extrair(aba).size();
+                    m.itens = m.semLista ? 0 : LOJAS.get(i).extrair(aba).anuncios().size();
                     m.extracao = (System.nanoTime() - te) / 1_000_000;
                     aba.close();
                 }

@@ -1,5 +1,6 @@
 // Terabyte — cartões .product-item, que trazem os dados em atributos (mapeado em 28/09/2026):
-//   data-tss-price = preço à vista no Pix · data-tss-brand = marca · data-tss-estoque = "1" em estoque
+//   data-tss-price = preço à vista no Pix · data-tss-brand = marca · data-tss-estoque = "1" em estoque, "0" esgotado
+//   (esgotado também leva a etiqueta .esgotadoL "Esgotado" — na busca "ssd 256gb" eram 223 de 300 cartões)
 //   a.product-item__name (href, title) · .product-item__old-price = "de" · .tss-rating-value/-count = avaliação
 // Use textContent, nunca innerText: parte do cartão fica escondida por CSS e innerText volta vazio.
 () => {
@@ -12,7 +13,11 @@
   document.querySelectorAll('.product-item').forEach(c => {
     const link = c.querySelector('a.product-item__name');
     if (!link) return;
-    if (c.getAttribute('data-tss-estoque') === '0') return; // esgotado
+    const titulo0 = link.getAttribute('title') || txt(link);
+    if (c.getAttribute('data-tss-estoque') === '0' || c.querySelector('.esgotadoL')) {
+      out.push({ titulo: titulo0, indisponivel: true });
+      return;
+    }
     let preco = parseFloat(c.getAttribute('data-tss-price') || '');
     if (!(preco > 0)) preco = dinheiro(txt(c.querySelector('.product-item__new-price')));
     if (!(preco > 0)) return;

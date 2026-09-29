@@ -2,6 +2,9 @@
 // Caminho: props.pageProps.data.catalogServer.data[] (mapeado em 28/09/2026).
 //   priceWithDiscount = preço à vista no PIX (o que vale para o orçamento) · price = parcelado · oldPrice = "de"
 //   flags.isMarketplace = vendido por lojista parceiro (não pela KaBuM!) · rating/ratingCount = avaliações
+//   available = false → indisponível (vai marcado e é descartado antes do ranking, com contagem no aviso).
+//   Não usar quantity como estoque: veio 0 em 52 de 60 produtos com available = true, inclusive 7 da própria
+//   KaBuM! (28/09/2026) — não se comprovou que signifique "sem estoque", e filtrar por ele esvaziaria a busca.
 // Se o caminho mudar, a lista volta vazia e a tela avisa "Kabum não devolveu resultados" (MANUTENCAO §7).
 () => {
   const el = document.getElementById('__NEXT_DATA__');
@@ -10,7 +13,8 @@
   try { dados = JSON.parse(el.textContent); } catch (e) { return []; }
   const lista = (((((dados || {}).props || {}).pageProps || {}).data || {}).catalogServer || {}).data || [];
   const num = v => (typeof v === 'number' && v > 0 ? v : null);
-  return lista.filter(p => p && p.available !== false).map(p => {
+  return lista.filter(p => p).map(p => {
+    if (p.available === false) return { titulo: p.name || '', indisponivel: true };
     const flags = p.flags || {};
     const preco = num(p.priceWithDiscount) || num(p.price);
     const antes = [num(p.oldPrice), num(p.price)].filter(v => v && preco && v > preco + 0.005);

@@ -3,6 +3,7 @@
 //   .a-price[data-a-strike="true"] = "de" (atenção: .a-text-price sem strike é o valor da PARCELA, não usar)
 //   span.a-icon-alt "4,5 de 5 estrelas" = nota · "Mais de 1 mil compras no mês passado" = vendidos (aproximado)
 //   i.a-icon-prime = entrega Prime (conta como entrega rápida, o "full") · link limpo = /dp/<ASIN>
+//   "Atualmente indisponível" / "Indisponível" no cartão → indisponível (descartado antes do ranking)
 () => {
   const txt = e => (e && e.textContent ? e.textContent.replace(/\s+/g, ' ').trim() : '');
   const dinheiro = s => {
@@ -17,6 +18,7 @@
     const rotulo = h2.getAttribute('aria-label') || '';
     const patrocinado = /patrocinado/i.test(rotulo) || !!c.querySelector('.puis-sponsored-label-text, .s-sponsored-label-text');
     const titulo = txt(h2.querySelector('span')) || txt(h2);
+    if (/esgotad|indispon[íi]vel|sem estoque|avise-me|temporariamente indispon/i.test(txt(c))) { out.push({ titulo: titulo, indisponivel: true }); return; }
     const preco = dinheiro(txt(c.querySelector('.a-price:not(.a-text-price) .a-offscreen')));
     if (!preco) return;
     const de = dinheiro(txt(c.querySelector('.a-price[data-a-strike="true"] .a-offscreen')));

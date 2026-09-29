@@ -102,6 +102,7 @@ public class ColetorCotacao {
 
         List<Anuncio> brutos = new ArrayList<>();
         Map<String, String> falhas = new LinkedHashMap<>(); // nome da loja → motivo (1ª falha)
+        Map<String, Integer> indisponiveis = new LinkedHashMap<>(); // nome da loja → esgotados ignorados
         usarContexto(ctx -> {
             for (int i = 0; i < alvos.size(); i += ABAS_POR_ONDA) {
                 List<Alvo> onda = alvos.subList(i, Math.min(alvos.size(), i + ABAS_POR_ONDA));
@@ -121,9 +122,10 @@ public class ColetorCotacao {
                 for (var e : abas.entrySet()) {
                     Alvo a = e.getKey();
                     try {
-                        List<Anuncio> achados = a.fonte().extrair(e.getValue());
-                        brutos.addAll(achados);
-                        porFonte.merge(a.fonte().nome(), achados.size(), Integer::sum);
+                        FonteCotacao.Extracao ex = a.fonte().extrair(e.getValue());
+                        brutos.addAll(ex.anuncios());
+                        porFonte.merge(a.fonte().nome(), ex.anuncios().size(), Integer::sum);
+                        if (ex.indisponiveis() > 0) indisponiveis.merge(a.fonte().nome(), ex.indisponiveis(), Integer::sum);
                     } catch (RuntimeException ex) {
                         registrarFalha(falhas, a, "falhou ao ler a página", ex);
                     } finally {
@@ -136,7 +138,16 @@ public class ColetorCotacao {
 
         falhas.forEach((loja, motivo) -> avisos.add(loja + " " + motivo));
         porFonte.forEach((loja, n) -> {
-            if (n == 0 && !falhas.containsKey(loja)) avisos.add(loja + " não devolveu resultados para o termo");
+            int esgotados = indisponiveis.getOrDefault(loja, 0);
+            if (n == 0 && esgotados > 0) {
+                avisos.add(loja + ": todos os " + esgotados + " resultados estão esgotados ou indisponíveis");
+            } else if (n == 0 && !falhas.containsKey(loja)) {
+                avisos.add(loja + " não devolveu resultados para o termo");
+            } else if (esgotados > 0) {
+                avisos.add(loja + ": " + esgotados + " anúncio" + (esgotados > 1 ? "s" : "") + " esgotado"
+                        + (esgotados > 1 ? "s" : "") + " ou indisponíve" + (esgotados > 1 ? "is" : "l") + " ignorado"
+                        + (esgotados > 1 ? "s" : ""));
+            }
         });
 
         ResolvedorPatrocinados.Resultado r = patrocinados.resolver(brutos);
@@ -243,6 +254,10 @@ public class ColetorCotacao {
             if (!(aba.evaluate(VALIDAR_PRINT, preco) instanceof Map<?, ?> r)) return "não consegui conferir o print";
             if (Boolean.TRUE.equals(r.get("rolou")) || r.get("avisos") instanceof Number n && n.intValue() > 0) {
                 aba.waitForTimeout(400); // rolagem suave e o aviso escondido saindo da tela
+            }
+            // esgotou entre a busca e a escolha: é o alerta mais importante — o anúncio não serve para o orçamento
+            if (Boolean.TRUE.equals(r.get("esgotado"))) {
+                return "a página indica produto esgotado ou indisponível — escolha outro anúncio";
             }
             if (Boolean.TRUE.equals(r.get("precoVisivel"))) return null;
             return "o preço coletado não foi localizado visível no print — confira a imagem";
