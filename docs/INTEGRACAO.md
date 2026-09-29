@@ -119,6 +119,32 @@ A máquina de desenvolvimento atual não tem Docker: as imagens são montadas e 
 A cotação continua precisando de uma máquina Windows com usuário logado (o `iniciar-helpagent.bat` de hoje). Numa
 integração, dá para manter uma instância só para ela e desligá-la nas demais.
 
+## 8. O que ainda prende a uma instância só
+
+Hoje o sistema roda como **uma instância**. Para rodar várias (balanceador, alta disponibilidade), estes pontos
+precisam sair da memória ou do disco local:
+
+| Ponto | Onde está | Com 2+ instâncias | Caminho |
+|---|---|---|---|
+| PDFs gerados | disco (`ArmazenamentoLocal`) | cada instância vê só os seus | já há interface `ArmazenamentoArquivos`: implementar S3/MinIO/Blob, ou volume compartilhado |
+| Prints da cotação | disco (`helpagent.cotacao.prints`) | idem | levar para o mesmo armazenamento dos PDFs |
+| Contagem de cota da IA | memória (`ControleCotaIa`), remontada do banco na subida | cada uma conta só as suas: o limite do plano estoura | contar pela tabela `uso_ia` (ou Redis) em vez da memória |
+| Cache da leitura por IA e leitura em andamento | memória (`CacheExtracao`) | reaproveita menos (só gasta mais cota) | aceitável; ou Redis |
+| Fila e resultado da cotação | memória (`CotacaoService`) | o "reavaliar" e a planilha precisam cair na mesma instância | cotação numa instância dedicada (§5) resolve junto |
+
+## 9. Pendências antes de ir para produção integrada
+
+1. **Login**: o backend já valida JWT de um provedor OIDC e o frontend já manda o token do portal — falta escolher
+   o provedor (Entra ID, Keycloak...) e ligar `SEGURANCA_HABILITADA=true` + issuer.
+2. **Permissões**: hoje qualquer um cadastra loja e apaga orçamento do histórico. Com login, separar papéis
+   (atendente × administrador) nas rotas de escrita de lojas e na exclusão do histórico.
+3. **Chave do Gemini antiga** (a que estava no HTML v3.5): revogar. O Google conta a cota por projeto, e o que
+   usa essa chave por fora não aparece no painel "Uso da IA".
+4. **Plano do Gemini**: o gratuito dá 20 leituras/dia no modelo principal. Para o uso de uma aplicação maior,
+   ativar o faturamento e copiar os limites reais para `helpagent.gemini.cadeia`.
+5. **Versão da API**: se outros sistemas forem consumir a API diretamente, fixar um prefixo (`/api/v1`) antes que
+   dependam das rotas atuais.
+
 ## Decisões em aberto
 
 - Como o backend entra (serviço próprio × módulo de um backend maior) e como o frontend entra (sub-rota de um
