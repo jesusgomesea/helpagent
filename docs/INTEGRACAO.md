@@ -76,6 +76,31 @@ Desligado (`config/Recursos`, `config/GuardaRecursos`):
 - `GET /api/parametros` devolve `recursos: {ia, cotacao}`, e o frontend esconde o link do menu, barra a rota
   (volta ao início) e, sem IA, oferece "Preencher manualmente" na tela de novo orçamento.
 
+## 6. Frontend embutível
+
+O mesmo build serve sozinho, atrás de um gateway ou dentro de um portal, **sem recompilar**:
+
+- **`config.json`** (ao lado do `index.html`, lido antes da primeira tela; `core/configuracao.ts`):
+  ```json
+  { "apiBase": "", "enviarCookies": false }
+  ```
+  `apiBase` vazio = API na mesma origem (proxy). Com valor (ex.: `https://gateway.empresa/helpagent`), toda chamada
+  `/api/...` vai para lá. `enviarCookies: true` manda os cookies (SSO por cookie no gateway). Sem o arquivo, vale
+  o padrão.
+- **Token do portal**: a página hospedeira define, antes de carregar o sistema,
+  `window.helpAgent = { token: () => tokenAtual() }` (pode devolver Promise). Toda chamada sai com
+  `Authorization: Bearer <token>` — o que o backend exige com a segurança ligada. Testado em 29/09 com um token de
+  exemplo: o cabeçalho sai em todas as chamadas.
+- **`X-Request-Id`**: o navegador gera um por chamada; em erro 5xx a tela mostra "Código para o suporte: ...", o
+  mesmo id das linhas de log daquela chamada no servidor.
+- **Imagens da API** (prints da cotação) são carregadas pelo HttpClient (`core/imagem-api.ts`, `<img haSrcApi>`), não
+  por `<img src="/api/...">` — senão iriam sem token e sem `apiBase` e quebrariam no portal.
+- **Sub-caminho**: para servir em `https://portal/helpagent/`, gere com `npx ng build --base-href /helpagent/`.
+  Rotas, logos e o `config.json` seguem o `<base href>`; as chamadas `/api` seguem o `apiBase` (ou um proxy de
+  `/api` no mesmo servidor).
+- O visual vem todo de `src/styles.scss` (tokens `--rd-*` e semânticos); os componentes não têm CSS próprio. Dentro
+  de um app maior, os estilos globais podem colidir — é um dos pontos da decisão em aberto abaixo.
+
 ## Decisões em aberto
 
 - Como o backend entra (serviço próprio × módulo de um backend maior) e como o frontend entra (sub-rota de um

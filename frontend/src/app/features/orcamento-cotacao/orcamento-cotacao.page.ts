@@ -9,6 +9,7 @@ import { criarAnexo, liberarAnexo } from '../../core/arquivos';
 import { Avisos } from '../../core/avisos';
 import { dataLocalISO, fmtBRL, numeroOuNulo, parseBRL } from '../../core/dinheiro';
 import { Anexo, DICA_MODO, Loja, MODOS, ModoAquisicao, ROTULO_MODO, exigeChamado } from '../../core/modelos';
+import { ImagensApi, SrcApi } from '../../core/imagem-api';
 import { Faixa } from '../../layout/faixa';
 import { CestaCotacao, ItemCesta, MAX_ITENS_CESTA, OpcaoCesta } from '../cotacao/cesta.store';
 import { CotacaoApi } from '../cotacao/cotacao.api';
@@ -22,7 +23,7 @@ import { CotacaoApi } from '../cotacao/cotacao.api';
  */
 @Component({
   selector: 'ha-orcamento-cotacao',
-  imports: [Faixa, FormsModule, RouterLink, CurrencyPipe, DatePipe],
+  imports: [Faixa, FormsModule, RouterLink, CurrencyPipe, DatePipe, SrcApi],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ha-faixa sobretitulo="Compras · Orçamento por cotação" titulo="Orçamento por cotação"
@@ -75,8 +76,8 @@ import { CotacaoApi } from '../cotacao/cotacao.api';
                         <span class="mono">{{ o.preco | currency: 'BRL' }}</span>
                       </figcaption>
                       @if (o.situacao === 'PRONTO' || o.situacao === 'MANUAL') {
-                        <a class="oc-thumb" [href]="imagem(o)" target="_blank" rel="noopener" title="Abrir o print em tamanho real">
-                          <img [src]="imagem(o)" [alt]="'Print ' + o.fonte" loading="lazy">
+                        <a class="oc-thumb" href="#" (click)="abrirImagem($event, o)" title="Abrir o print em tamanho real">
+                          <img [haSrcApi]="imagem(o)" [alt]="'Print ' + o.fonte">
                         </a>
                       } @else if (o.situacao === 'CAPTURANDO') {
                         <div class="oc-thumb oc-espera"><span class="oc-girando"></span>tirando o print…</div>
@@ -224,6 +225,7 @@ export class OrcamentoCotacaoPage {
   protected readonly cesta = inject(CestaCotacao);
   private readonly api = inject(Api);
   private readonly cotacaoApi = inject(CotacaoApi);
+  private readonly imagens = inject(ImagensApi);
   private readonly avisos = inject(Avisos);
 
   protected readonly modos = MODOS;
@@ -274,8 +276,14 @@ export class OrcamentoCotacaoPage {
     return (i + 1).toString().padStart(2, '0');
   }
 
+  /** Caminho /api da imagem; carregada pela API (SrcApi) para funcionar com login e apiBase. */
   protected imagem(o: OpcaoCesta): string {
     return this.cotacaoApi.urlImagem(o.printId, o.capturadoEm);
+  }
+
+  protected abrirImagem(ev: Event, o: OpcaoCesta): void {
+    ev.preventDefault();
+    this.imagens.abrir(this.imagem(o));
   }
 
   protected precoMudou(item: ItemCesta): boolean {

@@ -172,4 +172,6 @@ export interface Problema {
   detail?: string;
   problemas?: string[];
   tentativas?: number;
+  /** Id da requisição (X-Request-Id): o mesmo das linhas de log dela no servidor */
+  idRequisicao?: string;
 }

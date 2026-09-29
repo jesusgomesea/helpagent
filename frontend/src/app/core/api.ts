@@ -174,5 +174,8 @@ export async function mensagensDeErro(err: unknown): Promise<string[]> {
   const n = corpo?.tentativas ?? 1;
   if (corpo?.detail) linhas.push(n > 1 ? `Erro após ${n} tentativa(s): ${corpo.detail}` : corpo.detail);
   if (corpo?.problemas?.length) linhas.push(...corpo.problemas);
-  return linhas.length ? linhas : [`Erro ${err.status}`];
+  if (!linhas.length) linhas.push(`Erro ${err.status}`);
+  // o suporte acha a requisição no log por este código (IdRequisicaoFiltro no backend)
+  if (corpo?.idRequisicao && err.status >= 500) linhas.push(`Código para o suporte: ${corpo.idRequisicao}`);
+  return linhas;
 }

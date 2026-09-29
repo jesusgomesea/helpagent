@@ -92,7 +92,7 @@ Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem Post
 
 | Pasta | Conteúdo |
 |---|---|
-| `core/` | `api.ts` (todas as chamadas HTTP), `modelos.ts` (tipos da API), `recursos.ts` (o que o servidor oferece; esconde menu/rotas desligados), `dinheiro.ts`, `arquivos.ts` (anexos, texto→imagem), `avisos.ts` (toasts e overlay), `marca.ts` (visual Damásio × TD) |
+| `core/` | `api.ts` (todas as chamadas HTTP), `modelos.ts` (tipos da API), `recursos.ts` (o que o servidor oferece; esconde menu/rotas desligados), `configuracao.ts` + `interceptador-api.ts` (config.json, apiBase, X-Request-Id, token do portal), `imagem-api.ts` (imagens da API pelo HttpClient), `dinheiro.ts`, `arquivos.ts` (anexos, texto→imagem), `avisos.ts` (toasts e overlay), `marca.ts` (visual Damásio × TD) |
 | `layout/` | Cabeçalho, faixa de abertura, etapas, overlay de carregamento, toasts, ícones SVG |
 | `features/novo-orcamento/` | Página principal: `orcamento.store.ts` (estado com signals), `composer.ts` (card 1), `revisao.ts` (cards 2 e 3) |
 | `features/historico/` | Lista, busca, download, backup JSON |
