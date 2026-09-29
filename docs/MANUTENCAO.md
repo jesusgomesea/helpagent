@@ -72,12 +72,12 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 
 | Pacote | Responsabilidade |
 |---|---|
-| `config` | `HelpAgentProperties` (tudo que é configurável, prefixo `helpagent.*`), segurança/CORS, usuário atual, `/api/parametros` |
-| `common` | `Dinheiro` (BRL ↔ `BigDecimal`), `Documento` (arquivo enviado), `OrigemRequisicao` (IP para os logs de auditoria), erros de negócio e o `TratadorErros` (ProblemDetail) |
+| `config` | `HelpAgentProperties` (tudo que é configurável, prefixo `helpagent.*`), segurança/CORS, usuário atual, `/api/parametros`, `OpenApiConfig` (contrato em `/v3/api-docs`) |
+| `common` | `Dinheiro` (BRL ↔ `BigDecimal`), `Documento` (arquivo enviado), `OrigemRequisicao` (IP para os logs de auditoria), `IdRequisicaoFiltro` (X-Request-Id no log e no erro), erros de negócio e o `TratadorErros` (ProblemDetail) |
 | `loja` | Cadastro de lojas e busca por número/nome |
 | `template` | Os 4 impressos: `TemplateCodigo`, nomes dos campos AcroForm (`CamposImpresso`) e leitura do PDF em branco |
 | `extracao` | Tudo da IA: prompt, cliente Gemini, política de tentativas e cadeia de modelos, parser da resposta, avisos |
-| `usoia` | Controle de cota do Gemini por modelo (`ControleCotaIa`), registro de cada chamada (tabela `uso_ia`) e o painel `/api/uso-ia` (§4) |
+| `usoia` | Controle de cota do Gemini por modelo (`ControleCotaIa`), registro de cada chamada (tabela `uso_ia`), métricas Prometheus, saúde `ia` (`SaudeIa`) e o painel `/api/uso-ia` (§4) |
 | `orcamento` | Entidades, cálculo, validação A1 e o serviço que gera o impresso |
 | `pdf` | Montagem do PDF com PDFBox (preenchimento, anexos, carimbo, página de erro) |
 | `armazenamento` | Onde os PDFs gerados ficam (hoje: disco local) |

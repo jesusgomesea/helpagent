@@ -20,11 +20,34 @@ spring:
 server:
   port: ${PORT:8080}
 
+# Integração (docs/INTEGRACAO.md): saúde com sondas liveness/readiness para o orquestrador, versão do build em
+# /actuator/info e métricas Prometheus só quando ACTUATOR_EXPOR incluir "prometheus" (rede interna).
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: ${ACTUATOR_EXPOR:health,info}
+  endpoint:
+    health:
+      probes:
+        enabled: true             # /actuator/health/liveness e /readiness
+      show-details: ${ACTUATOR_DETALHES:never}
+  info:
+    java:
+      enabled: true
+
+# Contrato da API gerado do código: /v3/api-docs (OpenAPI) e /swagger-ui.html. API_DOCS=false desliga.
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS:true}
+  swagger-ui:
+    enabled: ${API_DOCS:true}
+  paths-to-match: /api/**
+
+# Toda linha de log leva o id da requisição (X-Request-Id, IdRequisicaoFiltro): segue a chamada entre sistemas.
+logging:
+  pattern:
+    level: "%5p [req=%X{req:-}]"
 
 helpagent:
   fuso: America/Sao_Paulo

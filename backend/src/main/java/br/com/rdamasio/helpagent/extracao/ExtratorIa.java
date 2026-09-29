@@ -16,11 +16,13 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -184,6 +186,8 @@ public class ExtratorIa implements DisposableBean {
         private final long limite = System.nanoTime() + PRAZO_TOTAL.toNanos();
         private volatile boolean configMinima;
         private volatile FalhaIa ultima;
+        /** Id da requisição (X-Request-Id) e demais chaves do log: as chamadas rodam em outras threads. */
+        private final Map<String, String> mdc = MDC.getCopyOfContextMap();
 
         Leitura(List<Documento> documentos, String prompt, Contexto contexto) {
             this.documentos = documentos;
@@ -224,7 +228,7 @@ public class ExtratorIa implements DisposableBean {
          * @return null = falhou por cota/sobrecarga/transitório (o laço desce); erro definitivo sai como exceção
          */
         private Resultado comReserva(String modelo, Papel papel) {
-            CompletableFuture<Resultado> f1 = CompletableFuture.supplyAsync(() -> noModelo(modelo, papel), executor);
+            CompletableFuture<Resultado> f1 = CompletableFuture.supplyAsync(comMdc(() -> noModelo(modelo, papel)), executor);
             long espera = cfg.reservaApos() == null ? 0 : cfg.reservaApos().toMillis();
             try {
                 return espera > 0 ? f1.get(espera, TimeUnit.MILLISECONDS) : f1.get();
@@ -232,7 +236,7 @@ public class ExtratorIa implements DisposableBean {
                 String segundo = podeGastar() ? escolher(Set.of(modelo)) : null;
                 if (segundo == null) return aguardar(f1);
                 log.info("[Gemini] {} passou de {} ms sem responder; disparando {} em paralelo.", modelo, espera, segundo);
-                CompletableFuture<Resultado> f2 = CompletableFuture.supplyAsync(() -> noModelo(segundo, Papel.RESERVA), executor);
+                CompletableFuture<Resultado> f2 = CompletableFuture.supplyAsync(comMdc(() -> noModelo(segundo, Papel.RESERVA)), executor);
                 return primeiraBoa(f1, f2);
             } catch (ExecutionException e) {
                 FalhaIa f = comoFalhaIa(e.getCause());
@@ -356,6 +360,18 @@ public class ExtratorIa implements DisposableBean {
                     g == null ? null : g.tokensEntrada(), g == null ? null : g.tokensSaida(),
                     g == null ? null : g.tokensRaciocinio(), estimativa, ms, contexto.modo(), documentos.size(),
                     contexto.origem()));
+        }
+
+        /** A chamada em outra thread loga com o mesmo id de requisição de quem pediu a leitura. */
+        private <T> Supplier<T> comMdc(Supplier<T> tarefa) {
+            return () -> {
+                if (mdc != null) MDC.setContextMap(mdc);
+                try {
+                    return tarefa.get();
+                } finally {
+                    MDC.clear();
+                }
+            };
         }
 
         private boolean podeGastar() {

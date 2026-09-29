@@ -160,6 +160,10 @@ continua sendo o da loja escolhida.
 | GET | `/api/cotacao/prints?ids=` · `/api/cotacao/prints/{id}/imagem` | situação dos prints · a imagem (JPEG com loja, hora e link) |
 | POST · PUT | `/api/cotacao/prints/{id}/recapturar` · `/api/cotacao/prints/{id}/imagem` (multipart `arquivo`) | tirar de novo · anexar o print à mão |
 
+Contrato completo, gerado do código: `/v3/api-docs` (OpenAPI) e `/swagger-ui.html`. Saúde e versão:
+`/actuator/health`, `/actuator/info`. Para integrar com outra aplicação (id de requisição, métricas, variáveis de
+ambiente): [docs/INTEGRACAO.md](docs/INTEGRACAO.md).
+
 **Antes de atualizar a versão ou trocar de banco**: Histórico → *Exportar JSON*. Depois: *Importar JSON*.
 
 Erros vêm como `ProblemDetail` (RFC 9457) com a lista `problemas`.

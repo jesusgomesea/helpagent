@@ -17,11 +17,19 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+
 /**
  * Registro das chamadas ao Gemini (tabela {@code uso_ia}) e o painel "Uso da IA".
  *
  * <p>Gravar nunca derruba uma leitura: se o banco falhar, fica só o log. Na subida, remonta os contadores do dia no
  * {@link ControleCotaIa} (senão um reinício "devolveria" a cota já gasta) e apaga o que passou de {@link #RETENCAO}.
+ *
+ * <p>Também publica métricas (Micrometer → {@code /actuator/prometheus}) para o monitoramento de uma aplicação maior
+ * alertar sem ler esta tabela: {@code helpagent_ia_requisicoes_total{modelo,ocorrencia,papel}},
+ * {@code helpagent_ia_tokens_total{modelo,tipo}}, {@code helpagent_ia_duracao_seconds{modelo}} e, por modelo da
+ * cadeia, {@code helpagent_ia_cota_dia_usada} / {@code helpagent_ia_cota_dia_limite}.
  */
 @Service
 public class UsoIaService {
@@ -61,19 +69,49 @@ public class UsoIaService {
     private final UsoIaRepository repo;
     private final ControleCotaIa controle;
     private final Clock relogio;
+    private final MeterRegistry metricas;
 
     @Autowired
-    public UsoIaService(UsoIaRepository repo, ControleCotaIa controle) {
-        this(repo, controle, Clock.systemUTC());
+    public UsoIaService(UsoIaRepository repo, ControleCotaIa controle, MeterRegistry metricas) {
+        this(repo, controle, Clock.systemUTC(), metricas);
     }
 
-    UsoIaService(UsoIaRepository repo, ControleCotaIa controle, Clock relogio) {
+    UsoIaService(UsoIaRepository repo, ControleCotaIa controle, Clock relogio, MeterRegistry metricas) {
         this.repo = repo;
         this.controle = controle;
         this.relogio = relogio;
+        this.metricas = metricas;
+        for (String modelo : controle.cadeia()) {
+            Gauge.builder("helpagent.ia.cota.dia.usada", () -> doModelo(modelo, ControleCotaIa.Situacao::requisicoesDia))
+                    .tag("modelo", modelo).description("Requisições no dia do Google (meia-noite do Pacífico)")
+                    .register(metricas);
+            Gauge.builder("helpagent.ia.cota.dia.limite", () -> doModelo(modelo, ControleCotaIa.Situacao::rpd))
+                    .tag("modelo", modelo).description("Limite diário em uso (configurado ou informado pelo Google)")
+                    .register(metricas);
+        }
+    }
+
+    private double doModelo(String modelo, java.util.function.ToIntFunction<ControleCotaIa.Situacao> campo) {
+        return controle.situacao().stream().filter(s -> s.modelo().equals(modelo)).mapToInt(campo).findFirst().orElse(0);
     }
 
     public void registrar(UsoIa chamada) {
+        try {
+            metricas.counter("helpagent.ia.requisicoes", "modelo", chamada.getModelo(),
+                    "ocorrencia", chamada.getOcorrencia().name(), "papel", chamada.getPapel().name()).increment();
+            if (chamada.getTokensEntrada() != null) {
+                metricas.counter("helpagent.ia.tokens", "modelo", chamada.getModelo(), "tipo", "entrada")
+                        .increment(chamada.getTokensEntrada());
+            }
+            if (chamada.getTokensSaida() != null) {
+                metricas.counter("helpagent.ia.tokens", "modelo", chamada.getModelo(), "tipo", "saida")
+                        .increment(chamada.getTokensSaida());
+            }
+            metricas.timer("helpagent.ia.duracao", "modelo", chamada.getModelo())
+                    .record(Duration.ofMillis(chamada.getDuracaoMs()));
+        } catch (RuntimeException e) {
+            log.debug("[Uso IA] métrica não registrada: {}", e.getMessage());
+        }
         try {
             repo.save(chamada);
         } catch (RuntimeException e) {

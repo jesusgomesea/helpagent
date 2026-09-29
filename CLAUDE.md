@@ -6,6 +6,7 @@ usuário revisa, sistema preenche o template PDF da empresa e anexa os originais
 - Visão geral e como subir: [README.md](README.md)
 - **Antes de mudar código**: [docs/MANUTENCAO.md](docs/MANUTENCAO.md) — fluxo, mapa, receitas, armadilhas
 - Escopo e plano de migração do HTML v3.5: [docs/ESCOPO-E-PLANO-MIGRACAO.md](docs/ESCOPO-E-PLANO-MIGRACAO.md)
+- Integração com uma aplicação maior (contrato, rastreio, saúde, métricas, config): [docs/INTEGRACAO.md](docs/INTEGRACAO.md)
 
 ## Regras de trabalho neste repositório
 

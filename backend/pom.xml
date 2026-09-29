@@ -21,6 +21,7 @@
     <pdfbox.version>3.0.8</pdfbox.version>
     <playwright.version>1.63.0</playwright.version>
     <poi.version>5.5.1</poi.version>
+    <springdoc.version>3.1.1</springdoc.version>
   </properties>
 
   <dependencies>
@@ -55,6 +56,17 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <!-- Integração: métricas no formato Prometheus em /actuator/prometheus (exposição ligada por configuração). -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+    <!-- Integração: contrato da API em /v3/api-docs (OpenAPI) e a tela /swagger-ui.html, gerados do código. -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>${springdoc.version}</version>
     </dependency>
 
     <dependency>
@@ -106,6 +118,14 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+          <!-- versão e hora do build em /actuator/info: quem integra sabe qual versão está no ar -->
+          <execution>
+            <goals>
+              <goal>build-info</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

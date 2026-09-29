@@ -14,7 +14,10 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import br.com.rdamasio.helpagent.cotacao.FalhaColeta;
 import br.com.rdamasio.helpagent.extracao.FalhaIa;
 
-/** Erros no formato RFC 9457 (ProblemDetail); {@code problemas} traz a lista que o frontend exibe. */
+/**
+ * Erros no formato RFC 9457 (ProblemDetail); {@code problemas} traz a lista que o frontend exibe e
+ * {@code idRequisicao}, o id da requisição ({@link IdRequisicaoFiltro}) — o mesmo das linhas de log dela.
+ */
 @RestControllerAdvice
 public class TratadorErros {
 
@@ -24,7 +27,7 @@ public class TratadorErros {
     ProblemDetail negocio(ErroNegocio e) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, e.getMessage());
         pd.setProperty("problemas", e.problemas());
-        return pd;
+        return comId(pd);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -34,18 +37,18 @@ public class TratadorErros {
                 .toList();
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, "Dados inválidos");
         pd.setProperty("problemas", problemas);
-        return pd;
+        return comId(pd);
     }
 
     @ExceptionHandler(NaoEncontrado.class)
     ProblemDetail naoEncontrado(NaoEncontrado e) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+        return comId(ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage()));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     ProblemDetail uploadGrande(MaxUploadSizeExceededException e) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.CONTENT_TOO_LARGE,
-                "Os arquivos enviados passam do limite permitido.");
+        return comId(ProblemDetail.forStatusAndDetail(HttpStatus.CONTENT_TOO_LARGE,
+                "Os arquivos enviados passam do limite permitido."));
     }
 
     /** Coleta da cotação voltou vazia: {@code problemas} traz os avisos (bloqueio, termo sem resultado...). */
@@ -53,7 +56,7 @@ public class TratadorErros {
     ProblemDetail coleta(FalhaColeta e) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, e.getMessage());
         pd.setProperty("problemas", e.avisos());
-        return pd;
+        return comId(pd);
     }
 
     @ExceptionHandler(FalhaIa.class)
@@ -61,6 +64,12 @@ public class TratadorErros {
         log.warn("Extração com IA falhou após {} tentativa(s): {}", e.tentativas(), e.getMessage());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, e.getMessage());
         pd.setProperty("tentativas", e.tentativas());
+        return comId(pd);
+    }
+
+    private static ProblemDetail comId(ProblemDetail pd) {
+        String id = IdRequisicaoFiltro.atual();
+        if (id != null) pd.setProperty("idRequisicao", id);
         return pd;
     }
 }

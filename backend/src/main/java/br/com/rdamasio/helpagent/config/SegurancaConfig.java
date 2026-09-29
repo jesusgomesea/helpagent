@@ -20,6 +20,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  *       {@code spring.security.oauth2.resourceserver.jwt.issuer-uri}, senão a aplicação não sobe.</li>
  * </ul>
  * O CORS só importa quando o frontend é servido de outra origem; atrás do proxy do {@code ng serve} não é usado.
+ *
+ * <p>Ficam abertos, mesmo com login: saúde e versão ({@code /actuator/health}, {@code /actuator/info}, que o
+ * orquestrador/gateway consulta sem token), o contrato da API ({@code /v3/api-docs}, {@code /swagger-ui}) e as
+ * métricas {@code /actuator/prometheus} — estas só existem se {@code ACTUATOR_EXPOR} as incluir, e devem ficar numa
+ * rede interna (docs/INTEGRACAO.md).
  */
 @Configuration
 public class SegurancaConfig {
@@ -36,7 +41,9 @@ public class SegurancaConfig {
         }
 
         http.authorizeHttpRequests(a -> a
-                        .requestMatchers("/actuator/health/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info",
+                                "/actuator/prometheus").permitAll()
+                        .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll())
@@ -53,6 +60,7 @@ public class SegurancaConfig {
         // O frontend lê o nome do arquivo e o id do orçamento gerado nesses cabeçalhos.
         cors.addExposedHeader("Content-Disposition");
         cors.addExposedHeader("X-Orcamento-Id");
+        cors.addExposedHeader("X-Request-Id");
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", cors);
         return source;
