@@ -32,7 +32,7 @@ public class GuardaRecursos implements WebMvcConfigurer {
                 .addPathPatterns("/api/cotacao", "/api/cotacao/**");
         registry.addInterceptor(barrar(() -> recursos.ia(), "A leitura por IA está desligada neste servidor",
                 "preencha o orçamento manualmente (helpagent.recursos.ia / RECURSO_IA)"))
-                .addPathPatterns("/api/extracoes", "/api/extracoes/**", "/api/uso-ia", "/api/uso-ia/**");
+                .addPathPatterns("/api/extracoes", "/api/extracoes/**", "/api/uso-ia", "/api/uso-ia/**", "/api/qualidade-ia");
     }
 
     private static HandlerInterceptor barrar(java.util.function.BooleanSupplier ligado, String mensagem, String detalhe) {

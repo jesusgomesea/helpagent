@@ -97,6 +97,7 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 | `config` | `HelpAgentProperties` (tudo que é configurável, prefixo `helpagent.*`), segurança/CORS, usuário atual, `/api/parametros`, `OpenApiConfig` (contrato em `/v3/api-docs`), `Recursos` + `GuardaRecursos` (liga/desliga IA e cotação; desligado → 503) |
 | `common` | `Dinheiro` (BRL ↔ `BigDecimal`), `Documento` (arquivo enviado), `OrigemRequisicao` (IP para os logs de auditoria), `IdRequisicaoFiltro` (X-Request-Id no log e no erro), erros de negócio e o `TratadorErros` (ProblemDetail) |
 | `loja` | Cadastro de lojas e busca por número/nome |
+| `qualidadeia` | Aprender com as correções: guarda cada leitura da IA, compara com o orçamento gerado (`ComparacaoLeitura`) e o relatório `/api/qualidade-ia` |
 | `fornecedor` | Fornecedores conhecidos: reconhecimento do que a IA leu (`ReconhecimentoFornecedor`), vínculo da linha ao gerar e o cadastro `/api/fornecedores` |
 | `template` | Os 4 impressos: `TemplateCodigo`, nomes dos campos AcroForm (`CamposImpresso`) e leitura do PDF em branco |
 | `extracao` | Tudo da IA: prompt, cliente Gemini, política de tentativas e cadeia de modelos, parser da resposta, avisos |
@@ -121,6 +122,7 @@ Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem Post
 | `features/historico/` | Lista, busca, download, backup JSON |
 | `features/lojas/` | Cadastro de lojas |
 | `features/fornecedores/` | Cadastro de fornecedores (`/lojas/fornecedores`, junto das lojas) |
+| `features/qualidade-ia/` | Relatório técnico "Qualidade da IA" (`/swagger/qualidade-ia`, fora do menu) |
 | `features/cotacao/` | Cotação em lojas online: `cotacao.api.ts` (tipos + HTTP, separados do `core/api.ts`), `cotacao.page.ts`, `criterios.ts`, `resultado.ts`, `cesta.store.ts` (itens escolhidos para o orçamento por cotação) |
 | `features/orcamento-cotacao/` | Tela de revisão e geração do orçamento por cotação (§8) |
 | `features/uso-ia/` | Painel "Uso da IA" (área técnica, rota `/swagger/uso-ia`, fora do menu): cota de cada modelo da cadeia, totais do dia do Google, horas e últimas chamadas (§4) |
@@ -270,6 +272,17 @@ subida, os contadores do dia são remontados daqui, senão um reinício "devolve
 tokens do dia, **pico por minuto** (é o "RPM" do painel do Google), leituras que caíram em modelo reserva, colunas
 por hora e as 40 últimas chamadas. Quando a leitura sai de um modelo abaixo do primeiro, a revisão ganha o aviso
 "Lido pelo modelo reserva ...: confira valores e quantidades".
+
+**Qualidade da IA — aprender com as correções (30/09/2026, V10).** Cada leitura nova publica `LeituraConcluida`
+e o `qualidadeia` guarda o JSON lido (`leitura_ia`, com o mesmo id da leitura em `uso_ia`). A revisão devolve esse
+`idLeitura` ao gerar; depois do commit do orçamento (`OrcamentoGerado`, `@TransactionalEventListener`), o
+`ComparacaoLeitura` compara campo a campo o lido com o confirmado e grava em `correcao_ia`: título, observação,
+chamado e loja (fora do CAPEX), total, número de itens e, por linha, produto, descrição, quantidade, valor unitário e
+fornecedor. "Corrigido" ignora maiúsculas, acentos e espaços; valores com mais de 1 centavo de diferença; chamado
+pelos números; loja pelo número ("023" = "23"); fornecedor pela chave do reconhecimento (padronizar pelo cadastro não
+é erro da IA). O relatório **`/swagger/qualidade-ia`** mostra acerto por campo, por modelo e por fornecedor e as
+últimas correções (lido → confirmado). **Nada muda a leitura sozinho**: é o insumo para ajustar o prompt, que continua
+sendo medido com `tools/avaliar_extracao.py`. Leitura que não virou orçamento em 90 dias é apagada na subida.
 
 **Limitação que não dá para resolver aqui:** o Google conta por **projeto**. Outra máquina com a mesma chave ou o
 HTML v3.5 (que tinha a chave embutida) gastam a mesma cota sem passar por este servidor. Se o AI Studio mostrar

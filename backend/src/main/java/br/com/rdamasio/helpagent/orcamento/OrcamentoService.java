@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,12 +50,14 @@ public class OrcamentoService {
     private final HelpAgentProperties.Orcamento cfg;
     private final PrintsCotacao prints;
     private final FornecedorService fornecedores;
+    private final ApplicationEventPublisher eventos;
 
     public OrcamentoService(LojaService lojas, PdfOrcamentoService pdf, ArmazenamentoArquivos armazenamento,
             OrcamentoRepository repo, UsuarioAtual usuario, HelpAgentProperties props, PrintsCotacao prints,
-            FornecedorService fornecedores) {
+            FornecedorService fornecedores, ApplicationEventPublisher eventos) {
         this.lojas = lojas;
         this.fornecedores = fornecedores;
+        this.eventos = eventos;
         this.prints = prints;
         this.pdf = pdf;
         this.armazenamento = armazenamento;
@@ -132,6 +135,9 @@ public class OrcamentoService {
         String ref = armazenamento.salvar(bytes, "pdf");
         o.registrarPdf(nome, ref);
         repo.save(o);
+        // depois do commit, o qualidadeia compara com a leitura da IA (se o orçamento veio de uma)
+        eventos.publishEvent(new OrcamentoGerado(o.getId(), r.idLeitura(), r, total,
+                o.getItens().stream().map(OrcamentoItem::getFornecedor).toList()));
         return new Gerado(o.getId(), nome, bytes);
     }
 

@@ -541,6 +541,19 @@ details[open] > summary .cot-seta { transform: rotate(-135deg); }
 .uia-chamada { display: grid; grid-template-columns: 130px 170px 140px 150px 130px 1fr; gap: 10px; align-items: center;
   padding: 8px 4px; border-bottom: 1px solid var(--border); font-size: 12.5px; color: var(--text2);
   &:nth-child(odd) { background: var(--bg-alt); } }
+// ---------- Qualidade da IA (features/qualidade-ia) ----------
+.qia-kpis { grid-template-columns: repeat(4, 1fr); }
+.qia-linha { display: grid; grid-template-columns: minmax(120px, 190px) 1fr 52px minmax(120px, 170px); gap: 12px; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; &:last-child { border-bottom: 0; } }
+.qia-nome { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qia-conta { color: var(--muted); font-size: 11.5px; }
+.qia-duas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.qia-exemplo { display: grid; grid-template-columns: 90px minmax(160px, 1fr) 1.4fr 16px 1.4fr 120px; gap: 10px; align-items: baseline;
+  padding: 8px 4px; border-bottom: 1px solid var(--border); font-size: 12.5px; color: var(--text2);
+  &:nth-child(odd) { background: var(--bg-alt); } }
+.qia-lido { color: var(--vermelho-erro); text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, 0.25); overflow-wrap: anywhere; }
+.qia-final { color: var(--success); overflow-wrap: anywhere; }
+.qia-seta { color: var(--muted); }
 .uia-quem { color: var(--muted); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 // anúncios por loja, logo abaixo dos números
 .cot-lojas-resultado { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;
@@ -717,6 +730,10 @@ details[open] > summary .cot-seta { transform: rotate(-135deg); }
   .uia-modelo { grid-template-columns: 34px 1fr; .uia-medida { grid-column: 2; } }
   .uia-chamada { grid-template-columns: 1fr 1fr; .uia-quem { grid-column: 1 / -1; } }
   .uia-hora span { font-size: 8px; }
+  .qia-kpis { grid-template-columns: 1fr 1fr; }
+  .qia-duas { grid-template-columns: 1fr; }
+  .qia-linha { grid-template-columns: 1fr 52px; .uia-barra, .qia-conta { display: none; } }
+  .qia-exemplo { grid-template-columns: 1fr; .qia-seta { display: none; } }
   .header { padding: 0 14px; gap: 10px; }
   .logo-sub, .logo-sep { display: none; }
   .logo img { height: 24px; }

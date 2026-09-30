@@ -49,6 +49,13 @@ export const routes: Routes = [
     canMatch: [recursoLigado('ia')],
     loadComponent: () => import('./features/uso-ia/uso-ia.page').then((m) => m.UsoIaPage),
   },
+  {
+    // área técnica, como o uso da IA: onde a IA mais erra, pelo que os atendentes corrigem
+    path: 'swagger/qualidade-ia',
+    title: 'HELP-AGENT — Qualidade da IA',
+    canMatch: [recursoLigado('ia')],
+    loadComponent: () => import('./features/qualidade-ia/qualidade-ia.page').then((m) => m.QualidadeIaPage),
+  },
   // endereço antigo (29/09/2026), para favorito salvo
   { path: 'uso-ia', redirectTo: 'swagger/uso-ia' },
   { path: '**', redirectTo: '' },

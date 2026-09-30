@@ -136,6 +136,8 @@ export interface RespostaExtracao {
   chamadosJaOrcados: ItemHistorico[];
   /** Um por item, na mesma ordem de dados.itens. */
   fornecedores: FornecedorSugerido[];
+  /** Volta no pedido de gerar: o servidor compara o que a IA leu com o que foi confirmado (qualidade da IA). */
+  idLeitura: string | null;
 }
 
 export interface GerarOrcamentoRequest {
@@ -165,6 +167,8 @@ export interface GerarOrcamentoRequest {
   observacoes: string;
   requerente: string;
   gestor: string;
+  /** Leitura da IA que preencheu a revisão (ausente = preenchido à mão ou pela cotação). */
+  idLeitura?: string | null;
 }
 
 export interface ItemHistorico {

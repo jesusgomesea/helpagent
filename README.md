@@ -124,7 +124,8 @@ A leitura por IA percorre uma **cadeia de modelos**, do melhor para o pior (`hel
 esgota a cota ou está sobrecarregado, desce para o próximo, e volta a subir sozinho depois. O servidor conta a
 própria cota (por minuto e por dia) e desce **antes** de levar a recusa do Google. No máximo 3 leituras ao mesmo
 tempo e 4 requisições por leitura. O painel técnico **`/swagger/uso-ia`** (fora do menu, ao lado da
-documentação da API em `/swagger-ui.html`) mostra a situação de cada modelo, o gasto do dia e as últimas chamadas; leitura feita por modelo reserva ganha um aviso na revisão. Limites e detalhes:
+documentação da API em `/swagger-ui.html`) mostra a situação de cada modelo, o gasto do dia e as últimas chamadas,
+e **`/swagger/qualidade-ia`** mostra onde a IA mais erra, pelo que os atendentes corrigem antes de gerar; leitura feita por modelo reserva ganha um aviso na revisão. Limites e detalhes:
 [docs/MANUTENCAO.md](docs/MANUTENCAO.md) §4.
 
 ## Homologação
@@ -151,6 +152,7 @@ continua sendo o da loja escolhida.
 | GET | `/api/parametros` | máx. de itens, requerente/gestor padrão |
 | POST | `/api/extracoes` (multipart: `modo`, `chamados[]`, `orcamentos[]`) | leitura por IA + avisos A2/C2 |
 | GET | `/api/uso-ia` | painel de uso do Gemini: situação de cada modelo da cadeia, totais do dia do Google, últimas chamadas |
+| GET | `/api/qualidade-ia?dias=90` | onde a IA mais erra (o que os atendentes corrigem antes de gerar), por campo, modelo e fornecedor |
 | POST | `/api/orcamentos` (multipart: `dados` JSON + arquivos) | valida (A1), gera e devolve o PDF, grava no histórico; itens com `prints` = orçamento por cotação |
 | GET | `/api/historico?modo=&busca=&lixeira=&pagina=&tamanho=` · `/api/historico/{id}/pdf` | histórico central, filtrável por tipo; `lixeira=true` = aba Lixeira |
 | | filtros (na listagem e na contagem): `de`, `ate` (emissão, yyyy-MM-dd), `loja`, `fornecedor` (id), `valorMin`, `valorMax`, `origem` (`DOCUMENTOS`/`COTACAO`) | painel "Filtros" da tela |

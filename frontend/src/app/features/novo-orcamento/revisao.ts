@@ -353,6 +353,8 @@ export class Revisao {
       observacoes: v.observacoes,
       requerente: v.requerente,
       gestor: v.gestor,
+      // o servidor compara o que a IA leu com o que foi confirmado aqui (aprender com as correções)
+      idLeitura: this.extracao()?.idLeitura ?? null,
     });
   }
 }

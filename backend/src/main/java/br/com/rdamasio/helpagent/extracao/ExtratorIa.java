@@ -94,8 +94,9 @@ public class ExtratorIa implements DisposableBean {
     /**
      * @param tentativas chamadas feitas à API nesta leitura, somando todos os modelos
      * @param degrau     posição do modelo que respondeu na cadeia: 0 = o melhor; -1 = modelo forçado
+     * @param leitura    id desta leitura (o mesmo das linhas de uso_ia): liga o que a IA leu ao orçamento gerado
      */
-    public record Resultado(DadosExtraidos dados, String modelo, int tentativas, int degrau) {
+    public record Resultado(DadosExtraidos dados, String modelo, int tentativas, int degrau, String leitura) {
     }
 
     /** Quem pediu a leitura; vai para o registro de uso. */
@@ -301,7 +302,7 @@ public class ExtratorIa implements DisposableBean {
                     controle.concluir(reserva, g.tokensEntrada(), g.tokensSaida());
                     DadosExtraidos dados = parser.parse(g.texto());
                     registrar(momento, modelo, p, Ocorrencia.OK, 200, g, inicio);
-                    return new Resultado(dados, modelo, n, controle.degrau(modelo));
+                    return new Resultado(dados, modelo, n, controle.degrau(modelo), id);
                 } catch (FalhaIa e) {
                     Ocorrencia o = classificar(e);
                     controle.registrarFalha(modelo, o, e.tentarDepois(), e.limiteInformado());

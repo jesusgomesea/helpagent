@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import br.com.rdamasio.helpagent.common.Documento;
@@ -41,10 +42,11 @@ public class ExtracaoService {
      * @param chamadosJaOrcados orçamentos já gerados para os mesmos chamados (aviso de duplicidade)
      * @param fornecedores      um por item (mesma ordem de {@code dados.itens}): o que a IA leu e o cadastrado que o
      *                          sistema reconheceu (null = fornecedor novo; vira cadastro ao gerar)
+     * @param idLeitura         volta no pedido de gerar: o servidor compara o que a IA leu com o que foi confirmado
      */
     public record Resposta(DadosExtraidos dados, LojaDto loja, List<String> avisos, String modelo, int tentativas,
             long duracaoMs, boolean doCache, LocalDate validadeSugerida,
-            List<HistoricoController.Item> chamadosJaOrcados, List<FornecedorSugerido> fornecedores) {
+            List<HistoricoController.Item> chamadosJaOrcados, List<FornecedorSugerido> fornecedores, String idLeitura) {
     }
 
     /** Fornecedor de um item lido: como veio no documento e o cadastrado correspondente, se houver. */
@@ -58,11 +60,14 @@ public class ExtracaoService {
     private final HelpAgentProperties props;
     private final ChamadosJaOrcados jaOrcados;
     private final FornecedorService fornecedores;
+    private final ApplicationEventPublisher eventos;
 
     public ExtracaoService(ExtratorIa extrator, CacheExtracao cache, PromptExtracao prompt, LojaService lojas,
-            HelpAgentProperties props, ChamadosJaOrcados jaOrcados, FornecedorService fornecedores) {
+            HelpAgentProperties props, ChamadosJaOrcados jaOrcados, FornecedorService fornecedores,
+            ApplicationEventPublisher eventos) {
         this.jaOrcados = jaOrcados;
         this.fornecedores = fornecedores;
+        this.eventos = eventos;
         this.extrator = extrator;
         this.cache = cache;
         this.prompt = prompt;
@@ -99,6 +104,11 @@ public class ExtracaoService {
                 modo, r.modelo(), r.degrau(), r.tentativas(), ms, enviados.size(), bytes / 1024, obtido.reaproveitado());
 
         DadosExtraidos d = r.dados();
+        // leitura nova (não reaproveitada): guardada para comparar com o que o atendente confirmar (qualidadeia)
+        if (!obtido.reaproveitado() && r.leitura() != null) {
+            eventos.publishEvent(new LeituraConcluida(r.leitura(), java.time.Instant.now(), modo.name(), r.modelo(),
+                    r.degrau(), enviados.size(), d));
+        }
         // Rastro de auditoria: de onde a IA tirou cada valor. Não aparece na tela; serve para investigar
         // uma leitura errada depois (ex.: somou anotação à mão da proposta).
         for (int i = 0; i < d.itens().size(); i++) {
@@ -120,7 +130,8 @@ public class ExtracaoService {
                     + "Confira valores e quantidades com atenção.");
         }
         return new Resposta(d, loja, avisos, r.modelo(), r.tentativas(),
-                ms, obtido.reaproveitado(), validadeSugerida(d, LocalDate.now(props.fuso())), duplicados, sugeridos);
+                ms, obtido.reaproveitado(), validadeSugerida(d, LocalDate.now(props.fuso())), duplicados, sugeridos,
+                r.leitura());
     }
 
     private static final DateTimeFormatter DATA_BR = DateTimeFormatter.ofPattern("dd/MM/uuuu");

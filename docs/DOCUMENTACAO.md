@@ -68,6 +68,7 @@ a partir da cotação, com o print da página de cada opção para a validação
 | **Cotação** | `/cotacao` | busca o item em 6 lojas, ranking por critérios ajustáveis, melhor de cada loja, planilha `.xlsx` |
 | **Orçamento por cotação** | `/orcamento-cotacao` | os itens escolhidos na cotação viram o impresso, com 3 prints por item e um resumo da cotação |
 | **Uso da IA** (técnico) | `/swagger/uso-ia` | cota de cada modelo, gasto do dia, últimas chamadas; fora do menu |
+| **Qualidade da IA** (técnico) | `/swagger/qualidade-ia` | onde a IA mais erra (lido × confirmado), por campo, modelo e fornecedor |
 | **Documentação da API** (técnico) | `/swagger-ui.html` | contrato gerado do código |
 | **Visual por marca** | seletor no cabeçalho | Damásio Motopeças ou TD Motopeças (só visual; o impresso segue a loja) |
 | **Homologação** | `http://localhost:4201` | cópia isolada para testar antes da produção |
@@ -167,6 +168,7 @@ Schema só por **migration Flyway** (`ddl-auto: validate`), em SQL portável (Po
 | `orcamento_item` | linhas do impresso; nas vindas da cotação, também loja fornecedora, URL e momento do print |
 | `uso_ia` | uma linha por requisição ao Gemini: modelo, degrau, papel, resultado, tokens, tempo, IP (90 dias) |
 | `fornecedor` | fornecedores conhecidos: nome padronizado, CNPJ, apelidos (nomes com que já apareceu), ativo |
+| `leitura_ia` · `correcao_ia` | o que a IA leu em cada extração e, por orçamento gerado, cada campo comparado (lido × confirmado) |
 
 | Migration | O quê |
 |---|---|
@@ -179,6 +181,7 @@ Schema só por **migration Flyway** (`ddl-auto: validate`), em SQL portável (Po
 | V7 | tabela `uso_ia` |
 | V8 | lixeira do histórico (`excluido_em`, `excluido_por`) |
 | V9 | fornecedores (`fornecedor`, `orcamento_item.fornecedor_id`); as lojas da cotação já gravadas viraram fornecedores |
+| V10 | qualidade da IA (`leitura_ia`, `correcao_ia`) |
 
 Loja não se apaga (só desativa): os orçamentos antigos apontam para ela. Orçamento apagado vai para a lixeira e
 só some de vez depois de 30 dias (ou por "excluir de vez" na própria lixeira). Migration aplicada não se edita.
@@ -219,6 +222,8 @@ Detalhes e onde cada uma está: [MANUTENCAO](MANUTENCAO.md) §1.
 - **Consumo medido:** cerca de **2.500 tokens por leitura** de 1 arquivo (a maior parte é o prompt), ~4.900 com 3.
 - **Tempo:** 5–10 s normalmente; um modelo lento por mais de 12 s dispara o de baixo em paralelo; prazo total 60 s.
 - **Onde acompanhar:** `/swagger/uso-ia`, `GET /api/uso-ia`, métricas `helpagent_ia_*`, saúde `ia`.
+- **Qualidade:** cada orçamento gerado de uma leitura é comparado campo a campo com o que a IA leu;
+  `/swagger/qualidade-ia` mostra onde ela mais erra, para ajustar o prompt com dado.
 
 Detalhes, medições e como avaliar precisão (`tools/avaliar_extracao.py`): [MANUTENCAO](MANUTENCAO.md) §4.
 
@@ -257,6 +262,7 @@ Tudo sob `/api`. Contrato completo e sempre atual em **`/v3/api-docs`** e **`/sw
 | Cotação | `GET /api/cotacao/estado`, `POST /api/cotacao`, `/{id}/reavaliar`, `/{id}/planilha`, `/{id}/prints`, `/prints…` |
 | Parâmetros | `GET /api/parametros` (padrões do formulário, ambiente, recursos ligados) |
 | Uso da IA | `GET /api/uso-ia` |
+| Qualidade da IA | `GET /api/qualidade-ia?dias=90` |
 
 - Erros sempre em **ProblemDetail** (RFC 9457) com `problemas` (lista para a tela) e `idRequisicao`.
 - Cabeçalho **`X-Request-Id`**: segue a chamada nos logs; em erro 5xx a tela mostra "Código para o suporte".
@@ -402,7 +408,8 @@ Tudo em [INTEGRACAO](INTEGRACAO.md).
 | 30/09/2026 | documentação geral centralizada | `9ca4433` |
 | 30/09/2026 | lixeira no histórico (30 dias para restaurar) | `47bbd4e` |
 | 30/09/2026 | filtros no histórico (período, loja, valor, origem) | `3b5b869` |
-| 30/09/2026 | fornecedores conhecidos (IA lê quem emitiu; cadastro cresce sozinho; filtro no histórico) | ver `git log` |
+| 30/09/2026 | fornecedores conhecidos (IA lê quem emitiu; cadastro cresce sozinho; filtro no histórico) | `91386f4` |
+| 30/09/2026 | qualidade da IA: aprender com as correções (`/swagger/qualidade-ia`) | ver `git log` |
 
 Detalhe de cada uma: `git log`.
 

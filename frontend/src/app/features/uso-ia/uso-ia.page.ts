@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { RouterLink } from '@angular/router';
 import { mensagensDeErro } from '../../core/api';
 import { Faixa } from '../../layout/faixa';
 import { Icone } from '../../layout/icone';
@@ -17,7 +18,7 @@ import { ChamadaIa, EstadoModelo, PainelUsoIa, SituacaoModelo, UsoIaApi } from '
  */
 @Component({
   selector: 'ha-uso-ia',
-  imports: [Faixa, Icone],
+  imports: [Faixa, Icone, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ha-faixa sobretitulo="Área técnica · Gemini" titulo="Uso da IA"
@@ -26,6 +27,7 @@ import { ChamadaIa, EstadoModelo, PainelUsoIa, SituacaoModelo, UsoIaApi } from '
       <p class="uia-nota">
         Área técnica, fora do menu do helpdesk. Documentação da API (inclui <code>GET /api/uso-ia</code>, os dados
         desta página): <a href="swagger-ui.html" target="_blank" rel="noopener">Swagger</a>
+        · onde a IA mais erra: <a routerLink="/swagger/qualidade-ia">Qualidade da IA</a>
       </p>
       @if (erro()) { <div class="status erro">{{ erro() }}</div> }
       @if (painel(); as p) {

@@ -10,7 +10,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
-/** Dados revisados pelo usuário. Valores monetários chegam como número (o frontend converte o BRL). */
+/**
+ * Dados revisados pelo usuário. Valores monetários chegam como número (o frontend converte o BRL).
+ * {@code idLeitura}: a leitura da IA que preencheu a revisão (opcional) — o servidor compara o lido com o confirmado.
+ */
 public record GerarOrcamentoRequest(
         @NotNull ModoAquisicao modo,
         @NotBlank String lojaNumero,
@@ -24,7 +27,8 @@ public record GerarOrcamentoRequest(
         @PositiveOrZero BigDecimal acrescimos,
         @Size(max = 4000) String observacoes,
         @Size(max = 120) String requerente,
-        @Size(max = 120) String gestor) {
+        @Size(max = 120) String gestor,
+        @Size(max = 36) String idLeitura) {
 
     /**
      * @param prints          só no orçamento por cotação: ids dos prints das opções do item, a escolhida primeiro
