@@ -42,7 +42,7 @@ class ResumoCotacaoPdfTest {
         List<DadosImpresso.ItemCotado> itens = new ArrayList<>();
         List<DadosImpresso.Apendice> anexos = new ArrayList<>();
         List<DadosImpresso.Anexo> prints = new ArrayList<>();
-        String[][] lojas = { { "Kabum", "Pichau", "Terabyte" }, { "Pichau", "Kabum", "Amazon" } };
+        String[][] lojas = { { "Kabum", "Pichau", "Terabyte" }, { "Pichau", "Kabum", "Mercado Livre" } };
         for (int i = 0; i < 2; i++) {
             List<DadosImpresso.OpcaoCotada> opcoes = new ArrayList<>();
             for (int j = 0; j < 3; j++) {
@@ -82,7 +82,7 @@ class ResumoCotacaoPdfTest {
             assertThat(t.getText(doc)).contains("Item 01 · ESCOLHIDA · Kabum");
             t.setStartPage(formulario + 7);
             t.setEndPage(formulario + 7);
-            assertThat(t.getText(doc)).contains("Item 02 · Opção 3 · Amazon");
+            assertThat(t.getText(doc)).contains("Item 02 · Opção 3 · Mercado Livre");
 
             ImageIO.write(new PDFRenderer(doc).renderImageWithDPI(formulario, 80), "png",
                     Path.of("target/resumo-cotacao.png").toFile());

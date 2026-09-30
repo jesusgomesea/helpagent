@@ -39,7 +39,7 @@ public class CotacaoService {
 
     public static final List<Nivel> NIVEIS = List.of(
             new Nivel(1, "Varejo de TI", "Kabum, Pichau, Terabyte", List.of(FonteCotacao.Grupo.VAREJO_TI)),
-            new Nivel(2, "+ Marketplaces", "também Amazon e Mercado Livre",
+            new Nivel(2, "+ Marketplace", "também Mercado Livre",
                     List.of(FonteCotacao.Grupo.VAREJO_TI, FonteCotacao.Grupo.MARKETPLACE)),
             new Nivel(3, "+ Fabricantes", "também Dell e Lenovo (notebooks, desktops, monitores)",
                     List.of(FonteCotacao.Grupo.VAREJO_TI, FonteCotacao.Grupo.MARKETPLACE, FonteCotacao.Grupo.FABRICANTE)));

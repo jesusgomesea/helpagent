@@ -20,7 +20,7 @@ import br.com.rdamasio.helpagent.config.HelpAgentProperties;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * Cotação em lojas online (Kabum, Pichau, Terabyte, Amazon, Mercado Livre, Dell, Lenovo) — funcionalidade à parte do
+ * Cotação em lojas online (Kabum, Pichau, Terabyte, Mercado Livre, Dell, Lenovo) — funcionalidade à parte do
  * orçamento (tela /cotacao). Ver {@link CotacaoService}.
  */
 @RestController

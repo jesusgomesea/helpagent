@@ -28,7 +28,7 @@ import tools.jackson.databind.json.JsonMapper;
 class ColetaRealManualTest {
 
     private static final List<FonteCotacao> TODAS = List.of(new FonteKabum(), new FontePichau(), new FonteTerabyte(),
-            new FonteAmazon(), new FonteMercadoLivre(), new FonteDell(), new FonteLenovo());
+            new FonteMercadoLivre(), new FonteDell(), new FonteLenovo());
 
     @Test
     void coletaNasLojas() throws Exception {

@@ -44,7 +44,7 @@ public class ResolvedorPatrocinados {
         List<Integer> alvos = new ArrayList<>();
         for (int i = 0; i < saida.size(); i++) {
             Anuncio a = saida.get(i);
-            // só o rastreamento do ML (click1) redireciona; a Amazon já entrega o link limpo /dp/<ASIN>
+            // só o rastreamento do ML (click1) redireciona; as outras lojas já entregam o link limpo
             if (a.patrocinado() && a.url().contains("click1.")) alvos.add(i);
         }
         if (alvos.isEmpty()) return new Resultado(saida, 0);

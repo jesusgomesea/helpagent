@@ -227,7 +227,7 @@ export class ResultadoCotacaoView {
     }
     if (r.resumo?.semVolume) {
       lista.push({ titulo: `Quantidade vendida indisponível em ${r.resumo.semVolume} de ${r.resumo.elegiveis} anúncios.`,
-        texto: 'Só o Mercado Livre (às vezes) e a Amazon ("compras no mês") informam; nos demais a reputação usa só a nota e o volume mínimo não se aplica — dado ausente não é venda baixa.' });
+        texto: 'Só o Mercado Livre informa (às vezes); nos demais a reputação usa só a nota e o volume mínimo não se aplica — dado ausente não é venda baixa.' });
     }
     const presumidos = r.elegiveis.filter((a) => a.anuncio.nota === null && a.anuncio.vendedorProprio).length;
     if (presumidos) {
@@ -248,7 +248,7 @@ export class ResultadoCotacaoView {
 
   protected selos(a: Anuncio): { texto: string; classe: string }[] {
     const s: { texto: string; classe: string }[] = [];
-    if (a.full) s.push({ texto: a.fonte === 'Amazon' ? 'Prime' : 'FULL', classe: 'cheio' });
+    if (a.full) s.push({ texto: 'FULL', classe: 'cheio' });
     else if (a.freteGratis) s.push({ texto: 'Frete grátis', classe: '' });
     if (a.internacional) s.push({ texto: 'Internacional' + (a.pais ? ' · ' + a.pais : ''), classe: 'alerta' });
     if (a.vendedorProprio) s.push({ texto: 'Vendido pela loja', classe: '' });
@@ -262,9 +262,9 @@ export class ResultadoCotacaoView {
     return s;
   }
 
-  /** "FULL" é o nome do Mercado Livre; na Amazon o mesmo campo marca o Prime. */
+  /** "FULL" é a entrega expressa do Mercado Livre. */
   protected entrega(a: Anuncio): string {
-    if (a.full) return a.fonte === 'Amazon' ? 'Prime' : 'FULL';
+    if (a.full) return 'FULL';
     return a.freteGratis ? 'Frete grátis' : 'Envio comum';
   }
 

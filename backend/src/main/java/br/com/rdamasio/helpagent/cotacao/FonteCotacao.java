@@ -18,7 +18,7 @@ public interface FonteCotacao {
     enum Grupo {
         /** Varejo especializado em TI (Kabum, Pichau, Terabyte) — nível 1 */
         VAREJO_TI,
-        /** Marketplaces com muitos vendedores (Amazon, Mercado Livre) — nível 2 */
+        /** Marketplace com muitos vendedores (Mercado Livre) — nível 2. A Amazon saiu da cotação em 30/09/2026. */
         MARKETPLACE,
         /** Loja do próprio fabricante (Dell, Lenovo) — nível 3 */
         FABRICANTE

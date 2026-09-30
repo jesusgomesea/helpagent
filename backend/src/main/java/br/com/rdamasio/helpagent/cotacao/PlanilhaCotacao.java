@@ -260,9 +260,9 @@ public class PlanilhaCotacao {
         return (v == Math.rint(v) ? String.valueOf((long) v) : String.valueOf(v)) + " pts";
     }
 
-    /** "FULL" é o nome do ML; na Amazon o mesmo campo marca o Prime. */
+    /** "FULL" é a entrega expressa do Mercado Livre. */
     private static String entrega(Anuncio a) {
-        if (a.full()) return "Amazon".equals(a.fonte()) ? "Prime" : "FULL";
+        if (a.full()) return "FULL";
         return a.freteGratis() ? "Frete grátis" : "Envio comum";
     }
 

@@ -87,7 +87,7 @@ nova busca. O preço é **referência**: confira na loja antes de comprar.
 | Nível | Lojas | Tempo típico |
 |---|---|---|
 | 1 · Varejo de TI (padrão) | Kabum, Pichau, Terabyte | ~20 s |
-| 2 · + Marketplaces | + Amazon, Mercado Livre | — |
+| 2 · + Marketplace | + Mercado Livre | — |
 | 3 · + Fabricantes | + Dell, Lenovo | 25–40 s |
 
 Também dá para marcar loja por loja.

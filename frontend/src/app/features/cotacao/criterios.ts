@@ -80,7 +80,7 @@ export const PESOS: { chave: ChavePeso; nome: string; classe: string; parcial: '
               <span class="ajuda">corta combos e acessórios parecidos</span>
             </label>
             <div class="cot-switches">
-              <label class="switch" title="FULL no Mercado Livre, Prime na Amazon"><input type="checkbox" formControlName="exigirFull"><span class="switch-ui"></span><span>Só com entrega FULL / Prime</span></label>
+              <label class="switch" title="Entrega FULL do Mercado Livre"><input type="checkbox" formControlName="exigirFull"><span class="switch-ui"></span><span>Só com entrega FULL</span></label>
               <label class="switch"><input type="checkbox" formControlName="aceitaRecondicionado"><span class="switch-ui"></span><span>Aceitar recondicionado</span></label>
               <label class="switch" title="Pichau, Dell e boa parte da Kabum não mostram nota na busca. Ligado: a reputação é a da loja (nota presumida 4,5). Desligado: descarta, como o piloto fazia.">
                 <input type="checkbox" formControlName="aceitarLojaPropriaSemNota"><span class="switch-ui"></span><span>Aceitar sem nota quando a própria loja vende</span>

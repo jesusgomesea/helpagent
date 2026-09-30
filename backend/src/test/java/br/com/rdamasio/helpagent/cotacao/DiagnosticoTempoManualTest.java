@@ -35,7 +35,7 @@ import br.com.rdamasio.helpagent.config.HelpAgentProperties;
 class DiagnosticoTempoManualTest {
 
     private static final List<FonteComScript> LOJAS = List.of(new FonteKabum(), new FontePichau(), new FonteTerabyte(),
-            new FonteAmazon(), new FonteMercadoLivre(), new FonteDell(), new FonteLenovo());
+            new FonteMercadoLivre(), new FonteDell(), new FonteLenovo());
     private static final Set<String> PESADOS = Set.of("image", "font", "media");
 
     /** Padrões bloqueados no modo 2: imagens, fontes, vídeo e rastreadores/anúncios conhecidos. */
@@ -169,7 +169,6 @@ class DiagnosticoTempoManualTest {
             case "kabum" -> "script#__NEXT_DATA__";
             case "pichau" -> "a[href]";
             case "terabyte" -> ".product-item";
-            case "amazon" -> "div[data-component-type='s-search-result']";
             case "mercadolivre" -> "li.ui-search-layout__item";
             case "dell" -> "[data-product-detail]";
             case "lenovo" -> ".product_item[data-product-code]";

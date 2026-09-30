@@ -82,7 +82,7 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 | `pdf` | Montagem do PDF com PDFBox (preenchimento, anexos, carimbo, página de erro) |
 | `armazenamento` | Onde os PDFs gerados ficam (hoje: disco local) |
 | `historico` | Consulta, download, exclusão, backup JSON (exportar/importar) |
-| `cotacao` | Cotação em 7 lojas online: Chrome via Playwright, uma `Fonte*` por loja, motor de ranking, planilha (§7); prints das páginas de produto para o orçamento por cotação (`PrintsCotacao`, §8) |
+| `cotacao` | Cotação em 6 lojas online: Chrome via Playwright, uma `Fonte*` por loja, motor de ranking, planilha (§7); prints das páginas de produto para o orçamento por cotação (`PrintsCotacao`, §8) |
 
 Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem PostgreSQL e sem login),
 `db/migration/` (Flyway), `prompts/extracao.txt`, `pdf-templates/*.pdf`, `cotacao/extrair-<loja>.js` (um por loja da cotação),
@@ -345,12 +345,16 @@ Começou como o piloto em Python de Suprimentos, só com o Mercado Livre (`legac
 **paridade provada por teste** e depois ampliado para 7 lojas. É funcionalidade à parte: não toca no orçamento
 nem no banco.
 
+**Amazon removida em 30/09/2026** (pedido do usuário): saíram `FonteAmazon` e `extrair-amazon.js`; hoje são **6 lojas**.
+Para voltar, os dois arquivos estão no histórico do git (commit anterior a esta remoção) e a receita "Acrescentar outra
+loja" abaixo vale. Os tempos medidos antes dessa data, nesta seção, são com as 7 lojas.
+
 ### Lojas e níveis de busca
 
 | Nível | Grupo | Lojas | Quando usar |
 |---|---|---|---|
 | 1 (padrão) | Varejo de TI | Kabum, Pichau, Terabyte | peças e periféricos; o melhor preço à vista costuma estar aqui |
-| 2 | + Marketplaces | Amazon, Mercado Livre | item que o varejo de TI não tem, ou para comparar |
+| 2 | + Marketplace | Mercado Livre | item que o varejo de TI não tem, ou para comparar |
 | 3 | + Fabricantes | Dell, Lenovo | notebooks, desktops, monitores dessas marcas |
 
 Os níveis estão em `CotacaoService.NIVEIS`; o grupo de cada loja, na própria classe (`FonteCotacao.Grupo`); a ordem
@@ -391,7 +395,6 @@ layout muda. Tudo que depende do site fica em `resources/cotacao/extrair-<loja>.
 | Kabum | `script#__NEXT_DATA__` → `props.pageProps.data.catalogServer.data` | `priceWithDiscount` (PIX) | `rating` se `ratingCount > 0` | KaBuM! ou parceiro (`flags.isMarketplace`) | caminho do JSON |
 | Pichau | tags `<script>self.__next_f.push(...)` → linha com `products.items` | `pichau_prices.avista` (PIX) | não tem | Pichau | formato do Next.js (ver armadilha abaixo) |
 | Terabyte | cartões `.product-item` e atributos `data-tss-*` | `data-tss-price` (Pix) | `.tss-rating-value` | Terabyte | nomes das classes |
-| Amazon | `div[data-component-type="s-search-result"][data-asin]` | `.a-price:not(.a-text-price)` | "x de 5 estrelas" | vários (desconhecido) | classes `a-*`; **`.a-text-price` sem strike é a parcela** |
 | Mercado Livre | cartões `li.ui-search-layout__item` (tabela abaixo) | preço do cartão | chips de avaliação | vários | layout muda com frequência |
 | Dell | atributo `data-product-detail` (JSON por cartão) | `dellPrice` | não tem | Dell | nome do atributo; título genérico + especificações do cartão |
 | Lenovo | cartões `.product_item[data-product-code]` | `.price-summary-info .price-title` | `.card-rating-container` | Lenovo | classes do preço |
@@ -406,7 +409,6 @@ sem estoque como `{titulo, indisponivel: true}`; o `FonteComScript` descarta ant
 | Kabum | `available === false` no JSON. **Não** usar `quantity`: vem 0 em quase todos, inclusive em produto da KaBuM! com `available` verdadeiro |
 | Pichau | `stock_status === "OUT_OF_STOCK"` |
 | Terabyte | `data-tss-estoque="0"` ou etiqueta `.esgotadoL` ("Esgotado") — a busca lista os esgotados junto (223 de 300 em "ssd 256gb") |
-| Amazon | texto "Indisponível"/"Atualmente indisponível" no cartão; cartão sem preço já saía antes |
 | Dell | `data-is-sold-out="True"` |
 | Lenovo | `data-adobe-params` com `marketingStatus` diferente de `"Available"` (ex.: `"Temporarily Unavailable"`) |
 | Mercado Livre | a busca não lista anúncio sem estoque; o script (cópia do piloto) não foi alterado |
@@ -440,8 +442,7 @@ dados acessíveis (`.andes-visually-hidden`) são escondidos por CSS, e `innerTe
   Playwright (`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`).
 - **Perfil persistente** em `backend/dados/navegador/` (fora do git, porque tem cookies). Se um site pedir
   verificação de conta, resolva à mão uma vez (ver diagnóstico abaixo) e as próximas passam.
-- **`vendidos = null` é "a página não informou", nunca zero.** Só o ML (às vezes) e a Amazon ("compras no mês
-  passado", aproximado) informam; o filtro de volume mínimo só vale quando o dado existe. Tratar como 0 derruba a
+- **`vendidos = null` é "a página não informou", nunca zero.** Só o ML informa (às vezes); o filtro de volume mínimo só vale quando o dado existe. Tratar como 0 derruba a
   lista inteira com o filtro padrão de 100.
 - **Loja própria sem nota não é eliminada** (`aceitarLojaPropriaSemNota`, ligado por padrão, com switch na tela).
   A regra do piloto ("vendedor sem avaliação pública" sai) foi feita para vendedor de marketplace e descartaria
@@ -462,7 +463,6 @@ dados acessíveis (`.andes-visually-hidden`) são escondidos por CSS, e `innerTe
 - **Paginação**: Terabyte e Dell usam só a 1ª página (a Terabyte já traz a lista inteira; o catálogo da Dell é
   pequeno). A Lenovo pede mais itens na mesma página (`rows`).
 - **Dell e Lenovo** só fazem sentido para produtos delas; para outros itens não devolvem nada, e isso vira aviso.
-- **Amazon**: o preço é o do cartão (sem desconto de PIX), e o vendedor não aparece na listagem.
 
 ### Desempenho da cotação: investigação em aberto (28/09/2026)
 
@@ -616,7 +616,7 @@ Revisão (/orcamento-cotacao): itens, prints,
 - **JPEG e página deitada:** 10 itens = 30 prints; em PNG o PDF passaria de 10 MB. No PDF, os prints entram em A4
   paisagem (`DadosImpresso.Anexo.paisagem`), o que deixa o texto da loja ~60% maior que em pé.
 - **Print anexado à mão** (`PUT /api/cotacao/prints/{id}/imagem`) ganha o mesmo carimbo com "print anexado à mão em…"
-  e fica como `MANUAL`. Serve quando a loja bloqueia o robô (Amazon, Mercado Livre) ou a página sai diferente.
+  e fica como `MANUAL`. Serve quando a loja bloqueia o robô (Mercado Livre) ou a página sai diferente.
 - **Reinício do backend:** o print é relido do disco; o que estava capturando vira falha ("o servidor reiniciou") e a
   tela oferece tirar de novo.
 - **Unitário editável:** começa no preço coletado. Se o atendente mudar, a revisão avisa, e o resumo do PDF continua
@@ -624,7 +624,7 @@ Revisão (/orcamento-cotacao): itens, prints,
 - **Banco (V5):** `orcamento.origem` (`DOCUMENTOS` | `COTACAO`) e, por linha, `fornecedor`, `url`, `coletado_em`.
   O backup JSON leva os campos novos (versão 3 continua: são opcionais e backups antigos importam como `DOCUMENTOS`).
 - **Lojas testadas:** Kabum, Pichau e Terabyte (29/09/2026, print com o preço à vista visível e igual ao coletado).
-  Amazon, Mercado Livre, Dell e Lenovo usam o mesmo código, sem ajuste por loja ainda: conferir com a captura real
+  Mercado Livre, Dell e Lenovo usam o mesmo código, sem ajuste por loja ainda: conferir com a captura real
   antes de liberar (é o próximo passo).
 
 ### Testes
