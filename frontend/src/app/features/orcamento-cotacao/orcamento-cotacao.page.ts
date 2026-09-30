@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -10,6 +10,7 @@ import { Avisos } from '../../core/avisos';
 import { dataLocalISO, fmtBRL, numeroOuNulo, parseBRL } from '../../core/dinheiro';
 import { Anexo, DICA_MODO, Loja, MODOS, ModoAquisicao, ROTULO_MODO, exigeChamado } from '../../core/modelos';
 import { ImagensApi, SrcApi } from '../../core/imagem-api';
+import { BuscaLoja } from '../../layout/busca-loja';
 import { Faixa } from '../../layout/faixa';
 import { CestaCotacao, ItemCesta, MAX_ITENS_CESTA, OpcaoCesta } from '../cotacao/cesta.store';
 import { CotacaoApi } from '../cotacao/cotacao.api';
@@ -23,7 +24,7 @@ import { CotacaoApi } from '../cotacao/cotacao.api';
  */
 @Component({
   selector: 'ha-orcamento-cotacao',
-  imports: [Faixa, FormsModule, RouterLink, CurrencyPipe, DatePipe, SrcApi],
+  imports: [Faixa, FormsModule, RouterLink, CurrencyPipe, DatePipe, SrcApi, BuscaLoja],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ha-faixa sobretitulo="Compras · Orçamento por cotação" titulo="Orçamento por cotação"
@@ -127,15 +128,7 @@ import { CotacaoApi } from '../cotacao/cotacao.api';
                 }
               </div>
             </div>
-            <div class="linha cols-2">
-              <label>Número da loja
-                <input [ngModel]="lojaNumero()" (ngModelChange)="aoDigitarNumero($event)" placeholder="ex: 23">
-              </label>
-              <label>Busca por nome
-                <input [ngModel]="lojaBusca()" (ngModelChange)="aoBuscarNome($event)" placeholder="ex: DAMASIO PE" list="dl-lojas-oc">
-                <datalist id="dl-lojas-oc">@for (l of lojas() ?? []; track l.numero) { <option [value]="l.nome"></option> }</datalist>
-              </label>
-            </div>
+            <ha-busca-loja [lojas]="lojas() ?? []" [(loja)]="loja" />
             @if (loja(); as l) {
               <div class="loja-tag">
                 <span class="loja-num">{{ l.numero }}</span>
@@ -204,6 +197,7 @@ import { CotacaoApi } from '../cotacao/cotacao.api';
             @if (cesta.falhas()) {
               <div class="status erro"><b>{{ cesta.falhas() }} print{{ cesta.falhas() > 1 ? 's' : '' }} não saiu.</b> Tire de novo, anexe o seu print ou tire o item da cesta.</div>
             }
+            <span class="ajuda atalho">atalho: <kbd>Ctrl</kbd> + <kbd>Enter</kbd> em qualquer campo</span>
             <button class="btn-primario" type="button" [disabled]="gerando() || !cesta.pronta()" (click)="gerar()">
               ↓ Gerar e guardar o orçamento
             </button>
@@ -241,8 +235,6 @@ export class OrcamentoCotacaoPage {
   protected readonly modo = signal<ModoAquisicao>('REQUISICAO');
   protected readonly exigeChamado = computed(() => exigeChamado(this.modo()));
   protected readonly loja = signal<Loja | null>(null);
-  protected readonly lojaNumero = signal('');
-  protected readonly lojaBusca = signal('');
   protected readonly titulo = signal('');
   protected readonly dataEmissao = signal(dataLocalISO());
   protected readonly validade = signal('');
@@ -337,24 +329,12 @@ export class OrcamentoCotacaoPage {
     this.chamados.update((l) => l.filter((x) => x.id !== c.id));
   }
 
-  /** "023" e "23" são a mesma loja (igual à revisão do fluxo por documentos). */
-  protected aoDigitarNumero(v: string): void {
-    this.lojaNumero.set(v);
-    const n = parseInt(v.trim(), 10);
-    const l = Number.isNaN(n) ? null : ((this.lojas() ?? []).find((x) => x.numero === n) ?? null);
-    this.loja.set(l);
-    if (l) this.lojaBusca.set(l.nome);
-  }
-
-  protected aoBuscarNome(v: string): void {
-    this.lojaBusca.set(v);
-    const termo = v.trim().toLowerCase();
-    if (termo.length < 2) return;
-    const l = (this.lojas() ?? []).find((x) => x.nome.toLowerCase().includes(termo));
-    if (l) {
-      this.loja.set(l);
-      this.lojaNumero.set(String(l.numero));
-    }
+  /** Ctrl+Enter em qualquer campo da tela gera, quando dá (mesmo atalho da revisão do fluxo por documentos). */
+  @HostListener('keydown.control.enter', ['$event'])
+  @HostListener('keydown.meta.enter', ['$event'])
+  protected atalhoGerar(ev: Event): void {
+    ev.preventDefault();
+    if (!this.gerando() && this.cesta.pronta()) this.gerar();
   }
 
   protected async gerar(): Promise<void> {
@@ -371,7 +351,7 @@ export class OrcamentoCotacaoPage {
         this.api.gerar(
           {
             modo: this.modo(),
-            lojaNumero: this.loja() ? String(this.loja()!.numero) : this.lojaNumero(),
+            lojaNumero: this.loja() ? String(this.loja()!.numero) : '',
             titulo: this.titulo(),
             dataEmissao: this.dataEmissao(),
             validade: this.validade() || null,

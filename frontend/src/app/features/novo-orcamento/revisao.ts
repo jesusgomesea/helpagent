@@ -15,6 +15,7 @@ import {
   Parametros,
   RespostaExtracao,
 } from '../../core/modelos';
+import { BuscaLoja } from '../../layout/busca-loja';
 import { OrcamentoStore } from './orcamento.store';
 
 type ItemForm = FormGroup<{
@@ -37,10 +38,12 @@ type ItemForm = FormGroup<{
  */
 @Component({
   selector: 'ha-revisao',
-  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe],
+  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, BuscaLoja],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <form [formGroup]="form" (ngSubmit)="enviar()">
+    <!-- Ctrl+Enter em qualquer campo gera o PDF (atalho de 30/09/2026) -->
+    <form [formGroup]="form" (ngSubmit)="enviar()"
+      (keydown.control.enter)="atalhoGerar($event)" (keydown.meta.enter)="atalhoGerar($event)">
       <section class="card">
         <header class="card-header">
           <span class="card-num">2</span>
@@ -71,15 +74,7 @@ type ItemForm = FormGroup<{
           }
 
           <h3 class="rotulo-secao">Identificação da loja</h3>
-          <div class="linha cols-2">
-            <label>Número da loja
-              <input formControlName="lojaNumero" placeholder="ex: 23" (input)="aoDigitarNumero()">
-            </label>
-            <label>Busca por nome
-              <input formControlName="lojaBusca" placeholder="ex: DAMASIO PE" list="dl-lojas" (input)="aoBuscarNome()">
-              <datalist id="dl-lojas">@for (l of lojas(); track l.numero) { <option [value]="l.nome"></option> }</datalist>
-            </label>
-          </div>
+          <ha-busca-loja [lojas]="lojas()" [(loja)]="loja" [sugestao]="sugestaoLoja()" />
           @if (loja(); as l) {
             <div class="loja-tag">
               <span class="loja-num">{{ l.numero }}</span>
@@ -162,6 +157,7 @@ type ItemForm = FormGroup<{
         </header>
         <div class="card-body">
           <button class="btn-primario" type="submit" [disabled]="gerando()">↓ Baixar orçamento em PDF</button>
+          <span class="ajuda atalho">ou <kbd>Ctrl</kbd> + <kbd>Enter</kbd> em qualquer campo</span>
           @if (erros().length) {
             <div class="status erro"><ul>@for (e of erros(); track $index) { <li>{{ e }}</li> }</ul></div>
           }
@@ -189,6 +185,8 @@ export class Revisao {
   readonly novo = output<void>();
 
   protected readonly loja = signal<Loja | null>(null);
+  /** O que a IA leu da loja quando não bateu com o cadastro — aparece no campo de busca para o atendente escolher. */
+  protected readonly sugestaoLoja = signal('');
   private readonly api = inject(Api);
   /** Orçamentos já gerados para o(s) chamado(s) do formulário. */
   protected readonly jaOrcados = signal<ItemHistorico[]>([]);
@@ -202,8 +200,6 @@ export class Revisao {
   protected readonly fmt = fmtBRL;
 
   protected readonly form = this.fb.group({
-    lojaNumero: '',
-    lojaBusca: '',
     titulo: '',
     dataEmissao: dataLocalISO(),
     validade: '',
@@ -273,10 +269,9 @@ export class Revisao {
       titulo: d.titulo ?? '',
       chamadoNum: d.chamado_num ?? '',
       observacoes: d.observacao ?? '',
-      lojaNumero: ex.loja ? String(ex.loja.numero) : (d.loja_num ?? ''),
-      lojaBusca: ex.loja?.nome ?? d.loja_nome ?? '',
     });
     this.loja.set(ex.loja);
+    this.sugestaoLoja.set(ex.loja ? '' : [d.loja_num, d.loja_nome].filter((x) => x?.trim()).join(' ').trim());
   }
 
   private novoItem(i: Partial<ItemExtraido> = {}, f?: FornecedorSugerido): ItemForm {
@@ -311,29 +306,17 @@ export class Revisao {
     this.itens.removeAt(i);
   }
 
-  /** "023" e "23" são a mesma loja. */
-  protected aoDigitarNumero(): void {
-    const n = parseInt(this.form.controls.lojaNumero.value.trim(), 10);
-    const l = Number.isNaN(n) ? null : (this.lojas().find((x) => x.numero === n) ?? null);
-    this.loja.set(l);
-    if (l) this.form.controls.lojaBusca.setValue(l.nome);
-  }
-
-  protected aoBuscarNome(): void {
-    const termo = this.form.controls.lojaBusca.value.trim().toLowerCase();
-    if (termo.length < 2) return;
-    const l = this.lojas().find((x) => x.nome.toLowerCase().includes(termo));
-    if (l) {
-      this.loja.set(l);
-      this.form.controls.lojaNumero.setValue(String(l.numero));
-    }
+  protected atalhoGerar(ev: Event): void {
+    ev.preventDefault();
+    if (!this.gerando()) this.enviar();
   }
 
   protected enviar(): void {
     const v = this.form.getRawValue();
     this.gerar.emit({
       modo: this.store.modo(),
-      lojaNumero: this.loja() ? String(this.loja()!.numero) : v.lojaNumero,
+      // sem loja escolhida o servidor responde "Selecione a loja"
+      lojaNumero: this.loja() ? String(this.loja()!.numero) : '',
       titulo: v.titulo,
       dataEmissao: v.dataEmissao,
       validade: v.validade || null,

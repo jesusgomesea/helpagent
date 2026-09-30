@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
@@ -52,7 +52,8 @@ const POR_PAGINA = 20;
       </header>
       <div class="card-body">
         <div class="hist-toolbar">
-          <input class="busca" #b placeholder="Buscar por loja, chamado, título..." [value]="termo()" (input)="buscar(b.value)">
+          <input class="busca" #b placeholder="Buscar por loja, chamado, título...  ( / )" [value]="termo()" (input)="buscar(b.value)"
+            title="Atalho: / em qualquer lugar da tela">
           <button class="btn-acao" [class.ativo]="painelAberto()" (click)="painelAberto.set(!painelAberto())"
             [attr.aria-expanded]="painelAberto()" title="Filtrar por período, loja, valor e origem">
             Filtros @if (filtrosAtivos()) { <span class="nav-contador">{{ filtrosAtivos() }}</span> }
@@ -213,6 +214,19 @@ export class HistoricoPage {
       if (this.filtrosAtivos()) this.painelAberto.set(true);
       this.carregar();
     });
+  }
+
+  private readonly campoBusca = viewChild<ElementRef<HTMLInputElement>>('b');
+
+  /** "/" fora de um campo leva à busca (atalho de 30/09/2026, o mesmo de muitos sistemas). */
+  @HostListener('document:keydown', ['$event'])
+  protected atalho(ev: KeyboardEvent): void {
+    const alvo = ev.target as HTMLElement | null;
+    const digitando = !!alvo && (alvo.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName));
+    if (ev.key === '/' && !digitando && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+      ev.preventDefault();
+      this.campoBusca()?.nativeElement.focus();
+    }
   }
 
   protected rotulo(a: Aba): string {

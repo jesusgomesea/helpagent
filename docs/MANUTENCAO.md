@@ -61,6 +61,11 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 
 - **Documentos ao lado do formulário** (`documentos.ts`): abas com os orçamentos e chamados, com imagem em
   "ajustar à largura"/"tamanho real" e PDF no visualizador do navegador.
+- **Busca rápida de loja e atalhos (30/09/2026)**: um campo só (`layout/busca-loja.ts`, usado nas duas revisões)
+  aceita número ("7", "023"), nome, cidade, razão social ou CNPJ (5+ dígitos), com lista de sugestões — ↑/↓ escolhe,
+  Enter confirma, Esc fecha. Número curto só procura número de loja (não acha "7" dentro de "TDMA-107"); só lojas
+  ativas. Quando a IA lê uma loja que não bate com o cadastro, o texto lido aparece no campo para o atendente
+  escolher. **Ctrl+Enter** em qualquer campo gera o PDF (as duas revisões); **/** no histórico vai para a busca.
 - **Chamado já orçado** (`ChamadosJaOrcados`): aviso com link para o PDF anterior, feito depois da leitura e
   quando o número é editado. A busca é por número inteiro, então "102107" não casa com "1021071".
 - **Válido até**: a IA só informa o que está escrito (`validade_ate` ou `validade_dias`) e o servidor faz a
@@ -117,7 +122,7 @@ Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem Post
 | Pasta | Conteúdo |
 |---|---|
 | `core/` | `api.ts` (todas as chamadas HTTP), `modelos.ts` (tipos da API), `recursos.ts` (o que o servidor oferece; esconde menu/rotas desligados), `configuracao.ts` + `interceptador-api.ts` (config.json, apiBase, X-Request-Id, token do portal), `imagem-api.ts` (imagens da API pelo HttpClient), `dinheiro.ts`, `arquivos.ts` (anexos, texto→imagem), `avisos.ts` (toasts e overlay), `marca.ts` (visual Damásio × TD) |
-| `layout/` | Cabeçalho, faixa de abertura, etapas, overlay de carregamento, toasts, ícones SVG |
+| `layout/` | Cabeçalho, faixa de abertura, etapas, overlay de carregamento, toasts, ícones SVG, `busca-loja.ts` (campo único de loja com sugestões) |
 | `features/novo-orcamento/` | Página principal: `orcamento.store.ts` (estado com signals), `composer.ts` (card 1), `revisao.ts` (cards 2 e 3) |
 | `features/historico/` | Lista, busca, download, backup JSON |
 | `features/lojas/` | Cadastro de lojas |

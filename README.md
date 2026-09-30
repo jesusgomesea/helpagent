@@ -103,6 +103,12 @@ A primeira cotação depois de subir o backend é mais lenta, porque o Chrome cr
 `backend/dados/navegador/`. Lojas, fontes dos dados, diagnóstico e como acrescentar uma loja:
 [docs/MANUTENCAO.md](docs/MANUTENCAO.md) §7.
 
+### Atalhos
+
+- **Loja**: um campo só — digite o número (`7`, `023`), o nome (`tdpi sul`), a cidade ou o CNPJ; ↑/↓ e Enter escolhem.
+- **Ctrl+Enter** em qualquer campo da revisão gera o PDF.
+- **/** no Histórico vai direto para a busca.
+
 ## Orçamento por cotação
 
 Monta o impresso a partir da cotação, com o print de cada opção para a validação:

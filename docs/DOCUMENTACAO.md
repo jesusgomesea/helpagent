@@ -58,7 +58,7 @@ a partir da cotação, com o print da página de cada opção para a validação
 
 | Funcionalidade | Tela | Resumo |
 |---|---|---|
-| **Novo orçamento** | `/` | anexar/colar chamado e orçamentos → leitura por IA → revisão ao lado dos documentos → PDF |
+| **Novo orçamento** | `/` | anexar/colar chamado e orçamentos → leitura por IA → revisão ao lado dos documentos → PDF (loja por número, nome ou CNPJ num campo só; Ctrl+Enter gera) |
 | **Tipos de requisição** | seletor na tela inicial | Requisição/Chamado (padrão), OPEX e CAPEX; muda a obrigatoriedade do chamado e a observação do impresso |
 | **Preenchimento manual** | `/` | sem IA (fora do ar, desligada ou por escolha) |
 | **Histórico** | `/historico` | todos os orçamentos gerados, abas por tipo, busca, filtros (período, loja, valor, origem), download do PDF, backup JSON |
@@ -134,7 +134,7 @@ helpagent_new/
 │  │  ├─ prompts/extracao.txt      prompt da leitura por IA
 │  │  ├─ pdf-templates/            TD.pdf, DAM.pdf, RDAM.pdf, CPL.pdf
 │  │  └─ cotacao/                  extrair-<loja>.js (um por loja), preparar-print.js, validar-print.js
-│  ├─ src/test/java/               65 testes (+4 manuais/condicionais)
+│  ├─ src/test/java/               84 testes (+4 manuais/condicionais)
 │  ├─ config/                      application-local.yml com a chave do Gemini — FORA do git
 │  ├─ dados/                       banco H2, PDFs, prints, logs, perfil do Chrome — FORA do git
 │  └─ Dockerfile · pom.xml · mvnw
@@ -322,7 +322,7 @@ cd backend && ./mvnw -q test
 cd frontend && npx ng build
 ```
 
-- **65 testes** no backend, entre eles:
+- **84 testes** no backend, entre eles:
   - política da cadeia de modelos e controle de cota (`ExtratorIaTest`, `ControleCotaIaTest`);
   - paridade do ranking com o piloto Python (`MotorCotacaoParidadeTest`);
   - PDF e planilha;
@@ -409,7 +409,8 @@ Tudo em [INTEGRACAO](INTEGRACAO.md).
 | 30/09/2026 | lixeira no histórico (30 dias para restaurar) | `47bbd4e` |
 | 30/09/2026 | filtros no histórico (período, loja, valor, origem) | `3b5b869` |
 | 30/09/2026 | fornecedores conhecidos (IA lê quem emitiu; cadastro cresce sozinho; filtro no histórico) | `91386f4` |
-| 30/09/2026 | qualidade da IA: aprender com as correções (`/swagger/qualidade-ia`) | ver `git log` |
+| 30/09/2026 | qualidade da IA: aprender com as correções (`/swagger/qualidade-ia`) | `f03fc0e` |
+| 30/09/2026 | busca rápida de loja e atalhos (Ctrl+Enter gera, / busca no histórico) | ver `git log` |
 
 Detalhe de cada uma: `git log`.
 
