@@ -94,18 +94,22 @@ export class Api {
       .pipe(map((r) => paraArquivo(r, 'orcamento.pdf')));
   }
 
-  /** @param modo aba do histórico; null = todos os tipos */
-  historico(busca: string, pagina = 0, modo: ModoAquisicao | null = null, tamanho = 20): Observable<Pagina<ItemHistorico>> {
+  /**
+   * @param modo    aba do histórico; null = todos os tipos
+   * @param lixeira true = aba "Lixeira" (o que foi apagado nos últimos 30 dias)
+   */
+  historico(busca: string, pagina = 0, modo: ModoAquisicao | null = null, tamanho = 20, lixeira = false): Observable<Pagina<ItemHistorico>> {
     let params = new HttpParams().set('pagina', pagina).set('tamanho', tamanho);
     if (busca.trim()) params = params.set('busca', busca.trim());
     if (modo) params = params.set('modo', modo);
+    if (lixeira) params = params.set('lixeira', true);
     return this.http.get<Pagina<ItemHistorico>>('/api/historico', { params });
   }
 
-  /** Quantos orçamentos de cada tipo batem com a busca: { TODOS, REQUISICAO, OPEX, CAPEX }. */
-  contagemHistorico(busca: string): Observable<Record<ModoAquisicao | 'TODOS', number>> {
+  /** Quantos orçamentos de cada aba batem com a busca: { TODOS, REQUISICAO, OPEX, CAPEX, LIXEIRA }. */
+  contagemHistorico(busca: string): Observable<Record<ModoAquisicao | 'TODOS' | 'LIXEIRA', number>> {
     const params = busca.trim() ? new HttpParams().set('busca', busca.trim()) : new HttpParams();
-    return this.http.get<Record<ModoAquisicao | 'TODOS', number>>('/api/historico/contagem', { params });
+    return this.http.get<Record<ModoAquisicao | 'TODOS' | 'LIXEIRA', number>>('/api/historico/contagem', { params });
   }
 
   baixar(id: number): Observable<ArquivoBaixado> {
@@ -128,8 +132,18 @@ export class Api {
     return this.http.post<ResultadoImportacao>('/api/historico/importar', form);
   }
 
+  /** "Apagar": manda para a lixeira (volta por 30 dias). */
   remover(id: number): Observable<void> {
     return this.http.delete<void>(`/api/historico/${id}`);
+  }
+
+  restaurar(id: number): Observable<void> {
+    return this.http.post<void>(`/api/historico/${id}/restaurar`, {});
+  }
+
+  /** Só para o que já está na lixeira: apaga o registro e o PDF de vez. */
+  excluirDeVez(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/historico/${id}/definitivo`);
   }
 }
 

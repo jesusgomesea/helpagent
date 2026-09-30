@@ -151,8 +151,9 @@ continua sendo o da loja escolhida.
 | POST | `/api/extracoes` (multipart: `modo`, `chamados[]`, `orcamentos[]`) | leitura por IA + avisos A2/C2 |
 | GET | `/api/uso-ia` | painel de uso do Gemini: situação de cada modelo da cadeia, totais do dia do Google, últimas chamadas |
 | POST | `/api/orcamentos` (multipart: `dados` JSON + arquivos) | valida (A1), gera e devolve o PDF, grava no histórico; itens com `prints` = orçamento por cotação |
-| GET/DELETE | `/api/historico?modo=&busca=&pagina=&tamanho=` · `/api/historico/{id}/pdf` | histórico central, filtrável por tipo |
-| GET | `/api/historico/contagem?busca=` | quantos de cada tipo (`REQUISICAO`, `OPEX`, `CAPEX`, `TODOS`), para as abas |
+| GET | `/api/historico?modo=&busca=&lixeira=&pagina=&tamanho=` · `/api/historico/{id}/pdf` | histórico central, filtrável por tipo; `lixeira=true` = aba Lixeira |
+| DELETE · POST · DELETE | `/api/historico/{id}` · `/{id}/restaurar` · `/{id}/definitivo` | manda para a lixeira · restaura · exclui de vez (só da lixeira) |
+| GET | `/api/historico/contagem?busca=` | quantos de cada aba (`REQUISICAO`, `OPEX`, `CAPEX`, `TODOS`, `LIXEIRA`) |
 | GET | `/api/historico/exportar` | backup JSON (versão 3) com todos os orçamentos, itens e PDFs em base64 |
 | POST | `/api/historico/importar` (multipart: `arquivo`) | adiciona um backup — deste sistema ou do HTML v3.5; repetidos (mesmo título + data) são ignorados |
 | GET | `/api/cotacao/estado` | `{ocupado, padrao, maxPaginas, lojas, niveis}`: fila, critérios padrão, lojas e níveis de busca |

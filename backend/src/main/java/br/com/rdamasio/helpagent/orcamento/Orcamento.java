@@ -22,7 +22,10 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
-/** Um impresso gerado. É o registro do histórico — substitui o IndexedDB local da v3.5. */
+/**
+ * Um impresso gerado. É o registro do histórico — substitui o IndexedDB local da v3.5.
+ * {@code excluidoEm} preenchido = está na lixeira (V8): some do histórico, mas pode voltar por 30 dias.
+ */
 @Entity
 @Table(name = "orcamento")
 public class Orcamento {
@@ -89,6 +92,13 @@ public class Orcamento {
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
+    /** Na lixeira desde (null = ativo). */
+    @Column(name = "excluido_em")
+    private Instant excluidoEm;
+
+    @Column(name = "excluido_por", length = 120)
+    private String excluidoPor;
+
     @OneToMany(mappedBy = "orcamento", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordem")
     private List<OrcamentoItem> itens = new ArrayList<>();
@@ -128,6 +138,20 @@ public class Orcamento {
         this.origem = origem == null ? OrigemOrcamento.DOCUMENTOS : origem;
     }
 
+    public void mandarParaLixeira(String quem, Instant quando) {
+        this.excluidoEm = quando;
+        this.excluidoPor = quem;
+    }
+
+    public void restaurar() {
+        this.excluidoEm = null;
+        this.excluidoPor = null;
+    }
+
+    public boolean naLixeira() {
+        return excluidoEm != null;
+    }
+
     public void registrarPdf(String nomeArquivo, String pdfRef) {
         this.nomeArquivo = nomeArquivo;
         this.pdfRef = pdfRef;
@@ -153,4 +177,6 @@ public class Orcamento {
     public String getCriadoPor() { return criadoPor; }
     public Instant getCriadoEm() { return criadoEm; }
     public List<OrcamentoItem> getItens() { return itens; }
+    public Instant getExcluidoEm() { return excluidoEm; }
+    public String getExcluidoPor() { return excluidoPor; }
 }

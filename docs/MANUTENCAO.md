@@ -43,7 +43,13 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
   `REQUISICAO`. O backup de antes está em `backend/dados/backups/historico-antes-dos-3-tipos-2026-09-28.json`.
   Backup em formato **versão 2** (exportado antes disso) com "OPEX" também é importado como `REQUISICAO`.
 - **Tela de histórico:** abas por tipo com contagem (que respeita a busca) e paginação de 20 em 20. A aba, a
-  página e a busca ficam na URL (`/historico?tipo=CAPEX&pagina=2`).
+  página e a busca ficam na URL (`/historico?tipo=CAPEX&pagina=2`). A consulta é uma `Specification`
+  (`historico/FiltroHistorico`), não JPQL fixo: cada filtro é opcional, e a listagem e as contagens usam o mesmo.
+- **Lixeira (desde 30/09/2026, V8):** "apagar" preenche `orcamento.excluido_em/excluido_por` em vez de apagar. O
+  orçamento some das abas, do aviso de chamado já orçado e do backup, e aparece na aba **Lixeira**
+  (`?tipo=LIXEIRA`), de onde é restaurado (`POST /{id}/restaurar`) ou excluído de vez (`DELETE /{id}/definitivo`,
+  só para o que já está na lixeira). Passados 30 dias, `LixeiraHistorico` apaga registro e PDF — na subida e sempre
+  que a lixeira é aberta (não há agendador). Cada movimento vai para o log com o IP/usuário.
 
 ### Recursos da revisão
 
@@ -82,7 +88,7 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 | `orcamento` | Entidades, cálculo, validação A1 e o serviço que gera o impresso |
 | `pdf` | Montagem do PDF com PDFBox (preenchimento, anexos, carimbo, página de erro) |
 | `armazenamento` | Onde os PDFs gerados ficam (hoje: disco local) |
-| `historico` | Consulta, download, exclusão, backup JSON (exportar/importar) |
+| `historico` | Consulta (`FiltroHistorico`), download, lixeira (`LixeiraHistorico`), backup JSON (exportar/importar) |
 | `cotacao` | Cotação em 6 lojas online: Chrome via Playwright, uma `Fonte*` por loja, motor de ranking, planilha (§7); prints das páginas de produto para o orçamento por cotação (`PrintsCotacao`, §8) |
 
 Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem PostgreSQL e sem login),

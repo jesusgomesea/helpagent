@@ -140,6 +140,9 @@ export interface ItemHistorico {
   criadoPor: string;
   /** COTACAO = montado pela cotação em lojas online (com os prints); DOCUMENTOS = fluxo de sempre. */
   origem: OrigemOrcamento;
+  /** Só na lixeira: quando foi apagado e por quem (IP, ou o usuário quando houver login). */
+  excluidoEm: string | null;
+  excluidoPor: string | null;
 }
 
 export type OrigemOrcamento = 'DOCUMENTOS' | 'COTACAO';

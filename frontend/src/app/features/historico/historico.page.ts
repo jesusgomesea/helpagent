@@ -1,14 +1,15 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { Api, mensagensDeErro, salvarArquivo } from '../../core/api';
 import { Avisos } from '../../core/avisos';
 import { ItemHistorico, MODOS, ModoAquisicao, ROTULO_MODO, ResultadoImportacao } from '../../core/modelos';
 import { Faixa } from '../../layout/faixa';
 import { Icone } from '../../layout/icone';
 
-type Aba = ModoAquisicao | 'TODOS';
+/** Abas: todos, um por tipo e a lixeira (o que foi apagado nos últimos 30 dias). */
+type Aba = ModoAquisicao | 'TODOS' | 'LIXEIRA';
 
 const POR_PAGINA = 20;
 
@@ -18,6 +19,9 @@ const POR_PAGINA = 20;
  *
  * A aba e a página ficam na URL (/historico?tipo=OPEX&pagina=2): dá para mandar o link e o "voltar" do
  * navegador funciona. A busca vale para todas as abas, e os números das abas acompanham o que foi buscado.
+ *
+ * Apagar manda para a aba Lixeira (30/09/2026): de lá o orçamento é restaurado ou excluído de vez; passados
+ * 30 dias, o servidor apaga sozinho (LixeiraHistorico).
  */
 @Component({
   selector: 'ha-historico',
@@ -47,11 +51,17 @@ const POR_PAGINA = 20;
 
         <div class="abas-tipo" role="tablist" aria-label="Tipo de requisição">
           @for (a of abas; track a) {
-            <button role="tab" [attr.aria-selected]="aba() === a" [class.ativo]="aba() === a" (click)="irPara(a, 0)">
+            <button role="tab" [attr.aria-selected]="aba() === a" [class.ativo]="aba() === a" [class.aba-lixeira]="a === 'LIXEIRA'"
+              (click)="irPara(a, 0)">
+              @if (a === 'LIXEIRA') { <ha-icone nome="fechar" [tamanho]="13" /> }
               {{ rotulo(a) }} <span class="contagem">{{ contagem()[a] ?? 0 }}</span>
             </button>
           }
         </div>
+        @if (naLixeira()) {
+          <div class="status alerta">Apagados nos últimos 30 dias. Restaure o que foi por engano; depois de 30 dias o
+            orçamento e o PDF são excluídos de vez.</div>
+        }
 
         @if (resultado(); as r) {
           <div class="status" [class.ok]="!r.problemas.length" [class.erro]="r.problemas.length">
@@ -73,16 +83,25 @@ const POR_PAGINA = 20;
                   @if (r.origem === 'COTACAO') { <span class="selo-tipo selo-COTACAO" title="Montado pela cotação em lojas online, com os prints anexados">por cotação</span> }
                   Loja {{ r.lojaNumero }} · {{ r.lojaNome }} · Chamado {{ r.chamadoNum || '—' }}@if (r.criadoPor !== 'anonimo') { · por {{ r.criadoPor }} }
                 </div>
+                @if (r.excluidoEm) {
+                  <div class="hist-meta hist-excluido">Apagado em {{ r.excluidoEm | date: 'dd/MM/yyyy HH:mm' }} por {{ r.excluidoPor }}</div>
+                }
               </div>
               <div class="hist-total">{{ r.total | currency: 'BRL' }}</div>
               <div class="hist-acoes">
                 <button (click)="baixar(r)" title="Baixar PDF novamente" aria-label="Baixar PDF"><ha-icone nome="baixar" [tamanho]="16" /></button>
-                <button class="perigo" (click)="remover(r)" title="Apagar" aria-label="Apagar"><ha-icone nome="fechar" [tamanho]="16" /></button>
+                @if (r.excluidoEm) {
+                  <button (click)="restaurar(r)" title="Restaurar para o histórico" aria-label="Restaurar"><ha-icone nome="historico" [tamanho]="16" /></button>
+                  <button class="perigo" (click)="excluirDeVez(r)" title="Excluir de vez (orçamento e PDF)" aria-label="Excluir de vez"><ha-icone nome="fechar" [tamanho]="16" /></button>
+                } @else {
+                  <button class="perigo" (click)="remover(r)" title="Mandar para a lixeira" aria-label="Apagar"><ha-icone nome="fechar" [tamanho]="16" /></button>
+                }
               </div>
             </div>
           } @empty {
             <div class="hist-vazio">
               {{ termo() ? 'Nenhum resultado para "' + termo() + '"' + (aba() !== 'TODOS' ? ' em ' + rotulo(aba()) : '') + '.'
+                : naLixeira() ? 'A lixeira está vazia.'
                 : aba() === 'TODOS' ? 'Nenhum orçamento gerado ainda.' : 'Nenhum orçamento de ' + rotulo(aba()) + ' ainda.' }}
             </div>
           }
@@ -106,7 +125,7 @@ export class HistoricoPage {
   private readonly router = inject(Router);
   private readonly rota = inject(ActivatedRoute);
 
-  protected readonly abas: Aba[] = ['TODOS', ...MODOS];
+  protected readonly abas: Aba[] = ['TODOS', ...MODOS, 'LIXEIRA'];
 
   protected readonly itens = signal<ItemHistorico[]>([]);
   protected readonly contagem = signal<Partial<Record<Aba, number>>>({});
@@ -120,6 +139,7 @@ export class HistoricoPage {
   protected readonly resultado = signal<ResultadoImportacao | null>(null);
   private atraso?: ReturnType<typeof setTimeout>;
 
+  protected readonly naLixeira = computed(() => this.aba() === 'LIXEIRA');
   protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.totalAba() / POR_PAGINA)));
   protected readonly primeiro = computed(() => (this.totalAba() ? this.pagina() * POR_PAGINA + 1 : 0));
   protected readonly ultimo = computed(() => Math.min(this.totalAba(), (this.pagina() + 1) * POR_PAGINA));
@@ -136,7 +156,7 @@ export class HistoricoPage {
   }
 
   protected rotulo(a: Aba): string {
-    return a === 'TODOS' ? 'Todos' : ROTULO_MODO[a];
+    return a === 'TODOS' ? 'Todos' : a === 'LIXEIRA' ? 'Lixeira' : ROTULO_MODO[a];
   }
 
   /** Muda aba/página pela URL (o carregamento acontece na assinatura do construtor). */
@@ -163,7 +183,8 @@ export class HistoricoPage {
     try {
       const aba = this.aba();
       const [p, c] = await Promise.all([
-        firstValueFrom(this.api.historico(this.termo(), this.pagina(), aba === 'TODOS' ? null : aba, POR_PAGINA)),
+        firstValueFrom(this.api.historico(this.termo(), this.pagina(), aba === 'TODOS' || aba === 'LIXEIRA' ? null : aba,
+          POR_PAGINA, aba === 'LIXEIRA')),
         firstValueFrom(this.api.contagemHistorico(this.termo())),
       ]);
       this.itens.set(p.itens);
@@ -218,9 +239,26 @@ export class HistoricoPage {
   }
 
   protected async remover(r: ItemHistorico): Promise<void> {
-    if (!confirm(`Apagar "${r.titulo}" do histórico?`)) return;
-    await firstValueFrom(this.api.remover(r.id));
-    this.avisos.toast('Removido do histórico');
-    this.carregar();
+    if (!confirm(`Mandar "${r.titulo}" para a lixeira? Dá para restaurar por 30 dias.`)) return;
+    await this.acao(this.api.remover(r.id), 'Enviado para a lixeira');
+  }
+
+  protected async restaurar(r: ItemHistorico): Promise<void> {
+    await this.acao(this.api.restaurar(r.id), 'Restaurado para o histórico');
+  }
+
+  protected async excluirDeVez(r: ItemHistorico): Promise<void> {
+    if (!confirm(`Excluir "${r.titulo}" DE VEZ? O orçamento e o PDF somem e não há como recuperar.`)) return;
+    await this.acao(this.api.excluirDeVez(r.id), 'Excluído de vez');
+  }
+
+  private async acao(chamada: Observable<void>, mensagem: string): Promise<void> {
+    try {
+      await firstValueFrom(chamada);
+      this.avisos.toast(mensagem);
+      await this.carregar();
+    } catch (e) {
+      this.avisos.toast((await mensagensDeErro(e)).join(' '), '⚠');
+    }
   }
 }

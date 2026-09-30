@@ -61,7 +61,8 @@ a partir da cotação, com o print da página de cada opção para a validação
 | **Novo orçamento** | `/` | anexar/colar chamado e orçamentos → leitura por IA → revisão ao lado dos documentos → PDF |
 | **Tipos de requisição** | seletor na tela inicial | Requisição/Chamado (padrão), OPEX e CAPEX; muda a obrigatoriedade do chamado e a observação do impresso |
 | **Preenchimento manual** | `/` | sem IA (fora do ar, desligada ou por escolha) |
-| **Histórico** | `/historico` | todos os orçamentos gerados, abas por tipo, busca, download do PDF, exclusão, backup JSON |
+| **Histórico** | `/historico` | todos os orçamentos gerados, abas por tipo, busca, download do PDF, backup JSON |
+| **Lixeira** | `/historico?tipo=LIXEIRA` | o que foi apagado nos últimos 30 dias: restaurar ou excluir de vez |
 | **Lojas** | `/lojas` | cadastro de lojas (número, nome, CNPJ, empresa do impresso, template, razão social, IE, cidade/UF) |
 | **Cotação** | `/cotacao` | busca o item em 6 lojas, ranking por critérios ajustáveis, melhor de cada loja, planilha `.xlsx` |
 | **Orçamento por cotação** | `/orcamento-cotacao` | os itens escolhidos na cotação viram o impresso, com 3 prints por item e um resumo da cotação |
@@ -161,7 +162,7 @@ Schema só por **migration Flyway** (`ddl-auto: validate`), em SQL portável (Po
 | Tabela | Conteúdo |
 |---|---|
 | `loja` | número (chave de negócio, fixo), nome, CNPJ, empresa impressa, template, ativa, razão social, IE, cidade, UF |
-| `orcamento` | tipo (`REQUISICAO`/`OPEX`/`CAPEX`), origem (`DOCUMENTOS`/`COTACAO`), loja, título, datas, chamado, totais, observação, responsáveis, PDF, quem/quando |
+| `orcamento` | tipo (`REQUISICAO`/`OPEX`/`CAPEX`), origem (`DOCUMENTOS`/`COTACAO`), loja, título, datas, chamado, totais, observação, responsáveis, PDF, quem/quando; `excluido_em`/`excluido_por` = na lixeira |
 | `orcamento_item` | linhas do impresso; nas vindas da cotação, também loja fornecedora, URL e momento do print |
 | `uso_ia` | uma linha por requisição ao Gemini: modelo, degrau, papel, resultado, tokens, tempo, IP (90 dias) |
 
@@ -174,8 +175,10 @@ Schema só por **migration Flyway** (`ddl-auto: validate`), em SQL portável (Po
 | V5 | orçamento por cotação (origem e dados da loja fornecedora por linha) |
 | V6 | cadastro completo das lojas (planilha do grupo, 54 lojas; 14 novas) |
 | V7 | tabela `uso_ia` |
+| V8 | lixeira do histórico (`excluido_em`, `excluido_por`) |
 
-Loja não se apaga (só desativa): os orçamentos antigos apontam para ela. Migration aplicada não se edita.
+Loja não se apaga (só desativa): os orçamentos antigos apontam para ela. Orçamento apagado vai para a lixeira e
+só some de vez depois de 30 dias (ou por "excluir de vez" na própria lixeira). Migration aplicada não se edita.
 
 ## 6. Regras de negócio
 
@@ -244,7 +247,8 @@ Tudo sob `/api`. Contrato completo e sempre atual em **`/v3/api-docs`** e **`/sw
 | Lojas | `GET/POST /api/lojas`, `GET/PUT /api/lojas/{numero}`, `PATCH /api/lojas/{numero}/ativa` |
 | Leitura por IA | `POST /api/extracoes` (multipart) |
 | Orçamento | `POST /api/orcamentos` (multipart: dados + arquivos) → PDF |
-| Histórico | `GET /api/historico`, `/contagem`, `/por-chamado`, `/{id}/pdf`, `DELETE /{id}`, `/exportar`, `/importar` |
+| Histórico | `GET /api/historico` (`lixeira=true` = aba Lixeira), `/contagem`, `/por-chamado`, `/{id}/pdf`, `/exportar`, `/importar` |
+| Lixeira | `DELETE /api/historico/{id}` (manda para a lixeira), `POST /{id}/restaurar`, `DELETE /{id}/definitivo` |
 | Cotação | `GET /api/cotacao/estado`, `POST /api/cotacao`, `/{id}/reavaliar`, `/{id}/planilha`, `/{id}/prints`, `/prints…` |
 | Parâmetros | `GET /api/parametros` (padrões do formulário, ambiente, recursos ligados) |
 | Uso da IA | `GET /api/uso-ia` |
@@ -329,7 +333,7 @@ cd frontend && npx ng build
 - **Métricas:** `/actuator/prometheus` quando exposto (`helpagent_ia_requisicoes_total`, `_tokens_total`,
   `_duracao_seconds`, `_cota_dia_usada`/`_limite`).
 - **Uso da IA:** `/swagger/uso-ia`.
-- **Backup:** Histórico → *Exportar JSON* (orçamentos, itens e PDFs); *Importar JSON* aceita também o backup do
+- **Backup:** Histórico → *Exportar JSON* (orçamentos, itens e PDFs; a lixeira não entra); *Importar JSON* aceita também o backup do
   HTML v3.5. Fazer antes de atualizar a versão ou trocar de banco.
 - **Diagnóstico de lentidão:** IA em [MANUTENCAO](MANUTENCAO.md) §4; cotação em §7 ("Diagnóstico").
 
@@ -390,6 +394,8 @@ Tudo em [INTEGRACAO](INTEGRACAO.md).
 | 29/09/2026 | integração: limitações e pendências documentadas | `cb8e969` |
 | 30/09/2026 | Uso da IA sai do menu: painel técnico em `/swagger/uso-ia` | `47aa9ac` |
 | 30/09/2026 | Amazon removida da cotação | `e0d69cd` |
+| 30/09/2026 | documentação geral centralizada | `9ca4433` |
+| 30/09/2026 | lixeira no histórico (30 dias para restaurar) | ver `git log` |
 
 Detalhe de cada uma: `git log`.
 
