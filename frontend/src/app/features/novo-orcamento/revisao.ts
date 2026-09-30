@@ -1,8 +1,14 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Avisos } from '../../core/avisos';
+import { ImagensApi } from '../../core/imagem-api';
+import { Recursos } from '../../core/recursos';
+import { BuscaCotacao, EscolhaCotacao } from '../cotacao/busca-cotacao';
+import { OpcaoCesta, alternativasPara, produtoDoTermo } from '../cotacao/cesta.store';
+import { LinhasCotadas } from './linhas-cotadas.store';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { catchError, debounceTime, distinctUntilChanged, firstValueFrom, of, switchMap } from 'rxjs';
-import { Api, salvarArquivo } from '../../core/api';
+import { Api, mensagensDeErro, salvarArquivo } from '../../core/api';
 import { FormArray, FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { dataLocalISO, fmtBRL, numeroOuNulo, parseBRL } from '../../core/dinheiro';
 import {
@@ -28,6 +34,8 @@ type ItemForm = FormGroup<{
   fornecedorCnpj: FormControl<string>;
   /** Como a IA leu: vai junto para o servidor aprender o apelido. */
   fornecedorLido: FormControl<string>;
+  /** Linha "adicionada por cotação": chave em {@link LinhasCotadas} (vazio = linha comum). */
+  cotacao: FormControl<string>;
 }>;
 
 /**
@@ -35,10 +43,15 @@ type ItemForm = FormGroup<{
  *
  * Fornecedor por linha (30/09/2026): a IA lê quem emitiu cada orçamento; se o sistema reconhece um fornecedor do
  * cadastro, o campo já vem com o nome padronizado ("cadastrado"); se não, com o nome lido ("novo — será cadastrado").
+ *
+ * Orçamento misto (30/09/2026): "Adicionar item" tem duas opções — manualmente, ou por cotação, que abre o painel
+ * lateral com a busca da tela Cotação ({@link BuscaCotacao}). O anúncio escolhido vira uma linha do impresso (preço,
+ * loja como fornecedor) e o servidor fotografa ele e mais 2 opções; o PDF continua único, com o resumo e os prints
+ * das linhas cotadas antes do orçamento original do prestador. Só gera com todos os prints prontos.
  */
 @Component({
   selector: 'ha-revisao',
-  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, BuscaLoja],
+  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, BuscaLoja, BuscaCotacao],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Ctrl+Enter em qualquer campo gera o PDF (atalho de 30/09/2026) -->
@@ -117,15 +130,47 @@ type ItemForm = FormGroup<{
                 <input formControlName="unit" placeholder="0,00">
                 <input [value]="totaisLinha()[i] ? fmt(totaisLinha()[i]) : ''" readonly placeholder="0,00">
                 <button type="button" class="btn-rm" (click)="removerItem(i)" title="Remover">×</button>
-                <div class="item-fornecedor">
-                  <input formControlName="fornecedor" placeholder="Fornecedor (quem emitiu o orçamento)" list="dl-fornecedores">
-                  @if (situacaoFornecedor(i); as s) { <span class="selo-fornecedor" [class.novo]="s === 'novo'">{{ s === 'novo' ? 'novo — será cadastrado' : 'cadastrado' }}</span> }
-                </div>
+                @if (g.controls.cotacao.value; as chave) {
+                  <!-- linha adicionada por cotação: fornecedor = loja do preço; os prints vão anexados ao PDF -->
+                  <div class="item-fornecedor item-cotado">
+                    <span class="selo-fornecedor cotado">cotado · {{ opcoesDe(chave)[0]?.fonte }}</span>
+                    @for (o of opcoesDe(chave); track o.printId; let j = $index) {
+                      <span class="print-chip" [class.escolhida]="j === 0" [class.falhou]="o.situacao === 'FALHOU'"
+                        [class.alerta]="o.situacao === 'PRONTO' && !!o.alerta" [title]="o.motivo || o.alerta || o.titulo">
+                        {{ j === 0 ? 'escolhida' : 'opção ' + (j + 1) }} · {{ o.fonte }}
+                        @switch (o.situacao) {
+                          @case ('CAPTURANDO') { <span class="oc-girando"></span> }
+                          @case ('FALHOU') { <b>✕ não saiu</b> }
+                          @default { <button type="button" class="btn-link" (click)="verPrint(o)">{{ o.alerta ? '⚠ conferir' : 'ver print' }}</button> }
+                        }
+                        @if (o.situacao === 'FALHOU' || (o.situacao === 'PRONTO' && o.alerta)) {
+                          <button type="button" class="btn-link" (click)="recapturar(o)">tirar de novo</button>
+                          <label class="btn-link oc-anexar">anexar print
+                            <input type="file" accept="image/png,image/jpeg" (change)="anexarPrint(o, $event)" hidden>
+                          </label>
+                        }
+                      </span>
+                    }
+                    @if (opcoesDe(chave)[0]?.url; as url) { <a class="link-loja" [href]="url" target="_blank" rel="noopener">ver na loja</a> }
+                  </div>
+                } @else {
+                  <div class="item-fornecedor">
+                    <input formControlName="fornecedor" placeholder="Fornecedor (quem emitiu o orçamento)" list="dl-fornecedores">
+                    @if (situacaoFornecedor(i); as s) { <span class="selo-fornecedor" [class.novo]="s === 'novo'">{{ s === 'novo' ? 'novo — será cadastrado' : 'cadastrado' }}</span> }
+                  </div>
+                }
               </div>
             }
           </div>
           <datalist id="dl-fornecedores">@for (f of fornecedores(); track f.id) { <option [value]="f.nome"></option> }</datalist>
-          <button type="button" class="btn-add" [disabled]="itens.length >= maxItens()" (click)="adicionarItem()">+ Adicionar item</button>
+          <div class="add-itens">
+            <button type="button" class="btn-add" [disabled]="cheio()" (click)="adicionarItem()">+ Adicionar manualmente</button>
+            @if (recursos.cotacao()) {
+              <button type="button" class="btn-add" [disabled]="cheio()" (click)="abrirCotacao()"
+                title="Busca o item nas lojas online; o escolhido vira uma linha e os prints vão anexados ao PDF">🔍 Adicionar por cotação</button>
+            }
+            @if (cheio()) { <span class="ajuda">o impresso tem {{ maxItens() }} linhas</span> }
+          </div>
 
           <div class="totais">
             <label>Subtotal <input formControlName="subtotal" placeholder="em branco"></label>
@@ -156,7 +201,16 @@ type ItemForm = FormGroup<{
           <span class="card-sub">exportar orçamento preenchido</span>
         </header>
         <div class="card-body">
-          <button class="btn-primario" type="submit" [disabled]="gerando()">↓ Baixar orçamento em PDF</button>
+          @if (cotadas.capturando()) {
+            <div class="status alerta"><b>Aguarde os prints da cotação:</b> {{ cotadas.capturando() }} ainda sendo tirado{{ cotadas.capturando() > 1 ? 's' : '' }} (≈15 s por item).</div>
+          }
+          @if (cotadas.alertas()) {
+            <div class="status alerta"><b>{{ cotadas.alertas() }} print{{ cotadas.alertas() > 1 ? 's' : '' }} para conferir:</b> a conferência automática não achou o preço visível. Abra ("⚠ conferir"); se estiver certo, pode gerar.</div>
+          }
+          @if (cotadas.falhas()) {
+            <div class="status erro"><b>{{ cotadas.falhas() }} print{{ cotadas.falhas() > 1 ? 's' : '' }} não saiu.</b> Tire de novo, anexe o seu ou remova a linha.</div>
+          }
+          <button class="btn-primario" type="submit" [disabled]="gerando() || !printsProntos()">↓ Baixar orçamento em PDF</button>
           <span class="ajuda atalho">ou <kbd>Ctrl</kbd> + <kbd>Enter</kbd> em qualquer campo</span>
           @if (erros().length) {
             <div class="status erro"><ul>@for (e of erros(); track $index) { <li>{{ e }}</li> }</ul></div>
@@ -168,10 +222,34 @@ type ItemForm = FormGroup<{
         </div>
       </section>
     </form>
+
+    <!-- Painel "Adicionar por cotação": criado na primeira vez e mantido (a última busca continua lá ao reabrir). -->
+    @if (gavetaUsada()) {
+      <div class="gaveta-fundo" [class.aberta]="gaveta()" (click)="fecharCotacao()"></div>
+      <aside class="gaveta-cotacao" [class.aberta]="gaveta()" role="dialog" aria-label="Adicionar item por cotação"
+        [attr.aria-hidden]="!gaveta()" (keydown.escape)="fecharCotacao()">
+        <header class="gaveta-cab">
+          <div>
+            <div class="sobretitulo">Novo orçamento · item {{ qtdItens() + 1 }} de até {{ maxItens() }}</div>
+            <h2>Adicionar por cotação</h2>
+            <p>Busque o item que o prestador não incluiu. O escolhido vira uma linha do impresso e os prints (dele e de mais
+              2 opções) vão anexados ao PDF, antes do orçamento original.</p>
+          </div>
+          <button type="button" class="btn-rm" (click)="fecharCotacao()" title="Fechar (Esc)">×</button>
+        </header>
+        <div class="gaveta-corpo">
+          <ha-busca-cotacao [sugestoes]="false" [escolhidas]="cotadas.urls()" [cheia]="cheio()" (escolher)="escolherCotacao($event)" />
+        </div>
+      </aside>
+    }
   `,
 })
 export class Revisao {
   protected readonly store = inject(OrcamentoStore);
+  protected readonly cotadas = inject(LinhasCotadas);
+  protected readonly recursos = inject(Recursos);
+  private readonly avisos = inject(Avisos);
+  private readonly imagens = inject(ImagensApi);
   private readonly fb = inject(NonNullableFormBuilder);
 
   readonly lojas = input.required<Loja[]>();
@@ -198,6 +276,9 @@ export class Revisao {
     initialValue: [] as Fornecedor[],
   });
   protected readonly fmt = fmtBRL;
+  /** Painel "Adicionar por cotação" aberto; {@link gavetaUsada} = já foi aberto uma vez (mantém a busca). */
+  protected readonly gaveta = signal(false);
+  protected readonly gavetaUsada = signal(false);
 
   protected readonly form = this.fb.group({
     titulo: '',
@@ -222,6 +303,11 @@ export class Revisao {
   protected readonly totaisLinha = computed(() =>
     (this.valor().itens ?? []).map((i) => (parseFloat(i?.qtd ?? '') || 0) * parseBRL(i?.unit ?? '')),
   );
+
+  protected readonly qtdItens = computed(() => this.valor().itens?.length ?? 0);
+  protected readonly cheio = computed(() => this.qtdItens() >= this.maxItens());
+  /** Sem print sendo tirado nem com falha: o servidor recusaria o PDF sem eles. */
+  protected readonly printsProntos = computed(() => !this.cotadas.capturando() && !this.cotadas.falhas());
 
   protected readonly totalGeral = computed(
     () => this.totaisLinha().reduce((a, b) => a + b, 0) + parseBRL(this.valor().frete) + parseBRL(this.valor().acrescimos),
@@ -251,6 +337,7 @@ export class Revisao {
   private preencher(ex: RespostaExtracao): void {
     const d = ex.dados;
     this.itens.clear({ emitEvent: false });
+    this.cotadas.limpar(); // leitura nova recomeça a lista de itens, cotados inclusive
     const itens = d.itens.slice(0, this.maxItens());
     (itens.length ? itens : [{} as ItemExtraido]).forEach((i, n) =>
       this.itens.push(this.novoItem(i, ex.fornecedores?.[n]), { emitEvent: false }),
@@ -274,7 +361,7 @@ export class Revisao {
     this.sugestaoLoja.set(ex.loja ? '' : [d.loja_num, d.loja_nome].filter((x) => x?.trim()).join(' ').trim());
   }
 
-  private novoItem(i: Partial<ItemExtraido> = {}, f?: FornecedorSugerido): ItemForm {
+  private novoItem(i: Partial<ItemExtraido> = {}, f?: FornecedorSugerido, cotacao = ''): ItemForm {
     return this.fb.group({
       produto: i.produto ?? '',
       descricao: i.descricao ?? '',
@@ -284,7 +371,66 @@ export class Revisao {
       fornecedor: f?.cadastrado?.nome ?? i.fornecedor ?? '',
       fornecedorCnpj: i.fornecedor_cnpj ?? '',
       fornecedorLido: i.fornecedor ?? '',
+      cotacao,
     });
+  }
+
+  protected opcoesDe(chave: string): OpcaoCesta[] {
+    return this.cotadas.opcoes()[chave] ?? [];
+  }
+
+  protected abrirCotacao(): void {
+    this.gavetaUsada.set(true);
+    this.gaveta.set(true);
+  }
+
+  protected fecharCotacao(): void {
+    this.gaveta.set(false);
+  }
+
+  /** O anúncio escolhido no painel vira uma linha (no lugar da linha vazia, se só houver ela) e os prints começam. */
+  protected async escolherCotacao({ resposta: r, avaliado: a }: EscolhaCotacao): Promise<void> {
+    if (this.itens.length >= this.maxItens()) {
+      this.avisos.toast(`O impresso tem ${this.maxItens()} linhas: remova uma para adicionar outra.`, '⚠');
+      return;
+    }
+    try {
+      const alternativas = alternativasPara(r.resultado, a);
+      const l = await this.cotadas.adicionar(r.id, a, alternativas);
+      const primeira = this.itens.length === 1 ? this.itens.at(0).getRawValue() : null;
+      if (primeira && !primeira.produto.trim() && !primeira.cotacao) this.itens.removeAt(0);
+      this.itens.push(this.novoItem({ produto: produtoDoTermo(r.termo), descricao: `${l.fonte} · ${l.titulo}`.slice(0, 500),
+        qtd: '1', valor_unit: fmtBRL(l.preco), fornecedor: l.fonte }, undefined, l.chave));
+      this.fecharCotacao();
+      this.avisos.toast(`Item ${this.itens.length} adicionado por cotação · tirando ${alternativas.length + 1} prints`);
+    } catch (e) {
+      this.avisos.toast(e instanceof Error ? e.message : (await mensagensDeErro(e)).join(' '), '⚠');
+    }
+  }
+
+  protected verPrint(o: OpcaoCesta): void {
+    this.imagens.abrir(this.cotadas.urlImagem(o));
+  }
+
+  protected async recapturar(o: OpcaoCesta): Promise<void> {
+    try {
+      await this.cotadas.recapturar(o.printId);
+    } catch (e) {
+      this.avisos.toast((await mensagensDeErro(e)).join(' '), '⚠');
+    }
+  }
+
+  protected async anexarPrint(o: OpcaoCesta, ev: Event): Promise<void> {
+    const input = ev.target as HTMLInputElement;
+    const arq = input.files?.[0];
+    input.value = '';
+    if (!arq) return;
+    try {
+      await this.cotadas.anexarManual(o.printId, arq, arq.name);
+      this.avisos.toast(`Print da ${o.fonte} substituído`);
+    } catch (e) {
+      this.avisos.toast((await mensagensDeErro(e)).join(' '), '⚠');
+    }
   }
 
   /** 'cadastrado' se o nome bate com um fornecedor do cadastro (sem diferenciar maiúsculas); 'novo' se não; null vazio. */
@@ -303,12 +449,14 @@ export class Revisao {
   }
 
   protected removerItem(i: number): void {
+    const chave = this.itens.at(i).controls.cotacao.value;
+    if (chave) this.cotadas.remover(chave);
     this.itens.removeAt(i);
   }
 
   protected atalhoGerar(ev: Event): void {
     ev.preventDefault();
-    if (!this.gerando()) this.enviar();
+    if (!this.gerando() && this.printsProntos()) this.enviar();
   }
 
   protected enviar(): void {
@@ -326,9 +474,14 @@ export class Revisao {
         descricao: i.descricao,
         quantidade: parseFloat(i.qtd) || 1,
         valorUnitario: parseBRL(i.unit),
-        fornecedor: i.fornecedor.trim() || undefined,
-        fornecedorCnpj: i.fornecedorCnpj.trim() || undefined,
-        fornecedorLido: i.fornecedorLido.trim() || undefined,
+        // linha cotada: o servidor anexa os prints e usa a loja do preço como fornecedor
+        ...(i.cotacao
+          ? { prints: this.cotadas.prints(i.cotacao) }
+          : {
+              fornecedor: i.fornecedor.trim() || undefined,
+              fornecedorCnpj: i.fornecedorCnpj.trim() || undefined,
+              fornecedorLido: i.fornecedorLido.trim() || undefined,
+            }),
       })),
       subtotal: numeroOuNulo(v.subtotal),
       frete: numeroOuNulo(v.frete),

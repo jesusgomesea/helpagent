@@ -5,7 +5,10 @@ package br.com.rdamasio.helpagent.orcamento;
  * não renomear as constantes.
  */
 public enum OrigemOrcamento {
-    /** Fluxo de sempre: orçamentos de fornecedor anexados (lidos pela IA ou digitados). */
+    /**
+     * Fluxo de sempre: orçamentos de fornecedor anexados (lidos pela IA ou digitados). Pode ter linhas
+     * "adicionadas por cotação" (orçamento misto): aí o histórico mostra também o rótulo "por cotação".
+     */
     DOCUMENTOS,
     /** Montado pela cotação em lojas online, com os prints das 3 opções de cada item anexados. */
     COTACAO

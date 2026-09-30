@@ -122,6 +122,17 @@ Monta o impresso a partir da cotação, com o print de cada opção para a valid
 3. **Gerar e guardar o orçamento**: o PDF sai com o impresso, o chamado (se anexado), o **Resumo da cotação** (as 3
    opções de cada item, a escolhida em destaque) e os prints, e fica no **Histórico** com o selo "por cotação".
 
+### Orçamento do prestador + itens cotados (misto)
+
+Quando o prestador manda o orçamento e parte dos itens precisa ser cotada em loja online:
+
+1. No **Novo orçamento**, anexe o chamado e o orçamento do prestador e extraia os dados como sempre.
+2. Na revisão, embaixo dos itens, clique em **Adicionar por cotação**: abre um painel ao lado com a busca da Cotação.
+   Escolha o anúncio — ele vira uma linha do impresso (preço e loja preenchidos) e os prints dele e de mais 2 opções
+   são tirados em segundo plano. Repita para cada item que faltar (até 10 linhas no total).
+3. Gere quando os prints ficarem prontos: um PDF só, com o impresso, o chamado, o resumo e os prints das linhas
+   cotadas e o orçamento original do prestador. No Histórico ele aparece com os rótulos **documentos** e **por cotação**.
+
 Detalhes técnicos e decisões: [docs/MANUTENCAO.md](docs/MANUTENCAO.md) §8.
 
 ## Uso da IA (cota do Gemini)

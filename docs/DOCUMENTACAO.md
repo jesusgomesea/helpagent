@@ -67,6 +67,7 @@ a partir da cotação, com o print da página de cada opção para a validação
 | **Fornecedores** | `/lojas/fornecedores` | quem emite os orçamentos: reconhecidos na leitura por IA, cadastrados sozinhos ao gerar |
 | **Cotação** | `/cotacao` | busca o item em 6 lojas, ranking por critérios ajustáveis, melhor de cada loja, planilha `.xlsx` |
 | **Orçamento por cotação** | `/orcamento-cotacao` | os itens escolhidos na cotação viram o impresso, com 3 prints por item e um resumo da cotação |
+| **Orçamento misto** | `/` (revisão) | orçamento do prestador + "Adicionar por cotação" para o que falta: painel lateral com a busca da Cotação, um PDF só, dois rótulos no histórico |
 | **Uso da IA** (técnico) | `/swagger/uso-ia` | cota de cada modelo, gasto do dia, últimas chamadas; fora do menu |
 | **Qualidade da IA** (técnico) | `/swagger/qualidade-ia` | onde a IA mais erra (lido × confirmado), por campo, modelo e fornecedor |
 | **Documentação da API** (técnico) | `/swagger-ui.html` | contrato gerado do código |
@@ -134,7 +135,7 @@ helpagent_new/
 │  │  ├─ prompts/extracao.txt      prompt da leitura por IA
 │  │  ├─ pdf-templates/            TD.pdf, DAM.pdf, RDAM.pdf, CPL.pdf
 │  │  └─ cotacao/                  extrair-<loja>.js (um por loja), preparar-print.js, validar-print.js
-│  ├─ src/test/java/               84 testes (+4 manuais/condicionais)
+│  ├─ src/test/java/               86 testes (+4 manuais/condicionais)
 │  ├─ config/                      application-local.yml com a chave do Gemini — FORA do git
 │  ├─ dados/                       banco H2, PDFs, prints, logs, perfil do Chrome — FORA do git
 │  └─ Dockerfile · pom.xml · mvnw
@@ -164,7 +165,7 @@ Schema só por **migration Flyway** (`ddl-auto: validate`), em SQL portável (Po
 | Tabela | Conteúdo |
 |---|---|
 | `loja` | número (chave de negócio, fixo), nome, CNPJ, empresa impressa, template, ativa, razão social, IE, cidade, UF |
-| `orcamento` | tipo (`REQUISICAO`/`OPEX`/`CAPEX`), origem (`DOCUMENTOS`/`COTACAO`), loja, título, datas, chamado, totais, observação, responsáveis, PDF, quem/quando; `excluido_em`/`excluido_por` = na lixeira |
+| `orcamento` | tipo (`REQUISICAO`/`OPEX`/`CAPEX`), origem (`DOCUMENTOS`/`COTACAO`; misto = `DOCUMENTOS` com linha cotada), loja, título, datas, chamado, totais, observação, responsáveis, PDF, quem/quando; `excluido_em`/`excluido_por` = na lixeira |
 | `orcamento_item` | linhas do impresso; nas vindas da cotação, também loja fornecedora, URL e momento do print |
 | `uso_ia` | uma linha por requisição ao Gemini: modelo, degrau, papel, resultado, tokens, tempo, IP (90 dias) |
 | `fornecedor` | fornecedores conhecidos: nome padronizado, CNPJ, apelidos (nomes com que já apareceu), ativo |
@@ -243,6 +244,9 @@ Detalhes, medições e como avaliar precisão (`tools/avaliar_extracao.py`): [MA
   critério reordena na hora, sem nova busca. Resultado guardado 30 min (para reavaliar e gerar a planilha).
 - **Orçamento por cotação:** "Escolher para o orçamento" fotografa a escolhida e 2 alternativas em segundo plano,
   com loja, hora e link carimbados na imagem; o PDF leva impresso, resumo da cotação e prints.
+- **Orçamento misto (30/09/2026):** na revisão do novo orçamento, "Adicionar por cotação" abre a mesma busca num
+  painel lateral; a linha escolhida leva os prints ao PDF (único), a origem continua `DOCUMENTOS` e o histórico mostra
+  os rótulos "documentos" + "por cotação" (`comCotacao`).
 - A Amazon foi removida em 30/09/2026. Tempo típico: nível 1 ~20 s; a lentidão está investigada (§18).
 
 Detalhes (seletores por loja, decisões, diagnóstico, como acrescentar loja): [MANUTENCAO](MANUTENCAO.md) §7 e §8.
@@ -322,7 +326,7 @@ cd backend && ./mvnw -q test
 cd frontend && npx ng build
 ```
 
-- **84 testes** no backend, entre eles:
+- **86 testes** no backend, entre eles:
   - política da cadeia de modelos e controle de cota (`ExtratorIaTest`, `ControleCotaIaTest`);
   - paridade do ranking com o piloto Python (`MotorCotacaoParidadeTest`);
   - PDF e planilha;
@@ -410,7 +414,8 @@ Tudo em [INTEGRACAO](INTEGRACAO.md).
 | 30/09/2026 | filtros no histórico (período, loja, valor, origem) | `3b5b869` |
 | 30/09/2026 | fornecedores conhecidos (IA lê quem emitiu; cadastro cresce sozinho; filtro no histórico) | `91386f4` |
 | 30/09/2026 | qualidade da IA: aprender com as correções (`/swagger/qualidade-ia`) | `f03fc0e` |
-| 30/09/2026 | busca rápida de loja e atalhos (Ctrl+Enter gera, / busca no histórico) | ver `git log` |
+| 30/09/2026 | busca rápida de loja e atalhos (Ctrl+Enter gera, / busca no histórico) | `1cfec52` |
+| 30/09/2026 | orçamento misto: "Adicionar por cotação" na revisão do novo orçamento | ver `git log` |
 
 Detalhe de cada uma: `git log`.
 

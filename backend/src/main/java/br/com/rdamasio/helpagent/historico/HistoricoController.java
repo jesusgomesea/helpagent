@@ -50,15 +50,20 @@ public class HistoricoController {
     /**
      * @param excluidoEm   preenchido só na lixeira (junto de quem mandou para lá)
      * @param fornecedores nomes dos fornecedores das linhas (sem repetir; vazio nos orçamentos antigos)
+     * @param comCotacao   tem linha cotada em loja online: por cotação, ou misto (origem DOCUMENTOS + linhas cotadas).
+     *                     O histórico mostra os dois rótulos no misto.
      */
     public record Item(Long id, Instant criadoEm, ModoAquisicao modo, String titulo, int lojaNumero, String lojaNome,
             String empresa, String chamadoNum, BigDecimal total, String nomeArquivo, String criadoPor,
-            OrigemOrcamento origem, Instant excluidoEm, String excluidoPor, List<String> fornecedores) {
+            OrigemOrcamento origem, Instant excluidoEm, String excluidoPor, List<String> fornecedores,
+            boolean comCotacao) {
 
+        /** Sem ler as linhas: {@code comCotacao} só pela origem (usado onde o rótulo não aparece). */
         static Item de(Orcamento o) {
             return new Item(o.getId(), o.getCriadoEm(), o.getModo(), o.getTitulo(), o.getLoja().getNumero(),
                     o.getLoja().getNome(), o.getLoja().getEmpresa(), o.getChamadoNum(), o.getTotal(),
-                    o.getNomeArquivo(), o.getCriadoPor(), o.getOrigem(), o.getExcluidoEm(), o.getExcluidoPor(), List.of());
+                    o.getNomeArquivo(), o.getCriadoPor(), o.getOrigem(), o.getExcluidoEm(), o.getExcluidoPor(), List.of(),
+                    o.getOrigem() == OrigemOrcamento.COTACAO);
         }
 
         /** Na listagem do histórico: com os fornecedores (as linhas vêm em lote, ver default_batch_fetch_size). */
@@ -66,9 +71,11 @@ public class HistoricoController {
             Item i = de(o);
             List<String> nomes = o.getItens().stream().map(OrcamentoItem::getFornecedor)
                     .filter(n -> n != null && !n.isBlank()).distinct().toList();
+            // linha cotada = guardou a página de onde o preço veio (registrarCotacao)
+            boolean cotado = i.comCotacao() || o.getItens().stream().anyMatch(it -> it.getUrl() != null);
             return new Item(i.id(), i.criadoEm(), i.modo(), i.titulo(), i.lojaNumero(), i.lojaNome(), i.empresa(),
                     i.chamadoNum(), i.total(), i.nomeArquivo(), i.criadoPor(), i.origem(), i.excluidoEm(),
-                    i.excluidoPor(), nomes);
+                    i.excluidoPor(), nomes, cotado);
         }
     }
 

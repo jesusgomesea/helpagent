@@ -9,13 +9,15 @@ import { Etapas } from '../../layout/etapas';
 import { Faixa } from '../../layout/faixa';
 import { Composer } from './composer';
 import { Documentos } from './documentos';
+import { LinhasCotadas } from './linhas-cotadas.store';
 import { OrcamentoStore } from './orcamento.store';
 import { Revisao } from './revisao';
 
 @Component({
   selector: 'ha-novo-orcamento',
   imports: [Faixa, Etapas, Composer, Documentos, Revisao],
-  providers: [OrcamentoStore],
+  // LinhasCotadas: prints das linhas "adicionadas por cotação" na revisão (orçamento misto)
+  providers: [OrcamentoStore, LinhasCotadas],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ha-faixa sobretitulo="Helpdesk · Orçamentos" titulo="Novo orçamento" subtitulo="Do chamado ao impresso oficial, com leitura por IA">
@@ -69,6 +71,7 @@ import { Revisao } from './revisao';
 })
 export class NovoOrcamentoPage {
   protected readonly store = inject(OrcamentoStore);
+  private readonly cotadas = inject(LinhasCotadas);
   protected readonly modos = MODOS;
   protected readonly rotulos = ROTULO_MODO;
   protected readonly dicas = DICA_MODO;
@@ -123,7 +126,9 @@ export class NovoOrcamentoPage {
       const pdf = await firstValueFrom(this.api.gerar(dados, this.store.chamados(), this.store.orcamentos()));
       salvarArquivo(pdf);
       const c = this.store.chamados().length;
-      this.sucesso.set(`✓ PDF baixado! Impresso completo: ${c ? `${c} chamado(s) + ` : ''}${this.store.orcamentos().length} orçamento(s) anexado(s).`);
+      const cotados = dados.itens.filter((i) => i.prints?.length).length;
+      this.sucesso.set(`✓ PDF baixado! Impresso completo: ${c ? `${c} chamado(s) + ` : ''}${this.store.orcamentos().length} orçamento(s) anexado(s)`
+        + (cotados ? ` + resumo e prints de ${cotados} item(ns) cotado(s).` : '.'));
       this.store.pdfGerado.set(true);
     } catch (e) {
       this.erroGeracao.set(await mensagensDeErro(e));
@@ -142,6 +147,7 @@ export class NovoOrcamentoPage {
 
   protected novo(): void {
     this.store.reiniciar();
+    this.cotadas.limpar();
     this.mostrarRevisao.set(false);
     this.sucesso.set(null);
     this.erroGeracao.set([]);

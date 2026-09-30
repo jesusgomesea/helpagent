@@ -34,7 +34,7 @@ import jakarta.persistence.criteria.Subquery;
  * @param loja       número da loja
  * @param valorMin   total a partir de (inclusive)
  * @param valorMax   total até (inclusive)
- * @param origem     DOCUMENTOS (fluxo de sempre) ou COTACAO (montado pela cotação)
+ * @param origem     DOCUMENTOS (fluxo de sempre, inclui o misto) ou COTACAO (com linha cotada: por cotação ou misto)
  * @param fornecedor id do fornecedor: orçamentos com alguma linha dele
  */
 public record FiltroHistorico(String termo, ModoAquisicao modo, boolean lixeira, LocalDate de, LocalDate ate,
@@ -84,7 +84,14 @@ public record FiltroHistorico(String termo, ModoAquisicao modo, boolean lixeira,
             if (loja != null) p.add(cb.equal(lojaJ.get("numero"), loja));
             if (valorMin != null) p.add(cb.greaterThanOrEqualTo(raiz.get("total"), valorMin));
             if (valorMax != null) p.add(cb.lessThanOrEqualTo(raiz.get("total"), valorMax));
-            if (origem != null) p.add(cb.equal(raiz.get("origem"), origem));
+            if (origem == OrigemOrcamento.DOCUMENTOS) p.add(cb.equal(raiz.get("origem"), origem));
+            if (origem == OrigemOrcamento.COTACAO) {
+                // "cotação" inclui o misto: origem DOCUMENTOS com alguma linha cotada (que guardou a página do preço)
+                Subquery<Long> sub = consulta.subquery(Long.class);
+                Root<OrcamentoItem> item = sub.from(OrcamentoItem.class);
+                sub.select(item.get("id")).where(cb.equal(item.get("orcamento"), raiz), cb.isNotNull(item.get("url")));
+                p.add(cb.or(cb.equal(raiz.get("origem"), origem), cb.exists(sub)));
+            }
             if (fornecedor != null) {
                 // existe alguma linha do orçamento com esse fornecedor (subconsulta: não duplica o orçamento na lista)
                 Subquery<Long> sub = consulta.subquery(Long.class);

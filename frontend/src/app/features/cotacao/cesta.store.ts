@@ -172,12 +172,12 @@ function carregar(): ItemCesta[] {
   }
 }
 
-function opcaoDe(p: PrintCotacao): OpcaoCesta {
+export function opcaoDe(p: PrintCotacao): OpcaoCesta {
   return { printId: p.id, fonte: p.fonte, titulo: p.titulo, preco: p.preco, url: p.url, situacao: p.situacao,
     motivo: p.motivo, capturadoEm: p.capturadoEm, alerta: p.alerta };
 }
 
 /** "ssd 480gb" → "SSD 480GB": o termo da busca costuma ser o nome curto do item no impresso. */
-function produtoDoTermo(termo: string): string {
+export function produtoDoTermo(termo: string): string {
   return termo.trim().toUpperCase().slice(0, 200);
 }

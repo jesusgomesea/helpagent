@@ -190,6 +190,8 @@ export interface ItemHistorico {
   excluidoPor: string | null;
   /** Fornecedores das linhas (vazio nos orçamentos antigos). */
   fornecedores: string[];
+  /** Tem linha cotada em loja online. Com origem DOCUMENTOS = misto (a tela mostra os dois rótulos). */
+  comCotacao: boolean;
 }
 
 export type OrigemOrcamento = 'DOCUMENTOS' | 'COTACAO';

@@ -33,6 +33,10 @@ import br.com.rdamasio.helpagent.pdf.PdfOrcamentoService;
  *
  * <p>Orçamento por cotação: as linhas que trazem {@code prints} ganham, depois dos chamados, a página de resumo e
  * os prints das opções de cada item (a escolhida primeiro), e guardam de que loja e página o preço veio.
+ *
+ * <p>Orçamento misto (30/09/2026): na revisão do fluxo por documentos o atendente pode "adicionar por cotação" os
+ * itens que o prestador não incluiu. O PDF continua único (impresso → chamados → resumo e prints das linhas cotadas →
+ * orçamentos originais) e a origem continua DOCUMENTOS — o histórico mostra os dois rótulos porque há linha cotada.
  */
 @Service
 public class OrcamentoService {
@@ -118,7 +122,8 @@ public class OrcamentoService {
             anexos.add(new DadosImpresso.Anexo(chamados.get(i), rotulo));
         }
         if (printsPorItem.stream().anyMatch(l -> !l.isEmpty())) {
-            o.definirOrigem(OrigemOrcamento.COTACAO);
+            // com orçamento de fornecedor anexado é misto: fica DOCUMENTOS e o histórico soma o rótulo "por cotação"
+            if (orcamentos.isEmpty()) o.definirOrigem(OrigemOrcamento.COTACAO);
             anexarCotacao(anexos, impressos, printsPorItem);
         }
         for (int i = 0; i < orcamentos.size(); i++) {

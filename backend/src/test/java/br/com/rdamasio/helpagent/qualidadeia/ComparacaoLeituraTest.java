@@ -73,6 +73,21 @@ class ComparacaoLeituraTest {
     }
 
     @Test
+    void linhaAdicionadaPorCotacaoNaoContaComoErroDaIa() {
+        var cotada = new GerarOrcamentoRequest.Item("SSD 480GB", "Kabum · SSD", BigDecimal.ONE, new BigDecimal("250"),
+                List.of("print-1", "print-2"), null, null, null);
+        var r = porCampo(ComparacaoLeitura.comparar(
+                lido("Manutenção", "1021069", "23", "R$ 100,00", itemLido("Mão de obra", "1", "100,00", "Prestador X")),
+                confirmado(ModoAquisicao.REQUISICAO, "Manutenção", "1021069", "23", itemFinal("Mão de obra", "1", "100"), cotada),
+                new BigDecimal("350.00"), List.of("Prestador X", "Kabum")));
+
+        // o total comparado é o sem a linha cotada; o número de itens também não a conta
+        assertThat(r).containsEntry("total#0", false).containsEntry("numero_de_itens#0", false)
+                .containsEntry("fornecedor#1", false);
+        assertThat(r.keySet()).noneMatch(k -> k.endsWith("#2"));
+    }
+
+    @Test
     void capexNaoComparaChamadoNemLoja() {
         var r = porCampo(ComparacaoLeitura.comparar(
                 lido("Servidor", "", "", "R$ 10,00", itemLido("Servidor", "1", "10,00", "")),

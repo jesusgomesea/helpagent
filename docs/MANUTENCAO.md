@@ -46,7 +46,8 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
   página e a busca ficam na URL (`/historico?tipo=CAPEX&pagina=2`). A consulta é uma `Specification`
   (`historico/FiltroHistorico`), não JPQL fixo: cada filtro é opcional, e a listagem e as contagens usam o mesmo.
 - **Filtros do histórico (desde 30/09/2026):** botão "Filtros" abre um painel com período de **emissão** (de/até),
-  loja (inclusive desativadas), faixa de **total** e origem (documentos ou cotação). Vão na URL
+  loja (inclusive desativadas), faixa de **total** e origem (documentos ou cotação; o misto — documentos com itens
+  adicionados por cotação — aparece nos dois). Vão na URL
   (`?de=2026-09-01&ate=2026-09-30&loja=23&valorMin=100&valorMax=5000&origem=COTACAO`) e para a API com os mesmos
   nomes (`HistoricoController.FiltrosPainel`); valem na lista e nos números das abas. Também filtra por
   **fornecedor** (`?fornecedor=<id>`), e cada linha da lista mostra os fornecedores do orçamento. Filtro novo: campo no
@@ -128,7 +129,7 @@ Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem Post
 | `features/lojas/` | Cadastro de lojas |
 | `features/fornecedores/` | Cadastro de fornecedores (`/lojas/fornecedores`, junto das lojas) |
 | `features/qualidade-ia/` | Relatório técnico "Qualidade da IA" (`/swagger/qualidade-ia`, fora do menu) |
-| `features/cotacao/` | Cotação em lojas online: `cotacao.api.ts` (tipos + HTTP, separados do `core/api.ts`), `cotacao.page.ts`, `criterios.ts`, `resultado.ts`, `cesta.store.ts` (itens escolhidos para o orçamento por cotação) |
+| `features/cotacao/` | Cotação em lojas online: `cotacao.api.ts` (tipos + HTTP, separados do `core/api.ts`), `cotacao.page.ts`, `busca-cotacao.ts` (a busca em si, também usada no painel "Adicionar por cotação"), `criterios.ts`, `resultado.ts`, `cesta.store.ts` (itens escolhidos para o orçamento por cotação) |
 | `features/orcamento-cotacao/` | Tela de revisão e geração do orçamento por cotação (§8) |
 | `features/uso-ia/` | Painel "Uso da IA" (área técnica, rota `/swagger/uso-ia`, fora do menu): cota de cada modelo da cadeia, totais do dia do Google, horas e últimas chamadas (§4) |
 
@@ -674,6 +675,38 @@ Revisão (/orcamento-cotacao): itens, prints,
   "Item 01 · ESCOLHIDA · Kabum"; grava `target/resumo-cotacao.pdf` e PNGs das páginas para conferir a olho.
 - A captura real (`ColetorCotacao.capturar`) roda contra os sites; conferir subindo a homologação (§9) e escolhendo um
   item de cada loja.
+
+### Orçamento misto: "Adicionar por cotação" na revisão (30/09/2026)
+
+Caso de rotina: o prestador manda o orçamento (mão de obra, parte dos itens) e o resto precisa ser cotado em loja
+online. Em vez de ir de site em site por fora, na revisão do **novo orçamento** o botão de itens tem duas opções:
+**+ Adicionar manualmente** (linha comum) e **Adicionar por cotação**, que abre um painel lateral com a mesma busca da
+tela Cotação. O anúncio escolhido vira uma linha do impresso e o servidor fotografa ele + 2 alternativas, como na cesta.
+
+```
+Revisão (novo orçamento)                              Servidor
+"Adicionar por cotação" → painel (BuscaCotacao) ────▶ POST /api/cotacao, /api/cotacao/{id}/prints (igual à Cotação)
+  linha nova: produto = termo, descrição = "loja · título",
+  unitário = preço, fornecedor = loja, selo "cotado"
+  LinhasCotadas acompanha os prints (2,5 s) ◀────────── GET /api/cotacao/prints?ids=…
+Gerar (só com todos os prints prontos) ────────────▶ POST /api/orcamentos: linhas cotadas com prints, as demais sem
+                                                      PDF único: impresso → chamados → resumo + prints das linhas
+                                                      cotadas → orçamentos originais do prestador
+                                                      origem = DOCUMENTOS (há orçamento anexado); histórico: 2 rótulos
+```
+
+- **Sem tipo novo:** o misto vale para Requisição/Chamado, OPEX e CAPEX; é "de onde vêm os preços", não classificação.
+- **Sem origem nova:** `orcamento.origem` continua `DOCUMENTOS` quando há orçamento de fornecedor anexado, e `COTACAO`
+  só quando o impresso veio só da cotação. "Tem linha cotada" é derivado das linhas (`orcamento_item.url` preenchida
+  por `registrarCotacao`): a API do histórico devolve `comCotacao`, a tela mostra os rótulos **documentos** + **por
+  cotação**, e o filtro de origem "cotação" traz também os mistos (`FiltroHistorico`, subconsulta). Sem migration.
+- **Componentes:** `features/cotacao/busca-cotacao.ts` é o miolo da tela Cotação (termo, onde buscar, critérios,
+  resultado), usado nela e no painel; quem usa decide o que fazer com o escolhido. `novo-orcamento/linhas-cotadas.store.ts`
+  guarda os prints das linhas cotadas enquanto a página vive (não vai para o navegador, como o resto da revisão).
+- **Qualidade da IA:** linha cotada não foi lida pela IA — `ComparacaoLeitura` a deixa fora das linhas e do número de
+  itens, e compara o total sem ela. Sem isso cada item cotado viraria "erro da IA".
+- **Limites:** 10 linhas no impresso somando as duas origens; com `helpagent.recursos.cotacao=false` o botão nem aparece.
+  Remover a linha tira os prints dela; uma leitura nova da IA recomeça a lista (cotadas inclusive).
 
 ## 9. Homologação (testar antes de ir para a produção)
 

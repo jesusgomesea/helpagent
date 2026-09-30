@@ -30,6 +30,9 @@ import br.com.rdamasio.helpagent.orcamento.ModoAquisicao;
  * </ul>
  * Campo vazio dos dois lados não entra (não há o que comparar). Em CAPEX, chamado e loja não entram: a IA é
  * instruída a não preenchê-los.
+ *
+ * <p>Linhas "adicionadas por cotação" (orçamento misto) não foram lidas pela IA: ficam fora da comparação das
+ * linhas e do número de itens, e o total comparado é o confirmado sem elas.
  */
 public final class ComparacaoLeitura {
 
@@ -54,14 +57,27 @@ public final class ComparacaoLeitura {
             adicionar(r, "loja", 0, null, lido.lojaNum(), confirmado.lojaNumero(),
                     () -> !String.valueOf(inteiro(lido.lojaNum())).equals(String.valueOf(inteiro(confirmado.lojaNumero()))));
         }
-        valor(r, "total", 0, null, lido.total(), totalConfirmado);
+        // fornecedoresConfirmados vem na ordem das linhas impressas: separar as cotadas sem perder o par
+        List<GerarOrcamentoRequest.Item> impressos = confirmado.itens().stream().filter(CalculoOrcamento::temProduto).toList();
+        List<GerarOrcamentoRequest.Item> finais = new ArrayList<>();
+        List<String> fornFinais = new ArrayList<>();
+        BigDecimal cotadas = BigDecimal.ZERO;
+        for (int i = 0; i < impressos.size(); i++) {
+            GerarOrcamentoRequest.Item it = impressos.get(i);
+            if (it.cotado()) {
+                cotadas = cotadas.add(CalculoOrcamento.totalItem(it));
+                continue;
+            }
+            finais.add(it);
+            fornFinais.add(i < fornecedoresConfirmados.size() ? fornecedoresConfirmados.get(i) : null);
+        }
+        valor(r, "total", 0, null, lido.total(), totalConfirmado == null ? null : totalConfirmado.subtract(cotadas));
 
-        List<GerarOrcamentoRequest.Item> finais = confirmado.itens().stream().filter(CalculoOrcamento::temProduto).toList();
         int n = Math.min(lido.itens().size(), finais.size());
         for (int i = 0; i < n; i++) {
             DadosExtraidos.Item a = lido.itens().get(i);
             GerarOrcamentoRequest.Item b = finais.get(i);
-            String forn = i < fornecedoresConfirmados.size() ? fornecedoresConfirmados.get(i) : null;
+            String forn = fornFinais.get(i);
             texto(r, "produto", i + 1, forn, a.produto(), b.produto());
             texto(r, "descricao", i + 1, forn, a.descricao(), b.descricao());
             BigDecimal qtdLida = decimal(a.qtd());

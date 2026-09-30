@@ -132,6 +132,11 @@ const POR_PAGINA = 20;
                 <div class="hist-meta">
                   @if (aba() === 'TODOS') { <span class="selo-tipo selo-{{ r.modo }}">{{ rotulo(r.modo) }}</span> }
                   @if (r.origem === 'COTACAO') { <span class="selo-tipo selo-COTACAO" title="Montado pela cotação em lojas online, com os prints anexados">por cotação</span> }
+                  @else if (r.comCotacao) {
+                    <!-- misto: orçamento do prestador + itens adicionados por cotação — os dois rótulos -->
+                    <span class="selo-tipo selo-DOCUMENTOS" title="Orçamento de fornecedor anexado">documentos</span>
+                    <span class="selo-tipo selo-COTACAO" title="Com itens adicionados por cotação em lojas online (prints anexados)">por cotação</span>
+                  }
                   Loja {{ r.lojaNumero }} · {{ r.lojaNome }} · Chamado {{ r.chamadoNum || '—' }}@if (r.fornecedores.length) { · {{ r.fornecedores.join(', ') }} }@if (r.criadoPor !== 'anonimo') { · por {{ r.criadoPor }} }
                 </div>
                 @if (r.excluidoEm) {
