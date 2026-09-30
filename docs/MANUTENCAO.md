@@ -45,6 +45,11 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 - **Tela de histórico:** abas por tipo com contagem (que respeita a busca) e paginação de 20 em 20. A aba, a
   página e a busca ficam na URL (`/historico?tipo=CAPEX&pagina=2`). A consulta é uma `Specification`
   (`historico/FiltroHistorico`), não JPQL fixo: cada filtro é opcional, e a listagem e as contagens usam o mesmo.
+- **Filtros do histórico (desde 30/09/2026):** botão "Filtros" abre um painel com período de **emissão** (de/até),
+  loja (inclusive desativadas), faixa de **total** e origem (documentos ou cotação). Vão na URL
+  (`?de=2026-09-01&ate=2026-09-30&loja=23&valorMin=100&valorMax=5000&origem=COTACAO`) e para a API com os mesmos
+  nomes (`HistoricoController.FiltrosPainel`); valem na lista e nos números das abas. Filtro novo: campo no
+  `FiltroHistorico` + parâmetro no `FiltrosPainel` + campo no painel (`historico.page.ts`).
 - **Lixeira (desde 30/09/2026, V8):** "apagar" preenche `orcamento.excluido_em/excluido_por` em vez de apagar. O
   orçamento some das abas, do aviso de chamado já orçado e do backup, e aparece na aba **Lixeira**
   (`?tipo=LIXEIRA`), de onde é restaurado (`POST /{id}/restaurar`) ou excluído de vez (`DELETE /{id}/definitivo`,

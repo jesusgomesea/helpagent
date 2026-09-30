@@ -4,6 +4,7 @@ import { Observable, filter, map, shareReplay, tap } from 'rxjs';
 import {
   Anexo,
   GerarOrcamentoRequest,
+  FiltrosHistorico,
   ItemHistorico,
   Loja,
   LojaForm,
@@ -98,8 +99,9 @@ export class Api {
    * @param modo    aba do histórico; null = todos os tipos
    * @param lixeira true = aba "Lixeira" (o que foi apagado nos últimos 30 dias)
    */
-  historico(busca: string, pagina = 0, modo: ModoAquisicao | null = null, tamanho = 20, lixeira = false): Observable<Pagina<ItemHistorico>> {
-    let params = new HttpParams().set('pagina', pagina).set('tamanho', tamanho);
+  historico(busca: string, pagina = 0, modo: ModoAquisicao | null = null, tamanho = 20, lixeira = false,
+    filtros: FiltrosHistorico = {}): Observable<Pagina<ItemHistorico>> {
+    let params = comFiltros(new HttpParams().set('pagina', pagina).set('tamanho', tamanho), filtros);
     if (busca.trim()) params = params.set('busca', busca.trim());
     if (modo) params = params.set('modo', modo);
     if (lixeira) params = params.set('lixeira', true);
@@ -107,8 +109,9 @@ export class Api {
   }
 
   /** Quantos orçamentos de cada aba batem com a busca: { TODOS, REQUISICAO, OPEX, CAPEX, LIXEIRA }. */
-  contagemHistorico(busca: string): Observable<Record<ModoAquisicao | 'TODOS' | 'LIXEIRA', number>> {
-    const params = busca.trim() ? new HttpParams().set('busca', busca.trim()) : new HttpParams();
+  contagemHistorico(busca: string, filtros: FiltrosHistorico = {}): Observable<Record<ModoAquisicao | 'TODOS' | 'LIXEIRA', number>> {
+    let params = comFiltros(new HttpParams(), filtros);
+    if (busca.trim()) params = params.set('busca', busca.trim());
     return this.http.get<Record<ModoAquisicao | 'TODOS' | 'LIXEIRA', number>>('/api/historico/contagem', { params });
   }
 
@@ -173,6 +176,14 @@ export function salvarArquivo({ nomeArquivo, blob }: ArquivoBaixado): void {
  * Transforma o erro HTTP em linhas legíveis. Respostas de erro de chamadas com
  * responseType 'blob' chegam como Blob, por isso a leitura é assíncrona.
  */
+/** Só os filtros preenchidos viram parâmetro (o servidor trata ausente como "não filtra"). */
+function comFiltros(params: HttpParams, f: FiltrosHistorico): HttpParams {
+  for (const [chave, valor] of Object.entries(f)) {
+    if (valor !== undefined && valor !== null && valor !== '') params = params.set(chave, String(valor));
+  }
+  return params;
+}
+
 export async function mensagensDeErro(err: unknown): Promise<string[]> {
   if (!(err instanceof HttpErrorResponse)) return [String(err)];
   if (err.status === 0) return ['Servidor fora do ar ou sem conexão.'];

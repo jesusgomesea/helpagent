@@ -147,6 +147,16 @@ export interface ItemHistorico {
 
 export type OrigemOrcamento = 'DOCUMENTOS' | 'COTACAO';
 
+/** Filtros do painel do histórico (vazio = não filtra). Datas de emissão em yyyy-MM-dd. */
+export interface FiltrosHistorico {
+  de?: string;
+  ate?: string;
+  loja?: number;
+  valorMin?: number;
+  valorMax?: number;
+  origem?: OrigemOrcamento;
+}
+
 export interface Pagina<T> {
   itens: T[];
   pagina: number;

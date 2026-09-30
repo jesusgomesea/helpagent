@@ -302,7 +302,12 @@ img.branca { filter: brightness(0) invert(1); }
 // ---------- histórico ----------
 .busca { margin-bottom: 14px; }
 .hist-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px;
-  .busca { flex: 1; margin: 0; } }
+  .busca { flex: 1; margin: 0; }
+  .btn-acao.ativo { border-color: var(--primaria); color: var(--primaria); } }
+// painel "Filtros" do histórico: período, loja, valor, origem
+.hist-filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end;
+  margin: 0 0 14px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-alt);
+  .btn-link { justify-self: start; padding-bottom: 10px; } }
 .hist-item { display: grid; grid-template-columns: 120px 1fr auto auto; gap: 14px; align-items: center; padding: 14px 4px; border-bottom: 1px solid var(--border);
   &:hover { background: var(--primaria-clara); } }
 .hist-data { font-size: 12px; color: var(--muted); font-family: var(--mono); }

@@ -1,10 +1,21 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
 import { Api, mensagensDeErro, salvarArquivo } from '../../core/api';
 import { Avisos } from '../../core/avisos';
-import { ItemHistorico, MODOS, ModoAquisicao, ROTULO_MODO, ResultadoImportacao } from '../../core/modelos';
+import { fmtBRL, parseBRL } from '../../core/dinheiro';
+import {
+  FiltrosHistorico,
+  ItemHistorico,
+  Loja,
+  MODOS,
+  ModoAquisicao,
+  OrigemOrcamento,
+  ROTULO_MODO,
+  ResultadoImportacao,
+} from '../../core/modelos';
 import { Faixa } from '../../layout/faixa';
 import { Icone } from '../../layout/icone';
 
@@ -19,6 +30,9 @@ const POR_PAGINA = 20;
  *
  * A aba e a página ficam na URL (/historico?tipo=OPEX&pagina=2): dá para mandar o link e o "voltar" do
  * navegador funciona. A busca vale para todas as abas, e os números das abas acompanham o que foi buscado.
+ *
+ * Filtros (30/09/2026): período de emissão, loja, faixa de valor e origem, num painel que abre pelo botão
+ * "Filtros". Também ficam na URL (?de=2026-09-01&loja=23...) e valem para a lista e para os números das abas.
  *
  * Apagar manda para a aba Lixeira (30/09/2026): de lá o orçamento é restaurado ou excluído de vez; passados
  * 30 dias, o servidor apaga sozinho (LixeiraHistorico).
@@ -38,6 +52,10 @@ const POR_PAGINA = 20;
       <div class="card-body">
         <div class="hist-toolbar">
           <input class="busca" #b placeholder="Buscar por loja, chamado, título..." [value]="termo()" (input)="buscar(b.value)">
+          <button class="btn-acao" [class.ativo]="painelAberto()" (click)="painelAberto.set(!painelAberto())"
+            [attr.aria-expanded]="painelAberto()" title="Filtrar por período, loja, valor e origem">
+            Filtros @if (filtrosAtivos()) { <span class="nav-contador">{{ filtrosAtivos() }}</span> }
+          </button>
           <button class="btn-acao" (click)="exportar()" [disabled]="ocupado() || !contagem()['TODOS']"
             title="Baixa um JSON com todos os orçamentos e seus PDFs">
             <ha-icone nome="baixar" [tamanho]="15" /> Exportar JSON
@@ -48,6 +66,31 @@ const POR_PAGINA = 20;
           </button>
           <input #arquivo type="file" accept="application/json,.json" hidden (change)="importar(arquivo)">
         </div>
+
+        @if (painelAberto()) {
+          <div class="hist-filtros">
+            <label>Emissão de <input type="date" [value]="filtros().de ?? ''" (change)="filtrar('de', $any($event.target).value)"></label>
+            <label>até <input type="date" [value]="filtros().ate ?? ''" (change)="filtrar('ate', $any($event.target).value)"></label>
+            <label>Loja
+              <select [value]="filtros().loja ?? ''" (change)="filtrar('loja', $any($event.target).value)">
+                <option value="">Todas</option>
+                @for (l of lojas(); track l.numero) { <option [value]="l.numero">{{ l.numero }} · {{ l.nome }}</option> }
+              </select>
+            </label>
+            <label>Valor de (R$) <input inputmode="decimal" placeholder="0,00" [value]="valorTexto(filtros().valorMin)"
+              (change)="filtrar('valorMin', $any($event.target).value)"></label>
+            <label>até (R$) <input inputmode="decimal" placeholder="sem limite" [value]="valorTexto(filtros().valorMax)"
+              (change)="filtrar('valorMax', $any($event.target).value)"></label>
+            <label>Origem
+              <select [value]="filtros().origem ?? ''" (change)="filtrar('origem', $any($event.target).value)">
+                <option value="">Todas</option>
+                <option value="DOCUMENTOS">Documentos (fluxo normal)</option>
+                <option value="COTACAO">Por cotação</option>
+              </select>
+            </label>
+            <button class="btn-link" type="button" (click)="limparFiltros()" [disabled]="!filtrosAtivos()">Limpar filtros</button>
+          </div>
+        }
 
         <div class="abas-tipo" role="tablist" aria-label="Tipo de requisição">
           @for (a of abas; track a) {
@@ -100,7 +143,8 @@ const POR_PAGINA = 20;
             </div>
           } @empty {
             <div class="hist-vazio">
-              {{ termo() ? 'Nenhum resultado para "' + termo() + '"' + (aba() !== 'TODOS' ? ' em ' + rotulo(aba()) : '') + '.'
+              {{ filtrosAtivos() && !termo() ? 'Nenhum orçamento com estes filtros.'
+                : termo() ? 'Nenhum resultado para "' + termo() + '"' + (aba() !== 'TODOS' ? ' em ' + rotulo(aba()) : '') + '.'
                 : naLixeira() ? 'A lixeira está vazia.'
                 : aba() === 'TODOS' ? 'Nenhum orçamento gerado ainda.' : 'Nenhum orçamento de ' + rotulo(aba()) + ' ainda.' }}
             </div>
@@ -140,6 +184,11 @@ export class HistoricoPage {
   private atraso?: ReturnType<typeof setTimeout>;
 
   protected readonly naLixeira = computed(() => this.aba() === 'LIXEIRA');
+  protected readonly filtros = signal<FiltrosHistorico>({});
+  protected readonly painelAberto = signal(false);
+  protected readonly filtrosAtivos = computed(() => Object.values(this.filtros()).filter((v) => v !== undefined).length);
+  /** Todas as lojas, inclusive desativadas: orçamento antigo pode ser de loja que fechou. */
+  protected readonly lojas = toSignal(this.api.lojasTodas(), { initialValue: [] as Loja[] });
   protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.totalAba() / POR_PAGINA)));
   protected readonly primeiro = computed(() => (this.totalAba() ? this.pagina() * POR_PAGINA + 1 : 0));
   protected readonly ultimo = computed(() => Math.min(this.totalAba(), (this.pagina() + 1) * POR_PAGINA));
@@ -151,6 +200,8 @@ export class HistoricoPage {
       this.aba.set(tipo && this.abas.includes(tipo) ? tipo : 'TODOS');
       this.pagina.set(Math.max(0, (Number(q.get('pagina')) || 1) - 1));
       this.termo.set(q.get('busca') ?? '');
+      this.filtros.set(filtrosDaUrl(q));
+      if (this.filtrosAtivos()) this.painelAberto.set(true);
       this.carregar();
     });
   }
@@ -167,8 +218,39 @@ export class HistoricoPage {
         tipo: aba === 'TODOS' ? null : aba,
         pagina: pagina > 0 ? pagina + 1 : null,
         busca: this.termo() || null,
+        de: this.filtros().de ?? null,
+        ate: this.filtros().ate ?? null,
+        loja: this.filtros().loja ?? null,
+        valorMin: this.filtros().valorMin ?? null,
+        valorMax: this.filtros().valorMax ?? null,
+        origem: this.filtros().origem ?? null,
       },
     });
+  }
+
+  /** Muda um filtro e volta para a primeira página (via URL, como as abas). */
+  protected filtrar(campo: keyof FiltrosHistorico, bruto: string): void {
+    const f = { ...this.filtros() };
+    const texto = bruto.trim();
+    if (!texto) delete f[campo];
+    else if (campo === 'loja') f.loja = Number(texto);
+    else if (campo === 'valorMin' || campo === 'valorMax') {
+      const v = parseBRL(texto);
+      if (v > 0) f[campo] = v;
+      else delete f[campo];
+    } else if (campo === 'origem') f.origem = texto as OrigemOrcamento;
+    else f[campo] = texto;
+    this.filtros.set(f);
+    this.irPara(this.aba(), 0);
+  }
+
+  protected limparFiltros(): void {
+    this.filtros.set({});
+    this.irPara(this.aba(), 0);
+  }
+
+  protected valorTexto(v: number | undefined): string {
+    return v === undefined ? '' : fmtBRL(v);
   }
 
   protected buscar(t: string): void {
@@ -184,8 +266,8 @@ export class HistoricoPage {
       const aba = this.aba();
       const [p, c] = await Promise.all([
         firstValueFrom(this.api.historico(this.termo(), this.pagina(), aba === 'TODOS' || aba === 'LIXEIRA' ? null : aba,
-          POR_PAGINA, aba === 'LIXEIRA')),
-        firstValueFrom(this.api.contagemHistorico(this.termo())),
+          POR_PAGINA, aba === 'LIXEIRA', this.filtros())),
+        firstValueFrom(this.api.contagemHistorico(this.termo(), this.filtros())),
       ]);
       this.itens.set(p.itens);
       this.totalAba.set(p.total);
@@ -261,4 +343,20 @@ export class HistoricoPage {
       this.avisos.toast((await mensagensDeErro(e)).join(' '), '⚠');
     }
   }
+}
+
+/** Filtros a partir da URL (?de=&ate=&loja=&valorMin=&valorMax=&origem=); valor inválido é ignorado. */
+function filtrosDaUrl(q: ParamMap): FiltrosHistorico {
+  const f: FiltrosHistorico = {};
+  const data = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+  const numero = (v: string | null) => (v && Number(v) > 0 ? Number(v) : undefined);
+  f.de = data(q.get('de'));
+  f.ate = data(q.get('ate'));
+  f.loja = numero(q.get('loja'));
+  f.valorMin = numero(q.get('valorMin'));
+  f.valorMax = numero(q.get('valorMax'));
+  const origem = q.get('origem');
+  f.origem = origem === 'DOCUMENTOS' || origem === 'COTACAO' ? origem : undefined;
+  for (const k of Object.keys(f) as (keyof FiltrosHistorico)[]) if (f[k] === undefined) delete f[k];
+  return f;
 }

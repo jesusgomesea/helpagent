@@ -61,7 +61,7 @@ a partir da cotação, com o print da página de cada opção para a validação
 | **Novo orçamento** | `/` | anexar/colar chamado e orçamentos → leitura por IA → revisão ao lado dos documentos → PDF |
 | **Tipos de requisição** | seletor na tela inicial | Requisição/Chamado (padrão), OPEX e CAPEX; muda a obrigatoriedade do chamado e a observação do impresso |
 | **Preenchimento manual** | `/` | sem IA (fora do ar, desligada ou por escolha) |
-| **Histórico** | `/historico` | todos os orçamentos gerados, abas por tipo, busca, download do PDF, backup JSON |
+| **Histórico** | `/historico` | todos os orçamentos gerados, abas por tipo, busca, filtros (período, loja, valor, origem), download do PDF, backup JSON |
 | **Lixeira** | `/historico?tipo=LIXEIRA` | o que foi apagado nos últimos 30 dias: restaurar ou excluir de vez |
 | **Lojas** | `/lojas` | cadastro de lojas (número, nome, CNPJ, empresa do impresso, template, razão social, IE, cidade/UF) |
 | **Cotação** | `/cotacao` | busca o item em 6 lojas, ranking por critérios ajustáveis, melhor de cada loja, planilha `.xlsx` |
@@ -247,7 +247,7 @@ Tudo sob `/api`. Contrato completo e sempre atual em **`/v3/api-docs`** e **`/sw
 | Lojas | `GET/POST /api/lojas`, `GET/PUT /api/lojas/{numero}`, `PATCH /api/lojas/{numero}/ativa` |
 | Leitura por IA | `POST /api/extracoes` (multipart) |
 | Orçamento | `POST /api/orcamentos` (multipart: dados + arquivos) → PDF |
-| Histórico | `GET /api/historico` (`lixeira=true` = aba Lixeira), `/contagem`, `/por-chamado`, `/{id}/pdf`, `/exportar`, `/importar` |
+| Histórico | `GET /api/historico` (`lixeira=true` = aba Lixeira; filtros `de`, `ate`, `loja`, `valorMin`, `valorMax`, `origem`), `/contagem`, `/por-chamado`, `/{id}/pdf`, `/exportar`, `/importar` |
 | Lixeira | `DELETE /api/historico/{id}` (manda para a lixeira), `POST /{id}/restaurar`, `DELETE /{id}/definitivo` |
 | Cotação | `GET /api/cotacao/estado`, `POST /api/cotacao`, `/{id}/reavaliar`, `/{id}/planilha`, `/{id}/prints`, `/prints…` |
 | Parâmetros | `GET /api/parametros` (padrões do formulário, ambiente, recursos ligados) |
@@ -395,7 +395,8 @@ Tudo em [INTEGRACAO](INTEGRACAO.md).
 | 30/09/2026 | Uso da IA sai do menu: painel técnico em `/swagger/uso-ia` | `47aa9ac` |
 | 30/09/2026 | Amazon removida da cotação | `e0d69cd` |
 | 30/09/2026 | documentação geral centralizada | `9ca4433` |
-| 30/09/2026 | lixeira no histórico (30 dias para restaurar) | ver `git log` |
+| 30/09/2026 | lixeira no histórico (30 dias para restaurar) | `47bbd4e` |
+| 30/09/2026 | filtros no histórico (período, loja, valor, origem) | ver `git log` |
 
 Detalhe de cada uma: `git log`.
 

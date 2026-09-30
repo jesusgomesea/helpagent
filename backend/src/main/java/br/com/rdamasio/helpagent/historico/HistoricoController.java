@@ -10,6 +10,7 @@ import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -58,6 +59,22 @@ public class HistoricoController {
     }
 
     public record Pagina<T>(List<T> itens, int pagina, int tamanho, long total) {
+    }
+
+    /**
+     * Filtros do painel "Filtros" da tela (query string: {@code ?de=2026-09-01&ate=2026-09-30&loja=23&valorMin=100
+     * &valorMax=5000&origem=COTACAO}). Valem para a listagem e para as contagens das abas.
+     *
+     * @param de  data de emissão a partir de (yyyy-MM-dd)
+     * @param ate data de emissão até (yyyy-MM-dd)
+     */
+    public record FiltrosPainel(@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate, Integer loja, BigDecimal valorMin,
+            BigDecimal valorMax, OrigemOrcamento origem) {
+
+        FiltroHistorico com(String busca, ModoAquisicao modo, boolean lixeira) {
+            return new FiltroHistorico(busca, modo, lixeira, de, ate, loja, valorMin, valorMax, origem);
+        }
     }
 
     private final OrcamentoRepository repo;
@@ -113,9 +130,10 @@ public class HistoricoController {
             @RequestParam(required = false) ModoAquisicao modo,
             @RequestParam(defaultValue = "false") boolean lixeira,
             @RequestParam(defaultValue = "0") int pagina,
-            @RequestParam(defaultValue = "20") int tamanho) {
+            @RequestParam(defaultValue = "20") int tamanho,
+            FiltrosPainel filtros) {
         if (lixeira) this.lixeira.limparVencidos();
-        FiltroHistorico f = new FiltroHistorico(busca, lixeira ? null : modo, lixeira);
+        FiltroHistorico f = filtros.com(busca, lixeira ? null : modo, lixeira);
         Sort ordem = Sort.by(Sort.Direction.DESC, lixeira ? "excluidoEm" : "criadoEm");
         Page<Orcamento> p = repo.findAll(f.especificacao(),
                 PageRequest.of(Math.max(pagina, 0), Math.clamp(tamanho, 1, 100), ordem));
@@ -123,13 +141,13 @@ public class HistoricoController {
     }
 
     /**
-     * Contagem para as abas (Todos, cada tipo e Lixeira), respeitando a busca digitada.
+     * Contagem para as abas (Todos, cada tipo e Lixeira), respeitando a busca e os filtros do painel.
      * Tipos sem nenhum orçamento vêm com 0, para a aba aparecer mesmo vazia.
      */
     @GetMapping("/contagem")
     @Transactional(readOnly = true)
-    public Map<String, Long> contagem(@RequestParam(required = false) String busca) {
-        FiltroHistorico f = new FiltroHistorico(busca, null, false);
+    public Map<String, Long> contagem(@RequestParam(required = false) String busca, FiltrosPainel filtros) {
+        FiltroHistorico f = filtros.com(busca, null, false);
         Map<String, Long> r = new LinkedHashMap<>();
         long total = 0;
         for (ModoAquisicao m : ModoAquisicao.values()) {

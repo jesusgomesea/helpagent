@@ -152,8 +152,9 @@ continua sendo o da loja escolhida.
 | GET | `/api/uso-ia` | painel de uso do Gemini: situação de cada modelo da cadeia, totais do dia do Google, últimas chamadas |
 | POST | `/api/orcamentos` (multipart: `dados` JSON + arquivos) | valida (A1), gera e devolve o PDF, grava no histórico; itens com `prints` = orçamento por cotação |
 | GET | `/api/historico?modo=&busca=&lixeira=&pagina=&tamanho=` · `/api/historico/{id}/pdf` | histórico central, filtrável por tipo; `lixeira=true` = aba Lixeira |
+| | filtros (na listagem e na contagem): `de`, `ate` (emissão, yyyy-MM-dd), `loja`, `valorMin`, `valorMax`, `origem` (`DOCUMENTOS`/`COTACAO`) | painel "Filtros" da tela |
 | DELETE · POST · DELETE | `/api/historico/{id}` · `/{id}/restaurar` · `/{id}/definitivo` | manda para a lixeira · restaura · exclui de vez (só da lixeira) |
-| GET | `/api/historico/contagem?busca=` | quantos de cada aba (`REQUISICAO`, `OPEX`, `CAPEX`, `TODOS`, `LIXEIRA`) |
+| GET | `/api/historico/contagem?busca=` (+ filtros) | quantos de cada aba (`REQUISICAO`, `OPEX`, `CAPEX`, `TODOS`, `LIXEIRA`) |
 | GET | `/api/historico/exportar` | backup JSON (versão 3) com todos os orçamentos, itens e PDFs em base64 |
 | POST | `/api/historico/importar` (multipart: `arquivo`) | adiciona um backup — deste sistema ou do HTML v3.5; repetidos (mesmo título + data) são ignorados |
 | GET | `/api/cotacao/estado` | `{ocupado, padrao, maxPaginas, lojas, niveis}`: fila, critérios padrão, lojas e níveis de busca |
