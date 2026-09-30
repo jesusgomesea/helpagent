@@ -10,12 +10,15 @@ backend/                Spring Boot 4.1 · Java 21 · PDFBox · Flyway · Postgr
 frontend/               Angular 22 · standalone + signals · zoneless
 tools/                  extrair_legado.py (lojas e templates do HTML legado) · avaliar_extracao.py · paridade_cotacao.py
 legacy/                 o HTML v3.5 original e o piloto em Python da cotação (com o HANDOFF), só para referência
-docs/                   escopo e plano de migração · guia de manutenção
+docs/                   documentação geral · guia de manutenção · integração · escopo e plano de migração
 iniciar-helpagent.bat   sobe backend + frontend para uso na rede (produção)
 parar-helpagent.bat     derruba os dois
 iniciar-homologacao.bat sobe a homologação só nesta máquina (http://localhost:4201), com dados separados
 parar-homologacao.bat   derruba a homologação
 ```
+
+**Documentação geral do projeto** (visão geral, arquitetura, estrutura, dados, regras, configuração, operação,
+pendências e o mapa de todos os documentos): [docs/DOCUMENTACAO.md](docs/DOCUMENTACAO.md).
 
 **Vai mexer no código?** Leia primeiro [docs/MANUTENCAO.md](docs/MANUTENCAO.md): fluxo, mapa do código,
 receitas (trocar prompt, loja, template, marca…) e armadilhas conhecidas.

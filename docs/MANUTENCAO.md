@@ -1,6 +1,7 @@
 # Guia de manutenção — HELP-AGENT Orçamentos
 
-Para quem vai mexer no código. Visão geral e como rodar estão no [README](../README.md). O escopo
+Para quem vai mexer no código. A documentação geral (e o mapa de todos os documentos) está em
+[DOCUMENTACAO.md](DOCUMENTACAO.md); como rodar, no [README](../README.md). O escopo
 original e o plano de migração estão em [ESCOPO-E-PLANO-MIGRACAO.md](ESCOPO-E-PLANO-MIGRACAO.md).
 
 ## 1. Como o sistema funciona

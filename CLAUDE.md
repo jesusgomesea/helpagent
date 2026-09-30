@@ -3,6 +3,7 @@
 Gera o impresso oficial de orçamento da R Damásio: IA (Gemini) lê chamado + orçamentos de fornecedor,
 usuário revisa, sistema preenche o template PDF da empresa e anexa os originais. Uso compartilhado pelo helpdesk.
 
+- **Documentação geral (ponto de partida):** [docs/DOCUMENTACAO.md](docs/DOCUMENTACAO.md)
 - Visão geral e como subir: [README.md](README.md)
 - **Antes de mudar código**: [docs/MANUTENCAO.md](docs/MANUTENCAO.md) — fluxo, mapa, receitas, armadilhas
 - Escopo e plano de migração do HTML v3.5: [docs/ESCOPO-E-PLANO-MIGRACAO.md](docs/ESCOPO-E-PLANO-MIGRACAO.md)
