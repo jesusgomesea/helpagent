@@ -33,8 +33,9 @@ public class OpenApiConfig {
                 .title("HELP-AGENT Orçamentos")
                 .version(versao)
                 .description("Leitura de orçamentos por IA, geração do impresso oficial, histórico, cadastro de lojas, "
-                        + "cotação em lojas online e uso da IA. Erros no formato RFC 9457 (ProblemDetail) com "
-                        + "`problemas` e `idRequisicao`; o cabeçalho X-Request-Id segue a chamada nos logs."));
+                        + "cotação em lojas online e uso da IA (painel técnico em /swagger/uso-ia). Erros no formato "
+                        + "RFC 9457 (ProblemDetail) com `problemas` e `idRequisicao`; o cabeçalho X-Request-Id segue a "
+                        + "chamada nos logs."));
         if (props.seguranca().habilitada()) {
             api.components(new Components().addSecuritySchemes(ESQUEMA, new SecurityScheme()
                             .type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")

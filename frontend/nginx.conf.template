@@ -16,6 +16,12 @@ server {
         proxy_read_timeout 120s;
     }
 
+    # documentação da API (Swagger), no mesmo endereço: o painel /swagger/uso-ia aponta para ela
+    location ~ ^/(swagger-ui|swagger-ui\.html|v3/api-docs) {
+        proxy_pass ${BACKEND_URL};
+        proxy_set_header Host $host;
+    }
+
     # config.json nunca em cache: é ele que diz onde está a API
     location = /config.json {
         add_header Cache-Control "no-store";

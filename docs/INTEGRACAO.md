@@ -8,7 +8,8 @@ Para o funcionamento interno, veja [MANUTENCAO.md](MANUTENCAO.md); para subir e 
 
 ## 1. Contrato da API
 
-- **OpenAPI gerado do código**: `GET /v3/api-docs` (JSON) e a tela `/swagger-ui.html`. É o próprio springdoc
+- **OpenAPI gerado do código**: `GET /v3/api-docs` (JSON) e a tela `/swagger-ui.html` — ambos também pelo
+  endereço do frontend (proxy), ao lado do painel técnico de uso da IA em `/swagger/uso-ia`. É o próprio springdoc
   lendo os controllers (`config/OpenApiConfig`): mudou um controller, o contrato muda junto. `API_DOCS=false` desliga.
   Dá para gerar o cliente da aplicação maior a partir dele (openapi-generator, orval...).
 - Só `/api/**` entra no contrato. Todas as rotas estão também na tabela "API" do README.
@@ -58,7 +59,7 @@ Alerta sugerido: `helpagent_ia_cota_dia_usada / helpagent_ia_cota_dia_limite > 0
 | `ACTUATOR_EXPOR` | `health,info` | endpoints do Actuator expostos (ex.: `health,info,prometheus`) |
 | `ACTUATOR_DETALHES` | `never` | detalhes da saúde |
 | `API_DOCS` | `true` | contrato OpenAPI e Swagger UI |
-| `RECURSO_IA` | `true` | leitura por IA e painel "Uso da IA" (§5) |
+| `RECURSO_IA` | `true` | leitura por IA e painel `/swagger/uso-ia` (§5) |
 | `RECURSO_COTACAO` | `true` | cotação em lojas online e orçamento por cotação (§5) |
 
 ## 5. Recursos que dependem do ambiente
@@ -139,7 +140,7 @@ precisam sair da memória ou do disco local:
 2. **Permissões**: hoje qualquer um cadastra loja e apaga orçamento do histórico. Com login, separar papéis
    (atendente × administrador) nas rotas de escrita de lojas e na exclusão do histórico.
 3. **Chave do Gemini antiga** (a que estava no HTML v3.5): revogar. O Google conta a cota por projeto, e o que
-   usa essa chave por fora não aparece no painel "Uso da IA".
+   usa essa chave por fora não aparece no painel `/swagger/uso-ia`.
 4. **Plano do Gemini**: o gratuito dá 20 leituras/dia no modelo principal. Para o uso de uma aplicação maior,
    ativar o faturamento e copiar os limites reais para `helpagent.gemini.cadeia`.
 5. **Versão da API**: se outros sistemas forem consumir a API diretamente, fixar um prefixo (`/api/v1`) antes que

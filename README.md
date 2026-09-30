@@ -120,8 +120,8 @@ Detalhes técnicos e decisões: [docs/MANUTENCAO.md](docs/MANUTENCAO.md) §8.
 A leitura por IA percorre uma **cadeia de modelos**, do melhor para o pior (`helpagent.gemini.cadeia`): quando um
 esgota a cota ou está sobrecarregado, desce para o próximo, e volta a subir sozinho depois. O servidor conta a
 própria cota (por minuto e por dia) e desce **antes** de levar a recusa do Google. No máximo 3 leituras ao mesmo
-tempo e 4 requisições por leitura. A tela **Uso da IA** mostra a situação de cada modelo, o gasto do dia e as
-últimas chamadas; leitura feita por modelo reserva ganha um aviso na revisão. Limites e detalhes:
+tempo e 4 requisições por leitura. O painel técnico **`/swagger/uso-ia`** (fora do menu, ao lado da
+documentação da API em `/swagger-ui.html`) mostra a situação de cada modelo, o gasto do dia e as últimas chamadas; leitura feita por modelo reserva ganha um aviso na revisão. Limites e detalhes:
 [docs/MANUTENCAO.md](docs/MANUTENCAO.md) §4.
 
 ## Homologação

@@ -3,5 +3,17 @@
     "target": "http://127.0.0.1:8080",
     "secure": false,
     "xfwd": true
+  },
+  "/swagger-ui": {
+    "target": "http://127.0.0.1:8080",
+    "secure": false
+  },
+  "/swagger-ui.html": {
+    "target": "http://127.0.0.1:8080",
+    "secure": false
+  },
+  "/v3/api-docs": {
+    "target": "http://127.0.0.1:8080",
+    "secure": false
   }
 }

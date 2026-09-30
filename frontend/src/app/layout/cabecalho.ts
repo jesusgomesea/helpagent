@@ -41,11 +41,6 @@ import { Icone } from './icone';
         <a routerLink="/lojas" routerLinkActive="ativo" title="Lojas" aria-label="Lojas">
           <ha-icone nome="loja" [tamanho]="15" /><span>Lojas</span>
         </a>
-        @if (recursos.ia()) {
-          <a routerLink="/uso-ia" routerLinkActive="ativo" title="Uso da IA (cota do Gemini)" aria-label="Uso da IA">
-            <ha-icone nome="grafico" [tamanho]="15" /><span>Uso da IA</span>
-          </a>
-        }
         <!-- Histórico por último, colado ao seletor de visual (pedido do helpdesk, 29/09/2026) -->
         <a routerLink="/historico" routerLinkActive="ativo" title="Histórico" aria-label="Histórico">
           <ha-icone nome="historico" [tamanho]="15" /><span>Histórico</span>
@@ -65,7 +60,8 @@ import { Icone } from './icone';
 export class Cabecalho {
   protected readonly marca = inject(MarcaService);
   protected readonly cesta = inject(CestaCotacao);
-  /** Cotação e Uso da IA somem do menu quando o servidor não os oferece. */
+  /** A cotação some do menu quando o servidor não a oferece. O painel de uso da IA não fica no menu: é
+   *  área técnica, em /swagger/uso-ia (30/09/2026). */
   protected readonly recursos = inject(Recursos);
   protected readonly ambiente = toSignal(inject(Api).parametros().pipe(map((p) => p.ambiente ?? ''), catchError(() => of(''))), {
     initialValue: '',

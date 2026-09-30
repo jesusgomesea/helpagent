@@ -386,7 +386,7 @@ public class ExtratorIa implements DisposableBean {
     /** Nenhum modelo da cadeia tem vez: todos sem cota, pausados ou fora. */
     private FalhaIa semModelo() {
         return new FalhaIa("Nenhum modelo de IA com cota disponível agora (" + String.join(", ", controle.cadeia())
-                + "). Tente de novo em alguns minutos ou preencha à mão; a situação de cada um está em \"Uso da IA\".",
+                + "). Tente de novo em alguns minutos ou preencha à mão; a situação de cada um está em /swagger/uso-ia.",
                 429, false);
     }
 

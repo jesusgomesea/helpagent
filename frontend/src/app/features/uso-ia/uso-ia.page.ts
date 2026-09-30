@@ -9,6 +9,9 @@ import { ChamadaIa, EstadoModelo, PainelUsoIa, SituacaoModelo, UsoIaApi } from '
  * Painel "Uso da IA": a cota de cada modelo da cadeia de fallback (do melhor para o pior), o que este servidor
  * gastou no dia do Google e as últimas chamadas. Atualiza sozinho a cada 15 s.
  *
+ * Área técnica, fora do menu do helpdesk (30/09/2026): abre só por /swagger/uso-ia, ao lado da documentação da
+ * API. Para o atendente o que importa é o aviso na revisão quando a leitura saiu de um modelo reserva.
+ *
  * Só mostra o que passou por ESTE servidor. O Google conta por projeto: outra máquina ou o HTML v3.5 com a chave
  * antiga gastam a mesma cota sem aparecer aqui — a diferença aparece no painel do AI Studio.
  */
@@ -17,9 +20,13 @@ import { ChamadaIa, EstadoModelo, PainelUsoIa, SituacaoModelo, UsoIaApi } from '
   imports: [Faixa, Icone],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ha-faixa sobretitulo="Helpdesk · Gemini" titulo="Uso da IA"
+    <ha-faixa sobretitulo="Área técnica · Gemini" titulo="Uso da IA"
       subtitulo="Cota de cada modelo da cadeia e o que este servidor gastou hoje" />
     <main class="container">
+      <p class="uia-nota">
+        Área técnica, fora do menu do helpdesk. Documentação da API (inclui <code>GET /api/uso-ia</code>, os dados
+        desta página): <a href="swagger-ui.html" target="_blank" rel="noopener">Swagger</a>
+      </p>
       @if (erro()) { <div class="status erro">{{ erro() }}</div> }
       @if (painel(); as p) {
         <section class="card">

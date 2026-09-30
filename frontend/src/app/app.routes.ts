@@ -2,8 +2,11 @@ import { Routes } from '@angular/router';
 import { recursoLigado } from './core/recursos';
 
 /**
- * Rotas. As páginas são carregadas sob demanda (lazy) para a primeira tela abrir rápido. Cotação e Uso da IA só
- * existem se o servidor tiver o recurso ligado (core/recursos.ts).
+ * Rotas. As páginas são carregadas sob demanda (lazy) para a primeira tela abrir rápido. Cotação e o painel de uso
+ * da IA só existem se o servidor tiver o recurso ligado (core/recursos.ts).
+ *
+ * O painel de uso da IA é área técnica, fora do menu do helpdesk (30/09/2026): só pelo endereço /swagger/uso-ia,
+ * ao lado da documentação da API (/swagger-ui.html).
  */
 export const routes: Routes = [
   {
@@ -35,10 +38,12 @@ export const routes: Routes = [
       import('./features/orcamento-cotacao/orcamento-cotacao.page').then((m) => m.OrcamentoCotacaoPage),
   },
   {
-    path: 'uso-ia',
+    path: 'swagger/uso-ia',
     title: 'HELP-AGENT — Uso da IA',
     canMatch: [recursoLigado('ia')],
     loadComponent: () => import('./features/uso-ia/uso-ia.page').then((m) => m.UsoIaPage),
   },
+  // endereço antigo (29/09/2026), para favorito salvo
+  { path: 'uso-ia', redirectTo: 'swagger/uso-ia' },
   { path: '**', redirectTo: '' },
 ];

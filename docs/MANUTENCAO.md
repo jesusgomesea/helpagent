@@ -99,7 +99,7 @@ Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem Post
 | `features/lojas/` | Cadastro de lojas |
 | `features/cotacao/` | Cotação em lojas online: `cotacao.api.ts` (tipos + HTTP, separados do `core/api.ts`), `cotacao.page.ts`, `criterios.ts`, `resultado.ts`, `cesta.store.ts` (itens escolhidos para o orçamento por cotação) |
 | `features/orcamento-cotacao/` | Tela de revisão e geração do orçamento por cotação (§8) |
-| `features/uso-ia/` | Painel "Uso da IA": cota de cada modelo da cadeia, totais do dia do Google, horas e últimas chamadas (§4) |
+| `features/uso-ia/` | Painel "Uso da IA" (área técnica, rota `/swagger/uso-ia`, fora do menu): cota de cada modelo da cadeia, totais do dia do Google, horas e últimas chamadas (§4) |
 
 Estilo: **um único** `src/styles.scss`, no **Design System R Damásio** (o mesmo do piloto de cotação de
 Suprimentos, adotado em 28/09/2026: papel claro, marinho `#0B3A5C` + vermelho `#CB2028`, fontes Archivo e
@@ -242,7 +242,7 @@ por vaga e então devolve "IA ocupada") e no máximo **4 requisições por leitu
 reserva, degrau, repetição), resultado, tokens, tempo, tipo de orçamento, nº de arquivos e IP. Guardado 90 dias. Na
 subida, os contadores do dia são remontados daqui, senão um reinício "devolveria" a cota já gasta.
 
-**Painel "Uso da IA"** (menu do cabeçalho, `/uso-ia`, atualiza a cada 15 s): situação de cada degrau, requisições e
+**Painel "Uso da IA"** (área técnica: só pelo endereço **`/swagger/uso-ia`**, fora do menu do helpdesk desde 30/09/2026; atualiza a cada 15 s): situação de cada degrau, requisições e
 tokens do dia, **pico por minuto** (é o "RPM" do painel do Google), leituras que caíram em modelo reserva, colunas
 por hora e as 40 últimas chamadas. Quando a leitura sai de um modelo abaixo do primeiro, a revisão ganha o aviso
 "Lido pelo modelo reserva ...: confira valores e quantidades".
@@ -264,7 +264,7 @@ guarda 14 dias). O backend registra, para cada chamada,
 - Muitos tokens de **entrada**: imagem ou PDF pesado (PDF multipágina conta cada página).
 - Muitos de **raciocínio**: baixar `nivel-raciocinio`.
 - `HTTP 503` ou "não respondeu": sobrecarga do Google. A cadeia já cuida disso.
-- Leitura que caiu em modelo reserva, recusas e pico por minuto: tela **Uso da IA** ou `GET /api/uso-ia`.
+- Leitura que caiu em modelo reserva, recusas e pico por minuto: `/swagger/uso-ia` ou `GET /api/uso-ia`.
 
 ### Avaliação com orçamentos reais (25/09/2026) — `tools/avaliar_extracao.py`
 
