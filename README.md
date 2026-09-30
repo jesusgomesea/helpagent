@@ -146,13 +146,14 @@ continua sendo o da loja escolhida.
 |---|---|---|
 | GET | `/api/lojas?busca=` · `?incluirInativas=true` · `/api/lojas/{numero}` | cadastro de lojas ("023" = "23") |
 | POST · PUT `/{numero}` · PATCH `/{numero}/ativa` | `/api/lojas` | cadastrar, editar, desativar/reativar (tela **Lojas**) |
+| GET · POST · PUT `/{id}` · PATCH `/{id}/ativo` | `/api/fornecedores` (`?incluirInativos=true` traz o uso de cada um) | fornecedores conhecidos (tela **Lojas → Fornecedores**) |
 | GET | `/api/historico/por-chamado?numeros=` | orçamentos já gerados para os chamados (aviso de duplicidade) |
 | GET | `/api/parametros` | máx. de itens, requerente/gestor padrão |
 | POST | `/api/extracoes` (multipart: `modo`, `chamados[]`, `orcamentos[]`) | leitura por IA + avisos A2/C2 |
 | GET | `/api/uso-ia` | painel de uso do Gemini: situação de cada modelo da cadeia, totais do dia do Google, últimas chamadas |
 | POST | `/api/orcamentos` (multipart: `dados` JSON + arquivos) | valida (A1), gera e devolve o PDF, grava no histórico; itens com `prints` = orçamento por cotação |
 | GET | `/api/historico?modo=&busca=&lixeira=&pagina=&tamanho=` · `/api/historico/{id}/pdf` | histórico central, filtrável por tipo; `lixeira=true` = aba Lixeira |
-| | filtros (na listagem e na contagem): `de`, `ate` (emissão, yyyy-MM-dd), `loja`, `valorMin`, `valorMax`, `origem` (`DOCUMENTOS`/`COTACAO`) | painel "Filtros" da tela |
+| | filtros (na listagem e na contagem): `de`, `ate` (emissão, yyyy-MM-dd), `loja`, `fornecedor` (id), `valorMin`, `valorMax`, `origem` (`DOCUMENTOS`/`COTACAO`) | painel "Filtros" da tela |
 | DELETE · POST · DELETE | `/api/historico/{id}` · `/{id}/restaurar` · `/{id}/definitivo` | manda para a lixeira · restaura · exclui de vez (só da lixeira) |
 | GET | `/api/historico/contagem?busca=` (+ filtros) | quantos de cada aba (`REQUISICAO`, `OPEX`, `CAPEX`, `TODOS`, `LIXEIRA`) |
 | GET | `/api/historico/exportar` | backup JSON (versão 3) com todos os orçamentos, itens e PDFs em base64 |

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { Api, mensagensDeErro } from '../../core/api';
 import { Avisos } from '../../core/avisos';
@@ -17,11 +18,15 @@ import { Icone } from '../../layout/icone';
  */
 @Component({
   selector: 'ha-lojas',
-  imports: [ReactiveFormsModule, Faixa, Icone],
+  imports: [ReactiveFormsModule, RouterLink, Faixa, Icone],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ha-faixa sobretitulo="Helpdesk · Cadastro" titulo="Lojas" subtitulo="Cadastro usado para empresa, CNPJ e impresso de cada orçamento" />
     <main class="container">
+      <div class="seg cadastro-seg" role="tablist" aria-label="Cadastro">
+        <a role="tab" class="ativo" aria-selected="true">Lojas</a>
+        <a role="tab" routerLink="/lojas/fornecedores">Fornecedores</a>
+      </div>
       <section class="card">
         <header class="card-header">
           <h2>{{ editando() ? 'Editar loja ' + editando() : 'Nova loja' }}</h2>

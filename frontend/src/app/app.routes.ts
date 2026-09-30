@@ -25,6 +25,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/lojas/lojas.page').then((m) => m.LojasPage),
   },
   {
+    // debaixo de /lojas: o link "Lojas" do menu fica ativo nas duas telas de cadastro
+    path: 'lojas/fornecedores',
+    title: 'HELP-AGENT — Fornecedores',
+    loadComponent: () => import('./features/fornecedores/fornecedores.page').then((m) => m.FornecedoresPage),
+  },
+  {
     path: 'cotacao',
     title: 'HELP-AGENT — Cotação',
     canMatch: [recursoLigado('cotacao')],

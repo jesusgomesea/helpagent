@@ -58,8 +58,9 @@ public class GeminiClient {
         Map<String, Object> texto = Map.of("type", "string");
         Map<String, Object> item = Map.of("type", "object",
                 "properties", Map.of("produto", texto, "descricao", texto, "qtd", texto, "valor_unit", texto,
-                        "valor_total", texto, "fonte", texto),
-                "required", List.of("produto", "descricao", "qtd", "valor_unit", "valor_total", "fonte"));
+                        "valor_total", texto, "fonte", texto, "fornecedor", texto, "fornecedor_cnpj", texto),
+                "required", List.of("produto", "descricao", "qtd", "valor_unit", "valor_total", "fonte", "fornecedor",
+                        "fornecedor_cnpj"));
         Map<String, Object> propriedades = new LinkedHashMap<>();
         for (String campo : List.of("chamado_num", "loja_num", "loja_nome", "titulo")) propriedades.put(campo, texto);
         propriedades.put("itens", Map.of("type", "array", "items", item));

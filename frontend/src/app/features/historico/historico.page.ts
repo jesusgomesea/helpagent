@@ -8,6 +8,7 @@ import { Avisos } from '../../core/avisos';
 import { fmtBRL, parseBRL } from '../../core/dinheiro';
 import {
   FiltrosHistorico,
+  Fornecedor,
   ItemHistorico,
   Loja,
   MODOS,
@@ -31,7 +32,7 @@ const POR_PAGINA = 20;
  * A aba e a página ficam na URL (/historico?tipo=OPEX&pagina=2): dá para mandar o link e o "voltar" do
  * navegador funciona. A busca vale para todas as abas, e os números das abas acompanham o que foi buscado.
  *
- * Filtros (30/09/2026): período de emissão, loja, faixa de valor e origem, num painel que abre pelo botão
+ * Filtros (30/09/2026): período de emissão, loja, fornecedor, faixa de valor e origem, num painel que abre pelo botão
  * "Filtros". Também ficam na URL (?de=2026-09-01&loja=23...) e valem para a lista e para os números das abas.
  *
  * Apagar manda para a aba Lixeira (30/09/2026): de lá o orçamento é restaurado ou excluído de vez; passados
@@ -81,6 +82,12 @@ const POR_PAGINA = 20;
               (change)="filtrar('valorMin', $any($event.target).value)"></label>
             <label>até (R$) <input inputmode="decimal" placeholder="sem limite" [value]="valorTexto(filtros().valorMax)"
               (change)="filtrar('valorMax', $any($event.target).value)"></label>
+            <label>Fornecedor
+              <select [value]="filtros().fornecedor ?? ''" (change)="filtrar('fornecedor', $any($event.target).value)">
+                <option value="">Todos</option>
+                @for (f of fornecedores(); track f.id) { <option [value]="f.id">{{ f.nome }}</option> }
+              </select>
+            </label>
             <label>Origem
               <select [value]="filtros().origem ?? ''" (change)="filtrar('origem', $any($event.target).value)">
                 <option value="">Todas</option>
@@ -124,7 +131,7 @@ const POR_PAGINA = 20;
                 <div class="hist-meta">
                   @if (aba() === 'TODOS') { <span class="selo-tipo selo-{{ r.modo }}">{{ rotulo(r.modo) }}</span> }
                   @if (r.origem === 'COTACAO') { <span class="selo-tipo selo-COTACAO" title="Montado pela cotação em lojas online, com os prints anexados">por cotação</span> }
-                  Loja {{ r.lojaNumero }} · {{ r.lojaNome }} · Chamado {{ r.chamadoNum || '—' }}@if (r.criadoPor !== 'anonimo') { · por {{ r.criadoPor }} }
+                  Loja {{ r.lojaNumero }} · {{ r.lojaNome }} · Chamado {{ r.chamadoNum || '—' }}@if (r.fornecedores.length) { · {{ r.fornecedores.join(', ') }} }@if (r.criadoPor !== 'anonimo') { · por {{ r.criadoPor }} }
                 </div>
                 @if (r.excluidoEm) {
                   <div class="hist-meta hist-excluido">Apagado em {{ r.excluidoEm | date: 'dd/MM/yyyy HH:mm' }} por {{ r.excluidoPor }}</div>
@@ -189,6 +196,8 @@ export class HistoricoPage {
   protected readonly filtrosAtivos = computed(() => Object.values(this.filtros()).filter((v) => v !== undefined).length);
   /** Todas as lojas, inclusive desativadas: orçamento antigo pode ser de loja que fechou. */
   protected readonly lojas = toSignal(this.api.lojasTodas(), { initialValue: [] as Loja[] });
+  /** Todos os fornecedores, inclusive desativados (orçamento antigo). */
+  protected readonly fornecedores = toSignal(this.api.fornecedoresTodos(), { initialValue: [] as Fornecedor[] });
   protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.totalAba() / POR_PAGINA)));
   protected readonly primeiro = computed(() => (this.totalAba() ? this.pagina() * POR_PAGINA + 1 : 0));
   protected readonly ultimo = computed(() => Math.min(this.totalAba(), (this.pagina() + 1) * POR_PAGINA));
@@ -224,6 +233,7 @@ export class HistoricoPage {
         valorMin: this.filtros().valorMin ?? null,
         valorMax: this.filtros().valorMax ?? null,
         origem: this.filtros().origem ?? null,
+        fornecedor: this.filtros().fornecedor ?? null,
       },
     });
   }
@@ -233,7 +243,7 @@ export class HistoricoPage {
     const f = { ...this.filtros() };
     const texto = bruto.trim();
     if (!texto) delete f[campo];
-    else if (campo === 'loja') f.loja = Number(texto);
+    else if (campo === 'loja' || campo === 'fornecedor') f[campo] = Number(texto);
     else if (campo === 'valorMin' || campo === 'valorMax') {
       const v = parseBRL(texto);
       if (v > 0) f[campo] = v;
@@ -353,6 +363,7 @@ function filtrosDaUrl(q: ParamMap): FiltrosHistorico {
   f.de = data(q.get('de'));
   f.ate = data(q.get('ate'));
   f.loja = numero(q.get('loja'));
+  f.fornecedor = numero(q.get('fornecedor'));
   f.valorMin = numero(q.get('valorMin'));
   f.valorMax = numero(q.get('valorMax'));
   const origem = q.get('origem');

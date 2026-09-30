@@ -9,6 +9,10 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate # o schema é das migrations Flyway, nunca do Hibernate
+    properties:
+      hibernate:
+        # a lista do histórico lê as linhas (fornecedores) de 20 orçamentos: em lote, 1 consulta em vez de 20
+        default_batch_fetch_size: 50
   servlet:
     multipart:
       # Prints e PDFs de fornecedor são pequenos, mas o backup do histórico leva todos os PDFs em base64.

@@ -48,7 +48,8 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 - **Filtros do histórico (desde 30/09/2026):** botão "Filtros" abre um painel com período de **emissão** (de/até),
   loja (inclusive desativadas), faixa de **total** e origem (documentos ou cotação). Vão na URL
   (`?de=2026-09-01&ate=2026-09-30&loja=23&valorMin=100&valorMax=5000&origem=COTACAO`) e para a API com os mesmos
-  nomes (`HistoricoController.FiltrosPainel`); valem na lista e nos números das abas. Filtro novo: campo no
+  nomes (`HistoricoController.FiltrosPainel`); valem na lista e nos números das abas. Também filtra por
+  **fornecedor** (`?fornecedor=<id>`), e cada linha da lista mostra os fornecedores do orçamento. Filtro novo: campo no
   `FiltroHistorico` + parâmetro no `FiltrosPainel` + campo no painel (`historico.page.ts`).
 - **Lixeira (desde 30/09/2026, V8):** "apagar" preenche `orcamento.excluido_em/excluido_por` em vez de apagar. O
   orçamento some das abas, do aviso de chamado já orçado e do backup, e aparece na aba **Lixeira**
@@ -66,6 +67,15 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
   conta (`ExtracaoService.validadeSugerida`). Validade anterior à emissão é recusada.
 - **Fonte de cada valor**: a IA diz de onde leu cada total, por exemplo "pág. 1, linha Subtotal". Isso vai só
   para o log (`Extração item 1: … fonte="…"`), não para a tela, e serve para auditar uma leitura errada.
+- **Fornecedor de cada item (desde 30/09/2026, V9)**: a IA lê quem emitiu cada orçamento (`fornecedor`,
+  `fornecedor_cnpj`; o prompt proíbe usar o grupo R Damásio, que é o cliente). O servidor reconhece o cadastrado
+  (`ReconhecimentoFornecedor`: CNPJ válido → nome/apelido com a mesma "chave" → nome lido que **começa** pelo
+  cadastrado, em palavra inteira e com 5+ letras; nunca "contém no meio") e a revisão mostra "cadastrado" ou
+  "novo — será cadastrado". Ao gerar, `FornecedorService.vincular` liga a linha ao cadastro, **cadastra quem é novo**
+  e guarda o nome lido como apelido — o cadastro cresce sozinho. Na cotação, o fornecedor é a loja. O impresso não
+  tem campo de fornecedor: é dado do histórico (lista, filtro "Fornecedor") e do cadastro. Regra conservadora de
+  propósito: juntar dois fornecedores diferentes é pior que cadastrar um repetido (esse se corrige na tela).
+  Testado em 30/09 com um orçamento real: leu "Image Informática Ltda" e o CNPJ, e não o cliente.
 
 ### Regras de negócio (nomes herdados do HTML v3.5, citados nos comentários)
 
@@ -87,6 +97,7 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 | `config` | `HelpAgentProperties` (tudo que é configurável, prefixo `helpagent.*`), segurança/CORS, usuário atual, `/api/parametros`, `OpenApiConfig` (contrato em `/v3/api-docs`), `Recursos` + `GuardaRecursos` (liga/desliga IA e cotação; desligado → 503) |
 | `common` | `Dinheiro` (BRL ↔ `BigDecimal`), `Documento` (arquivo enviado), `OrigemRequisicao` (IP para os logs de auditoria), `IdRequisicaoFiltro` (X-Request-Id no log e no erro), erros de negócio e o `TratadorErros` (ProblemDetail) |
 | `loja` | Cadastro de lojas e busca por número/nome |
+| `fornecedor` | Fornecedores conhecidos: reconhecimento do que a IA leu (`ReconhecimentoFornecedor`), vínculo da linha ao gerar e o cadastro `/api/fornecedores` |
 | `template` | Os 4 impressos: `TemplateCodigo`, nomes dos campos AcroForm (`CamposImpresso`) e leitura do PDF em branco |
 | `extracao` | Tudo da IA: prompt, cliente Gemini, política de tentativas e cadeia de modelos, parser da resposta, avisos |
 | `usoia` | Controle de cota do Gemini por modelo (`ControleCotaIa`), registro de cada chamada (tabela `uso_ia`), métricas Prometheus, saúde `ia` (`SaudeIa`) e o painel `/api/uso-ia` (§4) |
@@ -109,6 +120,7 @@ Recursos: `application.yml` (padrões), `application-local.yml` (perfil sem Post
 | `features/novo-orcamento/` | Página principal: `orcamento.store.ts` (estado com signals), `composer.ts` (card 1), `revisao.ts` (cards 2 e 3) |
 | `features/historico/` | Lista, busca, download, backup JSON |
 | `features/lojas/` | Cadastro de lojas |
+| `features/fornecedores/` | Cadastro de fornecedores (`/lojas/fornecedores`, junto das lojas) |
 | `features/cotacao/` | Cotação em lojas online: `cotacao.api.ts` (tipos + HTTP, separados do `core/api.ts`), `cotacao.page.ts`, `criterios.ts`, `resultado.ts`, `cesta.store.ts` (itens escolhidos para o orçamento por cotação) |
 | `features/orcamento-cotacao/` | Tela de revisão e geração do orçamento por cotação (§8) |
 | `features/uso-ia/` | Painel "Uso da IA" (área técnica, rota `/swagger/uso-ia`, fora do menu): cota de cada modelo da cadeia, totais do dia do Google, horas e últimas chamadas (§4) |

@@ -11,11 +11,14 @@ import org.springframework.data.jpa.domain.Specification;
 import br.com.rdamasio.helpagent.loja.Loja;
 import br.com.rdamasio.helpagent.orcamento.ModoAquisicao;
 import br.com.rdamasio.helpagent.orcamento.Orcamento;
+import br.com.rdamasio.helpagent.orcamento.OrcamentoItem;
 import br.com.rdamasio.helpagent.orcamento.OrigemOrcamento;
 import jakarta.persistence.criteria.Fetch;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 /**
  * O que a tela do histórico pediu: busca, aba (tipo de requisição), lixeira e os filtros do painel "Filtros".
@@ -32,22 +35,23 @@ import jakarta.persistence.criteria.Predicate;
  * @param valorMin   total a partir de (inclusive)
  * @param valorMax   total até (inclusive)
  * @param origem     DOCUMENTOS (fluxo de sempre) ou COTACAO (montado pela cotação)
+ * @param fornecedor id do fornecedor: orçamentos com alguma linha dele
  */
 public record FiltroHistorico(String termo, ModoAquisicao modo, boolean lixeira, LocalDate de, LocalDate ate,
-        Integer loja, BigDecimal valorMin, BigDecimal valorMax, OrigemOrcamento origem) {
+        Integer loja, BigDecimal valorMin, BigDecimal valorMax, OrigemOrcamento origem, Long fornecedor) {
 
     /** Só busca, aba e lixeira (sem os filtros do painel). */
     public FiltroHistorico(String termo, ModoAquisicao modo, boolean lixeira) {
-        this(termo, modo, lixeira, null, null, null, null, null, null);
+        this(termo, modo, lixeira, null, null, null, null, null, null, null);
     }
 
     /** O mesmo filtro em outra aba (as contagens das abas usam os demais filtros iguais). */
     public FiltroHistorico comModo(ModoAquisicao outro) {
-        return new FiltroHistorico(termo, outro, lixeira, de, ate, loja, valorMin, valorMax, origem);
+        return new FiltroHistorico(termo, outro, lixeira, de, ate, loja, valorMin, valorMax, origem, fornecedor);
     }
 
     public FiltroHistorico naLixeira(boolean sim) {
-        return new FiltroHistorico(termo, modo, sim, de, ate, loja, valorMin, valorMax, origem);
+        return new FiltroHistorico(termo, modo, sim, de, ate, loja, valorMin, valorMax, origem, fornecedor);
     }
 
     public Specification<Orcamento> especificacao() {
@@ -81,6 +85,14 @@ public record FiltroHistorico(String termo, ModoAquisicao modo, boolean lixeira,
             if (valorMin != null) p.add(cb.greaterThanOrEqualTo(raiz.get("total"), valorMin));
             if (valorMax != null) p.add(cb.lessThanOrEqualTo(raiz.get("total"), valorMax));
             if (origem != null) p.add(cb.equal(raiz.get("origem"), origem));
+            if (fornecedor != null) {
+                // existe alguma linha do orçamento com esse fornecedor (subconsulta: não duplica o orçamento na lista)
+                Subquery<Long> sub = consulta.subquery(Long.class);
+                Root<OrcamentoItem> item = sub.from(OrcamentoItem.class);
+                sub.select(item.get("id")).where(cb.equal(item.get("orcamento"), raiz),
+                        cb.equal(item.get("fornecedorRef").get("id"), fornecedor));
+                p.add(cb.exists(sub));
+            }
             return cb.and(p.toArray(Predicate[]::new));
         };
     }

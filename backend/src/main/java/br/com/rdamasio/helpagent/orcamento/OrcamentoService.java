@@ -17,6 +17,7 @@ import br.com.rdamasio.helpagent.common.ErroNegocio;
 import br.com.rdamasio.helpagent.common.NaoEncontrado;
 import br.com.rdamasio.helpagent.config.HelpAgentProperties;
 import br.com.rdamasio.helpagent.config.UsuarioAtual;
+import br.com.rdamasio.helpagent.fornecedor.FornecedorService;
 import br.com.rdamasio.helpagent.cotacao.PrintsCotacao;
 import br.com.rdamasio.helpagent.loja.Loja;
 import br.com.rdamasio.helpagent.loja.LojaService;
@@ -47,10 +48,13 @@ public class OrcamentoService {
     private final UsuarioAtual usuario;
     private final HelpAgentProperties.Orcamento cfg;
     private final PrintsCotacao prints;
+    private final FornecedorService fornecedores;
 
     public OrcamentoService(LojaService lojas, PdfOrcamentoService pdf, ArmazenamentoArquivos armazenamento,
-            OrcamentoRepository repo, UsuarioAtual usuario, HelpAgentProperties props, PrintsCotacao prints) {
+            OrcamentoRepository repo, UsuarioAtual usuario, HelpAgentProperties props, PrintsCotacao prints,
+            FornecedorService fornecedores) {
         this.lojas = lojas;
+        this.fornecedores = fornecedores;
         this.prints = prints;
         this.pdf = pdf;
         this.armazenamento = armazenamento;
@@ -93,6 +97,10 @@ public class OrcamentoService {
             if (!printsPorItem.get(i).isEmpty()) {
                 PrintsCotacao.Print escolhida = printsPorItem.get(i).getFirst();
                 item.registrarCotacao(escolhida.fonte(), escolhida.url(), escolhida.capturadoEm());
+                // na cotação o fornecedor é a loja onde o preço foi visto
+                fornecedores.vincular(escolhida.fonte(), null, null).ifPresent(item::definirFornecedor);
+            } else {
+                fornecedores.vincular(it.fornecedor(), it.fornecedorCnpj(), it.fornecedorLido()).ifPresent(item::definirFornecedor);
             }
             o.adicionarItem(item);
             linhas.add(new DadosImpresso.Linha(it.produto().trim(), it.descricao(), qtd.stripTrailingZeros().toPlainString(),

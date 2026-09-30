@@ -16,7 +16,9 @@ Retorne APENAS um JSON válido, sem markdown, sem explicações, no formato EXAT
       "qtd": "1",
       "valor_unit": "1500,00",
       "valor_total": "1500,00",
-      "fonte": "onde o valor total deste item foi lido, com página e trecho do documento (ex: 'pág. 1, linha Subtotal: R$ 14.994,00' ou 'print, preço à vista no PIX: R$ 2.678')"
+      "fonte": "onde o valor total deste item foi lido, com página e trecho do documento (ex: 'pág. 1, linha Subtotal: R$ 14.994,00' ou 'print, preço à vista no PIX: R$ 2.678')",
+      "fornecedor": "nome da empresa que EMITIU este orçamento, como está escrito no documento (razão social ou nome fantasia do cabeçalho, rodapé ou carimbo; em print de loja online, o nome da loja, ex: 'Kabum'). Se não aparecer, string vazia",
+      "fornecedor_cnpj": "CNPJ de quem emitiu este orçamento, se estiver escrito no documento (ex: '12.345.678/0001-90'); senão string vazia"
     }
   ],
   "total": "R$ 1.500,00",
@@ -30,6 +32,7 @@ REGRAS:
 - qtd variável "quase sempre não estará evidente no orçamento" Com isto, se não identificada, seguir para o proximo até o preview.
 - "total" do JSON = soma dos totais dos {{total_orcs}} orçamento(s).
 - Valores em formato brasileiro (vírgula como decimal, ponto como milhar).
+- Fornecedor: é quem VENDE. A R Damásio, a TD Motopeças, a Damásio, a CPL e as lojas do grupo são o CLIENTE — nunca use o nome ou o CNPJ delas como fornecedor.
 - Validade: NÃO invente nem calcule datas. Preencha validade_ate ou validade_dias apenas com o que estiver escrito. Havendo mais de um orçamento, use a menor validade. Prints de e-commerce normalmente não têm validade: deixe vazio.{{regra_extra}}
 
 HIERARQUIA DE PREÇOS (CRÍTICO para sites de e-commerce):

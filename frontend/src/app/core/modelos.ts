@@ -91,6 +91,33 @@ export interface ItemExtraido {
   valor_total: string | null;
   /** Onde a IA leu o valor — só vai para o log do servidor, a tela não mostra. */
   fonte?: string | null;
+  /** Quem emitiu o orçamento, como está no documento. */
+  fornecedor?: string | null;
+  fornecedor_cnpj?: string | null;
+}
+
+/** Fornecedor conhecido (cadastro que cresce com o uso). {@code orcamentos}/{@code ultimoUso} só na tela de cadastro. */
+export interface Fornecedor {
+  id: number;
+  nome: string;
+  cnpj: string | null;
+  apelidos: string[];
+  ativo: boolean;
+  orcamentos: number;
+  ultimoUso: string | null;
+}
+
+export interface FornecedorForm {
+  nome: string;
+  cnpj: string;
+  apelidos: string[];
+}
+
+/** Fornecedor de um item lido pela IA: como veio no documento e o cadastrado reconhecido (null = novo). */
+export interface FornecedorSugerido {
+  lido: string | null;
+  cnpjLido: string | null;
+  cadastrado: Fornecedor | null;
 }
 
 export interface RespostaExtracao {
@@ -107,6 +134,8 @@ export interface RespostaExtracao {
   validadeSugerida: string | null;
   /** Orçamentos já gerados para os mesmos chamados — aviso de duplicidade. */
   chamadosJaOrcados: ItemHistorico[];
+  /** Um por item, na mesma ordem de dados.itens. */
+  fornecedores: FornecedorSugerido[];
 }
 
 export interface GerarOrcamentoRequest {
@@ -116,8 +145,20 @@ export interface GerarOrcamentoRequest {
   dataEmissao: string; // yyyy-MM-dd
   validade: string | null; // yyyy-MM-dd
   chamadoNum: string | null;
-  /** prints: só no orçamento por cotação — ids dos prints das opções do item, a escolhida primeiro. */
-  itens: { produto: string; descricao: string; quantidade: number; valorUnitario: number; prints?: string[] }[];
+  /**
+   * prints: só no orçamento por cotação — ids dos prints das opções do item, a escolhida primeiro.
+   * fornecedor: quem emitiu o orçamento da linha (confirmado na revisão); fornecedorLido: como a IA leu (vira apelido).
+   */
+  itens: {
+    produto: string;
+    descricao: string;
+    quantidade: number;
+    valorUnitario: number;
+    prints?: string[];
+    fornecedor?: string;
+    fornecedorCnpj?: string;
+    fornecedorLido?: string;
+  }[];
   subtotal: number | null;
   frete: number | null;
   acrescimos: number | null;
@@ -143,6 +184,8 @@ export interface ItemHistorico {
   /** Só na lixeira: quando foi apagado e por quem (IP, ou o usuário quando houver login). */
   excluidoEm: string | null;
   excluidoPor: string | null;
+  /** Fornecedores das linhas (vazio nos orçamentos antigos). */
+  fornecedores: string[];
 }
 
 export type OrigemOrcamento = 'DOCUMENTOS' | 'COTACAO';
@@ -155,6 +198,8 @@ export interface FiltrosHistorico {
   valorMin?: number;
   valorMax?: number;
   origem?: OrigemOrcamento;
+  /** id do fornecedor */
+  fornecedor?: number;
 }
 
 export interface Pagina<T> {

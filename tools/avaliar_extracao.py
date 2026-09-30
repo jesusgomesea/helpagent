@@ -58,8 +58,10 @@ SCHEMA = {
         "titulo": {"type": "string"},
         "itens": {"type": "array", "items": {"type": "object", "properties": {
             "produto": {"type": "string"}, "descricao": {"type": "string"}, "qtd": {"type": "string"},
-            "valor_unit": {"type": "string"}, "valor_total": {"type": "string"}, "fonte": {"type": "string"}},
-            "required": ["produto", "descricao", "qtd", "valor_unit", "valor_total", "fonte"]}},
+            "valor_unit": {"type": "string"}, "valor_total": {"type": "string"}, "fonte": {"type": "string"},
+            "fornecedor": {"type": "string"}, "fornecedor_cnpj": {"type": "string"}},
+            "required": ["produto", "descricao", "qtd", "valor_unit", "valor_total", "fonte", "fornecedor",
+                         "fornecedor_cnpj"]}},
         "total": {"type": "string"}, "observacao": {"type": "string"},
         "validade_ate": {"type": "string"}, "validade_dias": {"type": "string"},
     },

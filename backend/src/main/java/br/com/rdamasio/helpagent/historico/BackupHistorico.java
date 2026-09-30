@@ -51,7 +51,10 @@ public record BackupHistorico(int versao, String origem, Instant exportadoEm, Li
             OrigemOrcamento origem) {
     }
 
-    /** {@code fornecedor}, {@code url} e {@code coletadoEm}: só nas linhas vindas da cotação (null nas demais). */
+    /**
+     * {@code url} e {@code coletadoEm}: só nas linhas vindas da cotação. {@code fornecedor}: o nome do fornecedor da
+     * linha (desde a V9 também nas linhas comuns; na importação volta a apontar para o cadastro).
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Item(int ordem, String produto, String descricao, BigDecimal quantidade,
             BigDecimal valorUnitario, BigDecimal valorTotal, String fornecedor, String url, Instant coletadoEm) {

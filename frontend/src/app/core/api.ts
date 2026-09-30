@@ -5,6 +5,8 @@ import {
   Anexo,
   GerarOrcamentoRequest,
   FiltrosHistorico,
+  Fornecedor,
+  FornecedorForm,
   ItemHistorico,
   Loja,
   LojaForm,
@@ -45,6 +47,28 @@ export class Api {
 
   definirLojaAtiva(numero: number, ativa: boolean): Observable<Loja> {
     return this.http.patch<Loja>(`/api/lojas/${numero}/ativa`, { ativa });
+  }
+
+  /** Só os ativos — sugestão na revisão e filtro do histórico. */
+  fornecedores(): Observable<Fornecedor[]> {
+    return this.http.get<Fornecedor[]>('/api/fornecedores');
+  }
+
+  /** Todos, com o uso de cada um — tela de cadastro. */
+  fornecedoresTodos(): Observable<Fornecedor[]> {
+    return this.http.get<Fornecedor[]>('/api/fornecedores', { params: { incluirInativos: true } });
+  }
+
+  criarFornecedor(f: FornecedorForm): Observable<Fornecedor> {
+    return this.http.post<Fornecedor>('/api/fornecedores', f);
+  }
+
+  atualizarFornecedor(id: number, f: FornecedorForm): Observable<Fornecedor> {
+    return this.http.put<Fornecedor>(`/api/fornecedores/${id}`, f);
+  }
+
+  definirFornecedorAtivo(id: number, ativo: boolean): Observable<Fornecedor> {
+    return this.http.patch<Fornecedor>(`/api/fornecedores/${id}/ativo`, { ativo });
   }
 
   /** Orçamentos já gerados para algum dos chamados do texto ("1021069, 1021070"). */

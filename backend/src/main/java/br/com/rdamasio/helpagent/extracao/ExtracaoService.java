@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import br.com.rdamasio.helpagent.common.Documento;
 import br.com.rdamasio.helpagent.common.ErroNegocio;
 import br.com.rdamasio.helpagent.config.HelpAgentProperties;
+import br.com.rdamasio.helpagent.fornecedor.FornecedorController;
+import br.com.rdamasio.helpagent.fornecedor.FornecedorService;
 import br.com.rdamasio.helpagent.historico.ChamadosJaOrcados;
 import br.com.rdamasio.helpagent.historico.HistoricoController;
 import br.com.rdamasio.helpagent.loja.LojaDto;
@@ -37,10 +39,16 @@ public class ExtracaoService {
      * @param validadeSugerida "válido até" para o impresso: a data escrita no documento, ou hoje + os dias
      *                 de validade escritos nele; null quando o documento não diz (comum em print de e-commerce)
      * @param chamadosJaOrcados orçamentos já gerados para os mesmos chamados (aviso de duplicidade)
+     * @param fornecedores      um por item (mesma ordem de {@code dados.itens}): o que a IA leu e o cadastrado que o
+     *                          sistema reconheceu (null = fornecedor novo; vira cadastro ao gerar)
      */
     public record Resposta(DadosExtraidos dados, LojaDto loja, List<String> avisos, String modelo, int tentativas,
             long duracaoMs, boolean doCache, LocalDate validadeSugerida,
-            List<HistoricoController.Item> chamadosJaOrcados) {
+            List<HistoricoController.Item> chamadosJaOrcados, List<FornecedorSugerido> fornecedores) {
+    }
+
+    /** Fornecedor de um item lido: como veio no documento e o cadastrado correspondente, se houver. */
+    public record FornecedorSugerido(String lido, String cnpjLido, FornecedorController.FornecedorDto cadastrado) {
     }
 
     private final ExtratorIa extrator;
@@ -49,10 +57,12 @@ public class ExtracaoService {
     private final LojaService lojas;
     private final HelpAgentProperties props;
     private final ChamadosJaOrcados jaOrcados;
+    private final FornecedorService fornecedores;
 
     public ExtracaoService(ExtratorIa extrator, CacheExtracao cache, PromptExtracao prompt, LojaService lojas,
-            HelpAgentProperties props, ChamadosJaOrcados jaOrcados) {
+            HelpAgentProperties props, ChamadosJaOrcados jaOrcados, FornecedorService fornecedores) {
         this.jaOrcados = jaOrcados;
+        this.fornecedores = fornecedores;
         this.extrator = extrator;
         this.cache = cache;
         this.prompt = prompt;
@@ -93,8 +103,14 @@ public class ExtracaoService {
         // uma leitura errada depois (ex.: somou anotação à mão da proposta).
         for (int i = 0; i < d.itens().size(); i++) {
             DadosExtraidos.Item it = d.itens().get(i);
-            log.info("Extração item {}: produto=\"{}\" valor={} fonte=\"{}\"", i + 1, it.produto(), it.valorTotal(), it.fonte());
+            log.info("Extração item {}: produto=\"{}\" valor={} fonte=\"{}\" fornecedor=\"{}\" cnpj={}", i + 1,
+                    it.produto(), it.valorTotal(), it.fonte(), it.fornecedor(), it.fornecedorCnpj());
         }
+        List<FornecedorSugerido> sugeridos = d.itens().stream()
+                .map(it -> new FornecedorSugerido(it.fornecedor(), it.fornecedorCnpj(),
+                        fornecedores.reconhecer(it.fornecedor(), it.fornecedorCnpj())
+                                .map(FornecedorController.FornecedorDto::de).orElse(null)))
+                .toList();
         LojaDto loja = lojas.resolver(d.lojaNum(), d.lojaNome()).map(LojaDto::de).orElse(null);
         var duplicados = modo.exigeChamado() ? jaOrcados.buscar(ChamadosJaOrcados.numeros(d.chamadoNum())) : List.<HistoricoController.Item>of();
         List<String> avisos = new ArrayList<>(RegrasExtracao.avisos(d, props.orcamento().maxItens()));
@@ -104,7 +120,7 @@ public class ExtracaoService {
                     + "Confira valores e quantidades com atenção.");
         }
         return new Resposta(d, loja, avisos, r.modelo(), r.tentativas(),
-                ms, obtido.reaproveitado(), validadeSugerida(d, LocalDate.now(props.fuso())), duplicados);
+                ms, obtido.reaproveitado(), validadeSugerida(d, LocalDate.now(props.fuso())), duplicados, sugeridos);
     }
 
     private static final DateTimeFormatter DATA_BR = DateTimeFormatter.ofPattern("dd/MM/uuuu");

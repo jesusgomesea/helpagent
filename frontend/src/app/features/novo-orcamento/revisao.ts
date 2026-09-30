@@ -5,7 +5,16 @@ import { catchError, debounceTime, distinctUntilChanged, firstValueFrom, of, swi
 import { Api, salvarArquivo } from '../../core/api';
 import { FormArray, FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { dataLocalISO, fmtBRL, numeroOuNulo, parseBRL } from '../../core/dinheiro';
-import { GerarOrcamentoRequest, ItemExtraido, ItemHistorico, Loja, Parametros, RespostaExtracao } from '../../core/modelos';
+import {
+  Fornecedor,
+  FornecedorSugerido,
+  GerarOrcamentoRequest,
+  ItemExtraido,
+  ItemHistorico,
+  Loja,
+  Parametros,
+  RespostaExtracao,
+} from '../../core/modelos';
 import { OrcamentoStore } from './orcamento.store';
 
 type ItemForm = FormGroup<{
@@ -13,9 +22,19 @@ type ItemForm = FormGroup<{
   descricao: FormControl<string>;
   qtd: FormControl<string>;
   unit: FormControl<string>;
+  /** Quem emitiu o orçamento desta linha (sugerido pela IA + cadastro; o atendente confirma). */
+  fornecedor: FormControl<string>;
+  fornecedorCnpj: FormControl<string>;
+  /** Como a IA leu: vai junto para o servidor aprender o apelido. */
+  fornecedorLido: FormControl<string>;
 }>;
 
-/** Cards 2 e 3: revisão dos dados extraídos e geração do PDF. */
+/**
+ * Cards 2 e 3: revisão dos dados extraídos e geração do PDF.
+ *
+ * Fornecedor por linha (30/09/2026): a IA lê quem emitiu cada orçamento; se o sistema reconhece um fornecedor do
+ * cadastro, o campo já vem com o nome padronizado ("cadastrado"); se não, com o nome lido ("novo — será cadastrado").
+ */
 @Component({
   selector: 'ha-revisao',
   imports: [ReactiveFormsModule, DatePipe, CurrencyPipe],
@@ -103,9 +122,14 @@ type ItemForm = FormGroup<{
                 <input formControlName="unit" placeholder="0,00">
                 <input [value]="totaisLinha()[i] ? fmt(totaisLinha()[i]) : ''" readonly placeholder="0,00">
                 <button type="button" class="btn-rm" (click)="removerItem(i)" title="Remover">×</button>
+                <div class="item-fornecedor">
+                  <input formControlName="fornecedor" placeholder="Fornecedor (quem emitiu o orçamento)" list="dl-fornecedores">
+                  @if (situacaoFornecedor(i); as s) { <span class="selo-fornecedor" [class.novo]="s === 'novo'">{{ s === 'novo' ? 'novo — será cadastrado' : 'cadastrado' }}</span> }
+                </div>
               </div>
             }
           </div>
+          <datalist id="dl-fornecedores">@for (f of fornecedores(); track f.id) { <option [value]="f.nome"></option> }</datalist>
           <button type="button" class="btn-add" [disabled]="itens.length >= maxItens()" (click)="adicionarItem()">+ Adicionar item</button>
 
           <div class="totais">
@@ -171,6 +195,10 @@ export class Revisao {
   /** De onde veio a validade pré-preenchida — para o atendente saber se foi lida ou precisa preencher. */
   protected readonly origemValidade = signal('Opcional — o documento não informa validade.');
   protected readonly maxItens = computed(() => this.parametros().maxItens);
+  /** Fornecedores ativos: sugestão no campo e para dizer se o nome digitado já é cadastrado. */
+  protected readonly fornecedores = toSignal(this.api.fornecedores().pipe(catchError(() => of([] as Fornecedor[]))), {
+    initialValue: [] as Fornecedor[],
+  });
   protected readonly fmt = fmtBRL;
 
   protected readonly form = this.fb.group({
@@ -228,7 +256,9 @@ export class Revisao {
     const d = ex.dados;
     this.itens.clear({ emitEvent: false });
     const itens = d.itens.slice(0, this.maxItens());
-    (itens.length ? itens : [{} as ItemExtraido]).forEach((i) => this.itens.push(this.novoItem(i), { emitEvent: false }));
+    (itens.length ? itens : [{} as ItemExtraido]).forEach((i, n) =>
+      this.itens.push(this.novoItem(i, ex.fornecedores?.[n]), { emitEvent: false }),
+    );
     this.jaOrcados.set(ex.chamadosJaOrcados ?? []);
     const validadeEscrita = !!d.validade_ate?.trim();
     this.origemValidade.set(
@@ -249,13 +279,24 @@ export class Revisao {
     this.loja.set(ex.loja);
   }
 
-  private novoItem(i: Partial<ItemExtraido> = {}): ItemForm {
+  private novoItem(i: Partial<ItemExtraido> = {}, f?: FornecedorSugerido): ItemForm {
     return this.fb.group({
       produto: i.produto ?? '',
       descricao: i.descricao ?? '',
       qtd: i.qtd ?? '1',
       unit: i.valor_unit ?? '',
+      // o cadastrado ganha do lido: é o nome padronizado que o helpdesk quer ver no histórico
+      fornecedor: f?.cadastrado?.nome ?? i.fornecedor ?? '',
+      fornecedorCnpj: i.fornecedor_cnpj ?? '',
+      fornecedorLido: i.fornecedor ?? '',
     });
+  }
+
+  /** 'cadastrado' se o nome bate com um fornecedor do cadastro (sem diferenciar maiúsculas); 'novo' se não; null vazio. */
+  protected situacaoFornecedor(i: number): 'cadastrado' | 'novo' | null {
+    const nome = (this.valor().itens?.[i]?.fornecedor ?? '').trim().toLowerCase();
+    if (!nome) return null;
+    return this.fornecedores().some((f) => f.nome.toLowerCase() === nome) ? 'cadastrado' : 'novo';
   }
 
   protected async baixarAnterior(o: ItemHistorico): Promise<void> {
@@ -302,6 +343,9 @@ export class Revisao {
         descricao: i.descricao,
         quantidade: parseFloat(i.qtd) || 1,
         valorUnitario: parseBRL(i.unit),
+        fornecedor: i.fornecedor.trim() || undefined,
+        fornecedorCnpj: i.fornecedorCnpj.trim() || undefined,
+        fornecedorLido: i.fornecedorLido.trim() || undefined,
       })),
       subtotal: numeroOuNulo(v.subtotal),
       frete: numeroOuNulo(v.frete),

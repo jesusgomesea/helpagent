@@ -223,7 +223,7 @@ img.branca { filter: brightness(0) invert(1); }
 
 // ---------- segmentado (OPEX / CAPEX / Requisição) ----------
 .seg { display: inline-flex; gap: 4px; border: 1px solid var(--border2); border-radius: var(--pilula); padding: 3px; background: var(--surface);
-  button { border: 0; background: transparent; padding: 6px 16px; border-radius: var(--pilula); color: var(--text2);
+  button, a { border: 0; background: transparent; padding: 6px 16px; border-radius: var(--pilula); color: var(--text2);
     font-weight: 700; font-size: 11px; letter-spacing: var(--rd-tracking-wider); text-transform: uppercase; transition: background 0.15s;
     &:hover:not(.ativo) { background: var(--primaria-clara); }
     &.ativo { background: var(--primaria); color: #fff; } } }
@@ -295,6 +295,12 @@ img.branca { filter: brightness(0) invert(1); }
 .itens-head, .item-row { display: grid; grid-template-columns: 36px 1.2fr 2fr 64px 110px 120px 28px; gap: 8px; align-items: center; }
 .itens-head { font-size: 11px; font-weight: 700; letter-spacing: var(--rd-tracking-wider); text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .item-row { margin-bottom: 8px; }
+// fornecedor da linha: segunda linha do item, embaixo de produto/descrição
+.item-fornecedor { grid-column: 2 / -1; display: flex; gap: 10px; align-items: center; margin-top: -2px;
+  input { flex: 1; max-width: 520px; font-size: 13px; } }
+.selo-fornecedor { padding: 2px 9px; border-radius: var(--pilula); font-size: 11px; font-weight: 700;
+  background: var(--success-dim); color: var(--success);
+  &.novo { background: var(--rd-blue-50); color: var(--rd-blue-700); } }
 .item-ord { font-family: var(--mono); font-weight: 600; color: var(--muted); text-align: center; }
 .totais { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 20px;
   .destaque input { font-family: var(--titulo); font-weight: 900; font-size: 17px; color: #fff; background: var(--primaria); border-color: var(--primaria); } }
@@ -389,6 +395,15 @@ img.branca { filter: brightness(0) invert(1); }
 // ---------- tela de lojas ----------
 .acao-form { display: flex; align-items: flex-end; padding-bottom: 14px; }
 .tabela-lojas { display: flex; flex-direction: column; }
+// Lojas | Fornecedores no topo das telas de cadastro (links, com o visual do seletor de tipo)
+.cadastro-seg { margin-bottom: 16px; a { text-decoration: none; cursor: pointer; } }
+.linha-fornecedor { display: grid; grid-template-columns: 1.6fr 170px 100px 110px 230px; gap: 10px; align-items: center;
+  padding: 11px 6px; border-bottom: 1px solid var(--border); font-size: 13.5px;
+  &:nth-child(odd):not(.cabecalho) { background: var(--bg-alt); }
+  &.cabecalho { font-size: 11px; font-weight: 700; letter-spacing: var(--rd-tracking-wider); text-transform: uppercase;
+    color: var(--rd-paper); background: var(--primaria); border-radius: var(--radius) var(--radius) 0 0; }
+  &.inativa { opacity: 0.55; em { font-style: normal; font-size: 11px; } }
+  .acoes-loja a { align-self: center; font-size: 12px; color: var(--primaria); } }
 // razão social · cidade/UF · IE embaixo do nome (cadastro que não sai no impresso)
 .loja-sub { display: block; margin-top: 2px; font-size: 11.5px; color: var(--muted); }
 .linha-loja { display: grid; grid-template-columns: 60px 1.4fr 1fr 170px 150px 170px; gap: 10px; align-items: center;
@@ -684,6 +699,8 @@ details[open] > summary .cot-seta { transform: rotate(-135deg); }
   .oc-nota { margin-left: 0; }
   .linha-loja { grid-template-columns: 50px 1fr auto; span:nth-child(3), span:nth-child(4), span:nth-child(5) { display: none; } }
   .linha-loja.cabecalho { display: none; }
+  .linha-fornecedor { grid-template-columns: 1fr auto; span:nth-child(2), span:nth-child(3), span:nth-child(4) { display: none; } }
+  .linha-fornecedor.cabecalho { display: none; }
 }
 // cabeçalho com 5 links (desde o "Uso da IA", 29/09/2026): a 1280 px logo + subtítulo + links + seletor já não
 // cabiam e os rótulos quebravam em 2 linhas. Primeiro some o subtítulo do logo; abaixo de 1080 px, só ícones

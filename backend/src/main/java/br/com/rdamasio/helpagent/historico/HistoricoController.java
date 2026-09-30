@@ -34,6 +34,7 @@ import br.com.rdamasio.helpagent.historico.BackupHistorico.ResultadoImportacao;
 import br.com.rdamasio.helpagent.orcamento.ModoAquisicao;
 import br.com.rdamasio.helpagent.orcamento.Orcamento;
 import br.com.rdamasio.helpagent.orcamento.OrcamentoController;
+import br.com.rdamasio.helpagent.orcamento.OrcamentoItem;
 import br.com.rdamasio.helpagent.orcamento.OrcamentoRepository;
 import br.com.rdamasio.helpagent.orcamento.OrigemOrcamento;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,15 +47,28 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequestMapping("/api/historico")
 public class HistoricoController {
 
-    /** @param excluidoEm preenchido só na lixeira (junto de quem mandou para lá) */
+    /**
+     * @param excluidoEm   preenchido só na lixeira (junto de quem mandou para lá)
+     * @param fornecedores nomes dos fornecedores das linhas (sem repetir; vazio nos orçamentos antigos)
+     */
     public record Item(Long id, Instant criadoEm, ModoAquisicao modo, String titulo, int lojaNumero, String lojaNome,
             String empresa, String chamadoNum, BigDecimal total, String nomeArquivo, String criadoPor,
-            OrigemOrcamento origem, Instant excluidoEm, String excluidoPor) {
+            OrigemOrcamento origem, Instant excluidoEm, String excluidoPor, List<String> fornecedores) {
 
         static Item de(Orcamento o) {
             return new Item(o.getId(), o.getCriadoEm(), o.getModo(), o.getTitulo(), o.getLoja().getNumero(),
                     o.getLoja().getNome(), o.getLoja().getEmpresa(), o.getChamadoNum(), o.getTotal(),
-                    o.getNomeArquivo(), o.getCriadoPor(), o.getOrigem(), o.getExcluidoEm(), o.getExcluidoPor());
+                    o.getNomeArquivo(), o.getCriadoPor(), o.getOrigem(), o.getExcluidoEm(), o.getExcluidoPor(), List.of());
+        }
+
+        /** Na listagem do histórico: com os fornecedores (as linhas vêm em lote, ver default_batch_fetch_size). */
+        static Item comFornecedores(Orcamento o) {
+            Item i = de(o);
+            List<String> nomes = o.getItens().stream().map(OrcamentoItem::getFornecedor)
+                    .filter(n -> n != null && !n.isBlank()).distinct().toList();
+            return new Item(i.id(), i.criadoEm(), i.modo(), i.titulo(), i.lojaNumero(), i.lojaNome(), i.empresa(),
+                    i.chamadoNum(), i.total(), i.nomeArquivo(), i.criadoPor(), i.origem(), i.excluidoEm(),
+                    i.excluidoPor(), nomes);
         }
     }
 
@@ -65,15 +79,16 @@ public class HistoricoController {
      * Filtros do painel "Filtros" da tela (query string: {@code ?de=2026-09-01&ate=2026-09-30&loja=23&valorMin=100
      * &valorMax=5000&origem=COTACAO}). Valem para a listagem e para as contagens das abas.
      *
-     * @param de  data de emissão a partir de (yyyy-MM-dd)
-     * @param ate data de emissão até (yyyy-MM-dd)
+     * @param de         data de emissão a partir de (yyyy-MM-dd)
+     * @param ate        data de emissão até (yyyy-MM-dd)
+     * @param fornecedor id do fornecedor (cadastro de fornecedores)
      */
     public record FiltrosPainel(@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate, Integer loja, BigDecimal valorMin,
-            BigDecimal valorMax, OrigemOrcamento origem) {
+            BigDecimal valorMax, OrigemOrcamento origem, Long fornecedor) {
 
         FiltroHistorico com(String busca, ModoAquisicao modo, boolean lixeira) {
-            return new FiltroHistorico(busca, modo, lixeira, de, ate, loja, valorMin, valorMax, origem);
+            return new FiltroHistorico(busca, modo, lixeira, de, ate, loja, valorMin, valorMax, origem, fornecedor);
         }
     }
 
@@ -137,7 +152,8 @@ public class HistoricoController {
         Sort ordem = Sort.by(Sort.Direction.DESC, lixeira ? "excluidoEm" : "criadoEm");
         Page<Orcamento> p = repo.findAll(f.especificacao(),
                 PageRequest.of(Math.max(pagina, 0), Math.clamp(tamanho, 1, 100), ordem));
-        return new Pagina<>(p.getContent().stream().map(Item::de).toList(), p.getNumber(), p.getSize(), p.getTotalElements());
+        return new Pagina<>(p.getContent().stream().map(Item::comFornecedores).toList(), p.getNumber(), p.getSize(),
+                p.getTotalElements());
     }
 
     /**

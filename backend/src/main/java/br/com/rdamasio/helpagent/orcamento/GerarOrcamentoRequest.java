@@ -27,18 +27,24 @@ public record GerarOrcamentoRequest(
         @Size(max = 120) String gestor) {
 
     /**
-     * @param prints só no orçamento por cotação: ids dos prints das opções do item, a escolhida primeiro
-     *               (ver {@code cotacao.PrintsCotacao}). Ausente = linha comum.
+     * @param prints          só no orçamento por cotação: ids dos prints das opções do item, a escolhida primeiro
+     *                        (ver {@code cotacao.PrintsCotacao}). Ausente = linha comum.
+     * @param fornecedor      quem emitiu o orçamento desta linha, como o atendente confirmou (opcional)
+     * @param fornecedorCnpj  CNPJ lido ou digitado (opcional)
+     * @param fornecedorLido  nome como a IA leu no documento — vira apelido do fornecedor (opcional)
      */
     public record Item(
             @Size(max = 200) String produto,
             @Size(max = 500) String descricao,
             @PositiveOrZero BigDecimal quantidade,
             @PositiveOrZero BigDecimal valorUnitario,
-            @Size(max = 3) List<String> prints) {
+            @Size(max = 3) List<String> prints,
+            @Size(max = 120) String fornecedor,
+            @Size(max = 20) String fornecedorCnpj,
+            @Size(max = 200) String fornecedorLido) {
 
         public Item(String produto, String descricao, BigDecimal quantidade, BigDecimal valorUnitario) {
-            this(produto, descricao, quantidade, valorUnitario, null);
+            this(produto, descricao, quantidade, valorUnitario, null, null, null, null);
         }
 
         public boolean cotado() {

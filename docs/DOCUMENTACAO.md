@@ -64,6 +64,7 @@ a partir da cotação, com o print da página de cada opção para a validação
 | **Histórico** | `/historico` | todos os orçamentos gerados, abas por tipo, busca, filtros (período, loja, valor, origem), download do PDF, backup JSON |
 | **Lixeira** | `/historico?tipo=LIXEIRA` | o que foi apagado nos últimos 30 dias: restaurar ou excluir de vez |
 | **Lojas** | `/lojas` | cadastro de lojas (número, nome, CNPJ, empresa do impresso, template, razão social, IE, cidade/UF) |
+| **Fornecedores** | `/lojas/fornecedores` | quem emite os orçamentos: reconhecidos na leitura por IA, cadastrados sozinhos ao gerar |
 | **Cotação** | `/cotacao` | busca o item em 6 lojas, ranking por critérios ajustáveis, melhor de cada loja, planilha `.xlsx` |
 | **Orçamento por cotação** | `/orcamento-cotacao` | os itens escolhidos na cotação viram o impresso, com 3 prints por item e um resumo da cotação |
 | **Uso da IA** (técnico) | `/swagger/uso-ia` | cota de cada modelo, gasto do dia, últimas chamadas; fora do menu |
@@ -165,6 +166,7 @@ Schema só por **migration Flyway** (`ddl-auto: validate`), em SQL portável (Po
 | `orcamento` | tipo (`REQUISICAO`/`OPEX`/`CAPEX`), origem (`DOCUMENTOS`/`COTACAO`), loja, título, datas, chamado, totais, observação, responsáveis, PDF, quem/quando; `excluido_em`/`excluido_por` = na lixeira |
 | `orcamento_item` | linhas do impresso; nas vindas da cotação, também loja fornecedora, URL e momento do print |
 | `uso_ia` | uma linha por requisição ao Gemini: modelo, degrau, papel, resultado, tokens, tempo, IP (90 dias) |
+| `fornecedor` | fornecedores conhecidos: nome padronizado, CNPJ, apelidos (nomes com que já apareceu), ativo |
 
 | Migration | O quê |
 |---|---|
@@ -176,6 +178,7 @@ Schema só por **migration Flyway** (`ddl-auto: validate`), em SQL portável (Po
 | V6 | cadastro completo das lojas (planilha do grupo, 54 lojas; 14 novas) |
 | V7 | tabela `uso_ia` |
 | V8 | lixeira do histórico (`excluido_em`, `excluido_por`) |
+| V9 | fornecedores (`fornecedor`, `orcamento_item.fornecedor_id`); as lojas da cotação já gravadas viraram fornecedores |
 
 Loja não se apaga (só desativa): os orçamentos antigos apontam para ela. Orçamento apagado vai para a lixeira e
 só some de vez depois de 30 dias (ou por "excluir de vez" na própria lixeira). Migration aplicada não se edita.
@@ -197,6 +200,7 @@ Valem **no servidor**; o frontend só mostra.
 | — | "válido até": a IA só lê o que está escrito; o servidor calcula e recusa validade anterior à emissão |
 | — | orçamento por cotação só é gerado com todos os prints com imagem |
 | — | leitura feita por modelo reserva → aviso na revisão para conferir valores |
+| — | fornecedor: reconhecido por CNPJ, nome ou apelido (nunca "contém no meio"); o novo é cadastrado ao gerar |
 
 Detalhes e onde cada uma está: [MANUTENCAO](MANUTENCAO.md) §1.
 
@@ -245,9 +249,10 @@ Tudo sob `/api`. Contrato completo e sempre atual em **`/v3/api-docs`** e **`/sw
 | Grupo | Rotas principais |
 |---|---|
 | Lojas | `GET/POST /api/lojas`, `GET/PUT /api/lojas/{numero}`, `PATCH /api/lojas/{numero}/ativa` |
+| Fornecedores | `GET/POST /api/fornecedores`, `PUT /api/fornecedores/{id}`, `PATCH /api/fornecedores/{id}/ativo` |
 | Leitura por IA | `POST /api/extracoes` (multipart) |
 | Orçamento | `POST /api/orcamentos` (multipart: dados + arquivos) → PDF |
-| Histórico | `GET /api/historico` (`lixeira=true` = aba Lixeira; filtros `de`, `ate`, `loja`, `valorMin`, `valorMax`, `origem`), `/contagem`, `/por-chamado`, `/{id}/pdf`, `/exportar`, `/importar` |
+| Histórico | `GET /api/historico` (`lixeira=true` = aba Lixeira; filtros `de`, `ate`, `loja`, `fornecedor`, `valorMin`, `valorMax`, `origem`), `/contagem`, `/por-chamado`, `/{id}/pdf`, `/exportar`, `/importar` |
 | Lixeira | `DELETE /api/historico/{id}` (manda para a lixeira), `POST /{id}/restaurar`, `DELETE /{id}/definitivo` |
 | Cotação | `GET /api/cotacao/estado`, `POST /api/cotacao`, `/{id}/reavaliar`, `/{id}/planilha`, `/{id}/prints`, `/prints…` |
 | Parâmetros | `GET /api/parametros` (padrões do formulário, ambiente, recursos ligados) |
@@ -396,7 +401,8 @@ Tudo em [INTEGRACAO](INTEGRACAO.md).
 | 30/09/2026 | Amazon removida da cotação | `e0d69cd` |
 | 30/09/2026 | documentação geral centralizada | `9ca4433` |
 | 30/09/2026 | lixeira no histórico (30 dias para restaurar) | `47bbd4e` |
-| 30/09/2026 | filtros no histórico (período, loja, valor, origem) | ver `git log` |
+| 30/09/2026 | filtros no histórico (período, loja, valor, origem) | `3b5b869` |
+| 30/09/2026 | fornecedores conhecidos (IA lê quem emitiu; cadastro cresce sozinho; filtro no histórico) | ver `git log` |
 
 Detalhe de cada uma: `git log`.
 

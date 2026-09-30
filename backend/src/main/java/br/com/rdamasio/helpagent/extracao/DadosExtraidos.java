@@ -32,8 +32,10 @@ public record DadosExtraidos(
     }
 
     /**
-     * @param fonte onde a IA leu o valor (página e trecho). Só vai para o log — serve para auditar
-     *              leituras erradas depois, sem poluir a tela de revisão
+     * @param fonte          onde a IA leu o valor (página e trecho). Só vai para o log — serve para auditar
+     *                       leituras erradas depois, sem poluir a tela de revisão
+     * @param fornecedor     quem emitiu o orçamento, como está no documento (o sistema reconhece o cadastrado)
+     * @param fornecedorCnpj CNPJ de quem emitiu, se o documento traz
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Item(
@@ -42,6 +44,8 @@ public record DadosExtraidos(
             String qtd,
             @JsonProperty("valor_unit") String valorUnit,
             @JsonProperty("valor_total") String valorTotal,
-            String fonte) {
+            String fonte,
+            String fornecedor,
+            @JsonProperty("fornecedor_cnpj") String fornecedorCnpj) {
     }
 }

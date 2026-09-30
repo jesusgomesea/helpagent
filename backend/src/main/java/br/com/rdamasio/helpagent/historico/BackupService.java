@@ -16,6 +16,7 @@ import br.com.rdamasio.helpagent.common.Dinheiro;
 import br.com.rdamasio.helpagent.common.ErroNegocio;
 import br.com.rdamasio.helpagent.common.NaoEncontrado;
 import br.com.rdamasio.helpagent.config.HelpAgentProperties;
+import br.com.rdamasio.helpagent.fornecedor.FornecedorService;
 import br.com.rdamasio.helpagent.historico.BackupHistorico.Registro;
 import br.com.rdamasio.helpagent.historico.BackupHistorico.RegistroLegado;
 import br.com.rdamasio.helpagent.historico.BackupHistorico.ResultadoImportacao;
@@ -44,9 +45,11 @@ public class BackupService {
     private final LojaService lojas;
     private final JsonMapper json;
     private final HelpAgentProperties props;
+    private final FornecedorService fornecedores;
 
     public BackupService(OrcamentoRepository repo, ArmazenamentoArquivos armazenamento, LojaService lojas,
-            JsonMapper json, HelpAgentProperties props) {
+            JsonMapper json, HelpAgentProperties props, FornecedorService fornecedores) {
+        this.fornecedores = fornecedores;
         this.repo = repo;
         this.armazenamento = armazenamento;
         this.lojas = lojas;
@@ -128,7 +131,11 @@ public class BackupService {
                 r.itens().forEach(it -> {
                     OrcamentoItem item = new OrcamentoItem(it.ordem(), it.produto(), it.descricao(),
                             it.quantidade(), it.valorUnitario(), it.valorTotal());
-                    if (it.fornecedor() != null) item.registrarCotacao(it.fornecedor(), it.url(), it.coletadoEm());
+                    if (it.fornecedor() != null) {
+                        item.registrarCotacao(it.fornecedor(), it.url(), it.coletadoEm());
+                        // o backup leva o nome do fornecedor; aqui ele volta a apontar para o cadastro (V9)
+                        fornecedores.vincular(it.fornecedor(), null, null).ifPresent(item::definirFornecedor);
+                    }
                     o.adicionarItem(item);
                 });
             }
