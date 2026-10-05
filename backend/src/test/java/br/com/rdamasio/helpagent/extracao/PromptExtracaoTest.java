@@ -34,6 +34,22 @@ class PromptExtracaoTest {
     }
 
     @Test
+    void padraoConsolidaUmItemPorOrcamento() {
+        String p = prompt.montar(ModoAquisicao.REQUISICAO, 1, 2);
+        assertThat(p).isEqualTo(prompt.montar(ModoAquisicao.REQUISICAO, 1, 2, false))
+                .contains("um item consolidado").contains("2 orçamento(s) anexado(s) → 2 item(ns)")
+                .doesNotContain("{{");
+    }
+
+    @Test
+    void detalhadoPedeUmaLinhaPorItemDoOrcamento() {
+        String p = prompt.montar(ModoAquisicao.REQUISICAO, 1, 2, true);
+        assertThat(p).contains("vira UM item próprio").contains("NÃO agrupe")
+                .contains("2 orçamento(s) anexado(s) → pelo menos 2 item(ns)")
+                .doesNotContain("item consolidado").doesNotContain("{{");
+    }
+
+    @Test
     void capexNaoFalaDeChamado() {
         assertThat(prompt.montar(ModoAquisicao.CAPEX, 0, 1)).contains("começando com 'CAPEX. '").contains("aquisição CAPEX");
     }

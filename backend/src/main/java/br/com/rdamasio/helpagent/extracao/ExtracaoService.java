@@ -81,6 +81,15 @@ public class ExtracaoService {
 
     /** @param origem IP de quem pediu (vai para o registro de uso da IA) */
     public Resposta extrair(ModoAquisicao modo, List<Documento> chamados, List<Documento> orcamentos, String origem) {
+        return extrair(modo, chamados, orcamentos, false, origem);
+    }
+
+    /**
+     * @param detalhar cada item do orçamento na sua linha, em vez de 1 linha por orçamento (opção da tela).
+     *                 Muda o prompt, e portanto a chave do cache: a mesma leitura nos dois formatos não se confunde.
+     */
+    public Resposta extrair(ModoAquisicao modo, List<Documento> chamados, List<Documento> orcamentos, boolean detalhar,
+            String origem) {
         if (orcamentos.isEmpty()) throw new ErroNegocio("Suba pelo menos 1 orçamento.");
         if (modo.exigeChamado() && chamados.isEmpty()) {
             throw new ErroNegocio("Suba o chamado e pelo menos 1 orçamento.");
@@ -93,15 +102,15 @@ public class ExtracaoService {
         enviados.addAll(orcamentos);
 
         long inicio = System.currentTimeMillis();
-        String textoPrompt = prompt.montar(modo, totalChamados, orcamentos.size());
+        String textoPrompt = prompt.montar(modo, totalChamados, orcamentos.size(), detalhar);
         String chave = CacheExtracao.chave(modo.name(), textoPrompt, enviados);
         var contexto = new ExtratorIa.Contexto(modo.name(), origem);
         CacheExtracao.Obtido obtido = cache.obter(chave, () -> extrator.extrair(enviados, textoPrompt, contexto));
         ExtratorIa.Resultado r = obtido.resultado();
         long ms = System.currentTimeMillis() - inicio;
         long bytes = enviados.stream().mapToLong(d -> d.conteudo().length).sum();
-        log.info("Extração {} concluída: modelo={} degrau={} tentativas={} duracaoMs={} arquivos={} tamanhoKB={} cache={}",
-                modo, r.modelo(), r.degrau(), r.tentativas(), ms, enviados.size(), bytes / 1024, obtido.reaproveitado());
+        log.info("Extração {} concluída: detalhada={} modelo={} degrau={} tentativas={} duracaoMs={} arquivos={} "
+                + "tamanhoKB={} cache={}", modo, detalhar, r.modelo(), r.degrau(), r.tentativas(), ms, enviados.size(), bytes / 1024, obtido.reaproveitado());
 
         DadosExtraidos d = r.dados();
         // leitura nova (não reaproveitada): guardada para comparar com o que o atendente confirmar (qualidadeia)

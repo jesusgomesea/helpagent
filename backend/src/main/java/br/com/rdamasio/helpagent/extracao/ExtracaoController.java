@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * {@code POST /api/extracoes}: recebe os arquivos (multipart) e devolve o que a IA leu + avisos para revisão.
+ * {@code detalhar=true}: cada item do orçamento vira a sua linha (padrão: 1 linha por orçamento).
  */
 @RestController
 @RequestMapping("/api/extracoes")
@@ -31,9 +32,11 @@ public class ExtracaoController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ExtracaoService.Resposta extrair(
             @RequestParam ModoAquisicao modo,
+            @RequestParam(defaultValue = "false") boolean detalhar,
             @RequestPart(name = "chamados", required = false) List<MultipartFile> chamados,
             @RequestPart(name = "orcamentos", required = false) List<MultipartFile> orcamentos,
             HttpServletRequest req) {
-        return service.extrair(modo, Documento.de(chamados), Documento.de(orcamentos), OrigemRequisicao.de(req));
+        return service.extrair(modo, Documento.de(chamados), Documento.de(orcamentos), detalhar,
+                OrigemRequisicao.de(req));
     }
 }

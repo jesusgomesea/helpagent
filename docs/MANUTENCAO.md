@@ -91,7 +91,7 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 | **A2** | O impresso tem 10 linhas; se a IA trouxer mais, avisar quantas ficaram de fora | `RegrasExtracao`, `helpagent.orcamento.max-itens` |
 | **A4** | Data de emissão na data **local**, não UTC (depois das 21h o UTC já é amanhã) | `dataLocalISO` (frontend) |
 | **C2** | Total lido pela IA ≠ soma das linhas (> R$ 0,05) → aviso de conferência | `RegrasExtracao` |
-| — | Cada orçamento anexado vira **um** item consolidado (qtd 1, valor = total do orçamento) | prompt |
+| — | Cada orçamento anexado vira **um** item consolidado (qtd 1, valor = total do orçamento). Com **"Detalhar item a item"** ligado, cada item do orçamento vira a sua linha (qtd e unitário do fornecedor) | prompt |
 | — | Preço de e-commerce: à vista/PIX > preço regular; nunca parcela | prompt |
 
 ## 2. Mapa do código
@@ -165,6 +165,21 @@ Depois de mudar, rode a avaliação com orçamentos reais para ver se a precisã
 Editar `backend/src/main/resources/prompts/extracao.txt`. Os trechos que mudam entre OPEX e CAPEX são
 os marcadores `{{...}}`, preenchidos em `PromptExtracao`. O JSON pedido no prompt precisa continuar
 batendo com `DadosExtraidos` (nomes em snake_case).
+
+**Dois formatos de itens (desde 05/10/2026).** O interruptor **"Detalhar item a item"** do card de upload manda
+`detalhar=true` em `POST /api/extracoes`, e `PromptExtracao.montar(..., detalhar)` troca 4 marcadores:
+`{{formato_itens}}`, `{{campo_produto}}`, `{{campo_descricao}}` e `{{regra_qtd}}`.
+- **Desligado (padrão):** 1 linha por orçamento, resumindo o que ele inclui. O texto é **idêntico** ao de antes da
+  opção (conferido caractere a caractere), então a precisão medida em `/swagger/qualidade-ia` continua valendo.
+- **Ligado:** cada linha da tabela do fornecedor vira um item, com a sua qtd, unitário e total; serviço cobrado à parte
+  (mão de obra, instalação) também; subtotal/total/impostos não. Produto curto ("Central de alarme"), descrição com
+  marca/modelo ("Intelbras AMT 2018 E"). Desconto geral não vira item negativo: a soma das linhas fica maior que o
+  `total` e a revisão mostra o aviso C2 de divergência.
+- O formato entra no texto do prompt, logo na chave do `CacheExtracao`: os mesmos arquivos lidos nos dois formatos
+  não se confundem. A escolha fica no `localStorage` do navegador (`helpagent.detalharItens`), por atendente.
+- **Limite do impresso:** detalhado, um orçamento passa fácil de 10 linhas; o excedente cai no aviso A2 de sempre
+  ("consolide manualmente ou gere dois orçamentos"). Testado em 05/10/2026 com um orçamento fictício de 6 itens
+  (alarme): 6 linhas, qtd/unitário certos, total igual ao do documento.
 
 ### Adicionar ou alterar uma loja
 Pela tela **Lojas** (menu do cabeçalho), sem mexer em código. Regras, validadas no servidor (`LojaService`):

@@ -149,6 +149,9 @@ label.switch { flex-direction: row; align-items: center; gap: 10px; cursor: poin
     box-shadow: var(--rd-shadow-sm); transition: transform 0.24s var(--rd-ease); } }
 label.switch input:checked + .switch-ui { background: var(--primaria); &::after { transform: translateX(18px); } }
 label.switch input:focus-visible + .switch-ui { box-shadow: 0 0 0 3px var(--anel); }
+// "Detalhar item a item", logo acima do botão de extrair (novo orçamento)
+label.switch.detalhar { margin: 0 4px 14px;
+  small { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--muted); } }
 
 // ---------- cabeçalho (o "topo" do DS: faixa sólida na cor primária) ----------
 .header {

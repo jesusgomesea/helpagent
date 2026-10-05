@@ -4,6 +4,16 @@ import { Anexo, ModoAquisicao, RespostaExtracao, exigeChamado } from '../../core
 
 export type Destino = 'chamado' | 'orc';
 
+const CHAVE_DETALHAR = 'helpagent.detalharItens';
+
+function lerPreferencia(): boolean {
+  try {
+    return localStorage.getItem(CHAVE_DETALHAR) === '1';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Estado do orçamento em montagem. Substitui as variáveis globais da v3.5
  * (chamados, orcamentos, modoAquisicao, dadosComuns…). Vive enquanto a página vive.
@@ -20,6 +30,11 @@ export class OrcamentoStore {
   readonly etapa = signal(1);
   readonly extracao = signal<RespostaExtracao | null>(null);
   readonly pdfGerado = signal(false);
+  /**
+   * Leitura item a item: cada item do orçamento vira a sua linha no impresso (com qtd e unitário), em vez de
+   * 1 linha por orçamento resumindo tudo. Opcional; a escolha fica lembrada neste navegador.
+   */
+  readonly detalharItens = signal(lerPreferencia());
 
   readonly prontoParaExtrair = computed(() =>
     !this.exigeChamado()
@@ -29,6 +44,15 @@ export class OrcamentoStore {
 
   /** Em CAPEX o chamado é opcional e não vai para a IA — mas vai anexado ao PDF se existir. */
   readonly chamadosParaIa = computed(() => (this.exigeChamado() ? this.chamados() : []));
+
+  setDetalharItens(v: boolean): void {
+    this.detalharItens.set(v);
+    try {
+      localStorage.setItem(CHAVE_DETALHAR, v ? '1' : '0');
+    } catch {
+      // navegador sem armazenamento: vale só nesta página
+    }
+  }
 
   setModo(m: ModoAquisicao): void {
     this.modo.set(m);

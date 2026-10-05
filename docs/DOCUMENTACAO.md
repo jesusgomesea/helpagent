@@ -1,7 +1,7 @@
 # HELP-AGENT Orçamentos — Documentação geral
 
 Documento central do projeto: o que o sistema faz, como está construído, como roda, como se mantém e o que falta.
-Cada seção resume e aponta para o documento detalhado quando existe. Atualizado em 30/09/2026.
+Cada seção resume e aponta para o documento detalhado quando existe. Atualizado em 05/10/2026.
 
 ## Índice
 
@@ -135,7 +135,7 @@ helpagent_new/
 │  │  ├─ prompts/extracao.txt      prompt da leitura por IA
 │  │  ├─ pdf-templates/            TD.pdf, DAM.pdf, RDAM.pdf, CPL.pdf
 │  │  └─ cotacao/                  extrair-<loja>.js (um por loja), preparar-print.js, validar-print.js
-│  ├─ src/test/java/               86 testes (+4 manuais/condicionais)
+│  ├─ src/test/java/               88 testes (+4 manuais/condicionais)
 │  ├─ config/                      application-local.yml com a chave do Gemini — FORA do git
 │  ├─ dados/                       banco H2, PDFs, prints, logs, perfil do Chrome — FORA do git
 │  └─ Dockerfile · pom.xml · mvnw
@@ -197,7 +197,7 @@ Valem **no servidor**; o frontend só mostra.
 | **A2** | o impresso tem 10 linhas; se vier mais, avisa quantas ficaram de fora |
 | **A4** | data de emissão na data local, não UTC |
 | **C2** | total lido ≠ soma das linhas (mais de R$ 0,05) → aviso de conferência |
-| — | cada orçamento anexado vira **um** item consolidado (qtd 1, valor = total dele) |
+| — | cada orçamento anexado vira **um** item consolidado (qtd 1, valor = total dele); com "Detalhar item a item" ligado, cada item do orçamento vira a sua linha |
 | — | preço de e-commerce: à vista/PIX antes do preço regular; nunca a parcela |
 | — | chamado obrigatório em Requisição e OPEX; opcional em CAPEX (e não vai para a IA) |
 | — | chamado já orçado → aviso com link para o PDF anterior |
@@ -326,7 +326,7 @@ cd backend && ./mvnw -q test
 cd frontend && npx ng build
 ```
 
-- **86 testes** no backend, entre eles:
+- **88 testes** no backend, entre eles:
   - política da cadeia de modelos e controle de cota (`ExtratorIaTest`, `ControleCotaIaTest`);
   - paridade do ranking com o piloto Python (`MotorCotacaoParidadeTest`);
   - PDF e planilha;
@@ -415,7 +415,8 @@ Tudo em [INTEGRACAO](INTEGRACAO.md).
 | 30/09/2026 | fornecedores conhecidos (IA lê quem emitiu; cadastro cresce sozinho; filtro no histórico) | `91386f4` |
 | 30/09/2026 | qualidade da IA: aprender com as correções (`/swagger/qualidade-ia`) | `f03fc0e` |
 | 30/09/2026 | busca rápida de loja e atalhos (Ctrl+Enter gera, / busca no histórico) | `1cfec52` |
-| 30/09/2026 | orçamento misto: "Adicionar por cotação" na revisão do novo orçamento | ver `git log` |
+| 30/09/2026 | orçamento misto: "Adicionar por cotação" na revisão do novo orçamento | `8705b0b` |
+| 05/10/2026 | "Detalhar item a item": opção de 1 linha por item do orçamento na leitura por IA | ver `git log` |
 
 Detalhe de cada uma: `git log`.
 

@@ -92,9 +92,12 @@ export class Api {
     chamados: Anexo[],
     orcamentos: Anexo[],
     aoProgredir: (fase: 'enviando' | 'lendo', pct?: number) => void = () => {},
+    detalhar = false,
   ): Observable<RespostaExtracao> {
     const form = new FormData();
     form.append('modo', modo);
+    // cada item do orçamento na sua linha, em vez de 1 linha por orçamento
+    if (detalhar) form.append('detalhar', 'true');
     chamados.forEach((a) => form.append('chamados', a.arquivo, a.nome));
     orcamentos.forEach((a) => form.append('orcamentos', a.arquivo, a.nome));
     return this.http.post<RespostaExtracao>('/api/extracoes', form, { observe: 'events', reportProgress: true }).pipe(

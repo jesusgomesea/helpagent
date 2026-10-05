@@ -69,6 +69,12 @@ import { Destino, OrcamentoStore } from './orcamento.store';
         </div>
         <p class="dica">cole imagem com <kbd>Ctrl V</kbd> · Enter quebra linha · <kbd>Ctrl Enter</kbd> adiciona</p>
 
+        <label class="switch detalhar" title="Desligado: 1 linha por orçamento, resumindo o que ele inclui">
+          <input type="checkbox" [checked]="store.detalharItens()" (change)="store.setDetalharItens($any($event.target).checked)" [disabled]="extraindo()">
+          <span class="switch-ui"></span>
+          <span>Detalhar item a item <small>cada item do orçamento na sua linha, com quantidade e valor unitário</small></span>
+        </label>
+
         <button class="btn-primario" [disabled]="!store.prontoParaExtrair() || extraindo()" (click)="extrair.emit()">
           Extrair dados com IA
         </button>

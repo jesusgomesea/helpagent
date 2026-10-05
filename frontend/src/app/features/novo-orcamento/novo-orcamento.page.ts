@@ -99,6 +99,7 @@ export class NovoOrcamentoPage {
       const r = await firstValueFrom(
         this.api.extrair(this.store.modo(), this.store.chamadosParaIa(), this.store.orcamentos(), (fase, pct) =>
           this.avisos.iniciar(fase === 'lendo' ? lendo : 'Enviando os arquivos' + (pct !== undefined ? ' · ' + pct + '%' : '')),
+          this.store.detalharItens(),
         ),
       );
       this.store.extracao.set(r);
@@ -106,7 +107,10 @@ export class NovoOrcamentoPage {
       this.store.etapa.set(3);
       const n = this.store.orcamentos().length;
       const tempo = r.doCache ? 'na hora (mesmos arquivos de antes)' : 'em ' + (r.duracaoMs / 1000).toFixed(1).replace('.', ',') + ' s';
-      this.avisos.toast(`Dados extraídos ${tempo}${n > 1 ? ` · ${n} orçamentos consolidados` : ''}. Revise antes de gerar.`);
+      const forma = this.store.detalharItens()
+        ? ` · ${r.dados.itens.length} item(ns) detalhado(s)`
+        : n > 1 ? ` · ${n} orçamentos consolidados` : '';
+      this.avisos.toast(`Dados extraídos ${tempo}${forma}. Revise antes de gerar.`);
     } catch (e) {
       this.erroExtracao.set(await mensagensDeErro(e));
       this.store.etapa.set(1);

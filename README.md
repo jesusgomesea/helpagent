@@ -109,6 +109,13 @@ A primeira cotação depois de subir o backend é mais lenta, porque o Chrome cr
 - **Ctrl+Enter** em qualquer campo da revisão gera o PDF.
 - **/** no Histórico vai direto para a busca.
 
+## Detalhar item a item
+
+Por padrão a IA põe **uma linha por orçamento**, resumindo o que ele inclui (ex.: "Central + 8 sensores + teclado").
+Quando o impresso precisa mostrar cada item com o seu valor, ligue **"Detalhar item a item"** no card de upload, antes
+de extrair: cada item do orçamento vira a sua linha, com quantidade e valor unitário. A escolha fica lembrada no
+navegador. O impresso tem 10 linhas; se passar disso, a revisão avisa.
+
 ## Orçamento por cotação
 
 Monta o impresso a partir da cotação, com o print de cada opção para a validação:
@@ -167,7 +174,7 @@ continua sendo o da loja escolhida.
 | GET · POST · PUT `/{id}` · PATCH `/{id}/ativo` | `/api/fornecedores` (`?incluirInativos=true` traz o uso de cada um) | fornecedores conhecidos (tela **Lojas → Fornecedores**) |
 | GET | `/api/historico/por-chamado?numeros=` | orçamentos já gerados para os chamados (aviso de duplicidade) |
 | GET | `/api/parametros` | máx. de itens, requerente/gestor padrão |
-| POST | `/api/extracoes` (multipart: `modo`, `chamados[]`, `orcamentos[]`) | leitura por IA + avisos A2/C2 |
+| POST | `/api/extracoes` (multipart: `modo`, `chamados[]`, `orcamentos[]`, `detalhar` opcional) | leitura por IA + avisos A2/C2; `detalhar=true` = cada item do orçamento na sua linha |
 | GET | `/api/uso-ia` | painel de uso do Gemini: situação de cada modelo da cadeia, totais do dia do Google, últimas chamadas |
 | GET | `/api/qualidade-ia?dias=90` | onde a IA mais erra (o que os atendentes corrigem antes de gerar), por campo, modelo e fornecedor |
 | POST | `/api/orcamentos` (multipart: `dados` JSON + arquivos) | valida (A1), gera e devolve o PDF, grava no histórico; itens com `prints` = orçamento por cotação |
