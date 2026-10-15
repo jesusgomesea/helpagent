@@ -1,3 +1,4 @@
+import { Moeda } from './dinheiro';
 /**
  * Tipo de requisição (espelha ModoAquisicao.java). O valor vai para o banco e não muda; o nome que a tela
  * mostra fica em ROTULO_MODO — "Requisição / Chamado" é provisório, trocar só ali.
@@ -142,6 +143,8 @@ export interface RespostaExtracao {
 
 export interface GerarOrcamentoRequest {
   modo: ModoAquisicao;
+  /** Moeda de todos os valores (ausente = real). */
+  moeda?: Moeda;
   lojaNumero: string;
   titulo: string;
   dataEmissao: string; // yyyy-MM-dd
@@ -192,6 +195,8 @@ export interface ItemHistorico {
   fornecedores: string[];
   /** Tem linha cotada em loja online. Com origem DOCUMENTOS = misto (a tela mostra os dois rótulos). */
   comCotacao: boolean;
+  /** Moeda do total (orçamentos antigos: real). */
+  moeda?: Moeda;
 }
 
 export type OrigemOrcamento = 'DOCUMENTOS' | 'COTACAO';
@@ -206,6 +211,8 @@ export interface FiltrosHistorico {
   origem?: OrigemOrcamento;
   /** id do fornecedor */
   fornecedor?: number;
+  /** só os orçamentos nessa moeda; sem ela, a faixa de valor vale para os em real */
+  moeda?: Moeda;
 }
 
 export interface Pagina<T> {

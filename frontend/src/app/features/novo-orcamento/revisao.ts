@@ -6,11 +6,11 @@ import { BuscaCotacao, EscolhaCotacao } from '../cotacao/busca-cotacao';
 import { OpcaoCesta, alternativasPara, produtoDoTermo } from '../cotacao/cesta.store';
 import { LinhasCotadas } from './linhas-cotadas.store';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { DatePipe, CurrencyPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { catchError, debounceTime, distinctUntilChanged, firstValueFrom, of, switchMap } from 'rxjs';
 import { Api, mensagensDeErro, salvarArquivo } from '../../core/api';
 import { FormArray, FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { dataLocalISO, fmtBRL, numeroOuNulo, parseBRL } from '../../core/dinheiro';
+import { MOEDAS, Moeda, NOME_MOEDA, SIMBOLO_MOEDA, dataLocalISO, fmtBRL, fmtMoeda, moedaNoTexto, numeroOuNulo, parseBRL } from '../../core/dinheiro';
 import {
   Fornecedor,
   FornecedorSugerido,
@@ -48,10 +48,14 @@ type ItemForm = FormGroup<{
  * lateral com a busca da tela Cotação ({@link BuscaCotacao}). O anúncio escolhido vira uma linha do impresso (preço,
  * loja como fornecedor) e o servidor fotografa ele e mais 2 opções; o PDF continua único, com o resumo e os prints
  * das linhas cotadas antes do orçamento original do prestador. Só gera com todos os prints prontos.
+ *
+ * Moeda (15/10/2026): o impresso sai em real, dólar ou euro, sem conversão — a do documento do fornecedor. A tela
+ * sugere a moeda quando o valor lido pela IA vem com "US$"/"€"; o atendente confirma. Item cotado (em R$) só em
+ * orçamento em real: com cotação na lista a moeda fica travada, e em outra moeda o botão de cotação some.
  */
 @Component({
   selector: 'ha-revisao',
-  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, BuscaLoja, BuscaCotacao],
+  imports: [ReactiveFormsModule, DatePipe, BuscaLoja, BuscaCotacao],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Ctrl+Enter em qualquer campo gera o PDF (atalho de 30/09/2026) -->
@@ -70,7 +74,7 @@ type ItemForm = FormGroup<{
               <ul>
                 @for (o of jaOrcados(); track o.id) {
                   <li>
-                    {{ o.criadoEm | date: 'dd/MM/yyyy HH:mm' }} · {{ o.titulo }} · {{ o.total | currency: 'BRL' }}
+                    {{ o.criadoEm | date: 'dd/MM/yyyy HH:mm' }} · {{ o.titulo }} · {{ fmtEm(o.total, o.moeda) }}
                     · chamado {{ o.chamadoNum }} ·
                     <button type="button" class="btn-link" (click)="baixarAnterior(o)">baixar o PDF</button>
                   </li>
@@ -118,7 +122,23 @@ type ItemForm = FormGroup<{
           }
 
           <hr>
-          <h3 class="rotulo-secao">Itens</h3>
+          <div class="itens-titulo">
+            <h3 class="rotulo-secao">Itens</h3>
+            <div class="moeda-escolha">
+              <span class="ajuda">Moeda do impresso</span>
+              <div class="seg" role="group" aria-label="Moeda do impresso">
+                @for (m of moedas; track m) {
+                  <button type="button" [class.ativo]="moeda() === m" (click)="escolherMoeda(m)"
+                    [disabled]="m !== 'BRL' && temCotado()" [title]="m !== 'BRL' && temCotado() ? 'Há item cotado (em R$): remova-o para mudar a moeda' : NOME_MOEDA[m]">{{ SIMBOLO_MOEDA[m] }}</button>
+                }
+              </div>
+            </div>
+          </div>
+          @if (moedaSugerida(); as m) {
+            <div class="status alerta">O documento traz valores em <b>{{ SIMBOLO_MOEDA[m] }}</b> ({{ NOME_MOEDA[m] }}): o impresso vai sair em {{ SIMBOLO_MOEDA[m] }}, sem conversão. Se não for o caso, escolha R$ acima.</div>
+          } @else if (moeda() !== 'BRL') {
+            <div class="status alerta">Impresso em <b>{{ SIMBOLO_MOEDA[moeda()] }}</b> ({{ NOME_MOEDA[moeda()] }}): todos os valores, inclusive frete e acréscimos, nessa moeda, sem conversão.</div>
+          }
           <div class="itens-head"><span>Ord</span><span>Produto</span><span>Descrição</span><span>Qtd</span><span>Unit</span><span>Total</span><span></span></div>
           <div formArrayName="itens">
             @for (g of itens.controls; track g; let i = $index) {
@@ -127,7 +147,7 @@ type ItemForm = FormGroup<{
                 <input formControlName="produto" placeholder="Produto">
                 <input formControlName="descricao" placeholder="Descrição técnica">
                 <input formControlName="qtd" type="number" min="1" placeholder="1">
-                <input formControlName="unit" placeholder="0,00">
+                <input formControlName="unit" [placeholder]="SIMBOLO_MOEDA[moeda()] + ' 0,00'">
                 <input [value]="totaisLinha()[i] ? fmt(totaisLinha()[i]) : ''" readonly placeholder="0,00">
                 <button type="button" class="btn-rm" (click)="removerItem(i)" title="Remover">×</button>
                 @if (g.controls.cotacao.value; as chave) {
@@ -165,7 +185,7 @@ type ItemForm = FormGroup<{
           <datalist id="dl-fornecedores">@for (f of fornecedores(); track f.id) { <option [value]="f.nome"></option> }</datalist>
           <div class="add-itens">
             <button type="button" class="btn-add" [disabled]="cheio()" (click)="adicionarItem()">+ Adicionar manualmente</button>
-            @if (recursos.cotacao()) {
+            @if (recursos.cotacao() && moeda() === 'BRL') {
               <button type="button" class="btn-add" [disabled]="cheio()" (click)="abrirCotacao()"
                 title="Busca o item nas lojas online; o escolhido vira uma linha e os prints vão anexados ao PDF">🔍 Adicionar por cotação</button>
             }
@@ -176,7 +196,7 @@ type ItemForm = FormGroup<{
             <label>Subtotal <input formControlName="subtotal" placeholder="em branco"></label>
             <label>Frete <input formControlName="frete" placeholder="em branco"></label>
             <label>Acréscimos <input formControlName="acrescimos" placeholder="em branco"></label>
-            <label class="destaque">Total geral <input [value]="totalGeral() ? fmt(totalGeral()) : ''" readonly placeholder="R$ 0,00"></label>
+            <label class="destaque">Total geral <input [value]="totalGeral() ? fmt(totalGeral()) : ''" readonly [placeholder]="SIMBOLO_MOEDA[moeda()] + ' 0,00'"></label>
           </div>
 
           <hr>
@@ -275,7 +295,15 @@ export class Revisao {
   protected readonly fornecedores = toSignal(this.api.fornecedores().pipe(catchError(() => of([] as Fornecedor[]))), {
     initialValue: [] as Fornecedor[],
   });
-  protected readonly fmt = fmtBRL;
+  protected readonly moedas = MOEDAS;
+  protected readonly SIMBOLO_MOEDA = SIMBOLO_MOEDA;
+  protected readonly NOME_MOEDA = NOME_MOEDA;
+  /** Moeda do impresso; volta para o real a cada leitura nova (a não ser que o documento traga outra). */
+  protected readonly moeda = signal<Moeda>('BRL');
+  /** Moeda que a tela escolheu sozinha pelo que a IA leu — o aviso some quando o atendente escolhe. */
+  protected readonly moedaSugerida = signal<Moeda | null>(null);
+  protected readonly fmt = (v: number) => fmtMoeda(v, this.moeda());
+  protected readonly fmtEm = fmtMoeda;
   /** Painel "Adicionar por cotação" aberto; {@link gavetaUsada} = já foi aberto uma vez (mantém a busca). */
   protected readonly gaveta = signal(false);
   protected readonly gavetaUsada = signal(false);
@@ -308,6 +336,7 @@ export class Revisao {
   protected readonly cheio = computed(() => this.qtdItens() >= this.maxItens());
   /** Sem print sendo tirado nem com falha: o servidor recusaria o PDF sem eles. */
   protected readonly printsProntos = computed(() => !this.cotadas.capturando() && !this.cotadas.falhas());
+  protected readonly temCotado = computed(() => Object.keys(this.cotadas.opcoes()).length > 0);
 
   protected readonly totalGeral = computed(
     () => this.totaisLinha().reduce((a, b) => a + b, 0) + parseBRL(this.valor().frete) + parseBRL(this.valor().acrescimos),
@@ -357,6 +386,11 @@ export class Revisao {
       chamadoNum: d.chamado_num ?? '',
       observacoes: d.observacao ?? '',
     });
+    // a IA copia o valor com o símbolo do documento no "fonte" (e às vezes no total): dali sai a sugestão de moeda
+    const lida = [d.total, ...d.itens.flatMap((i) => [i.fonte, i.valor_unit, i.valor_total])]
+      .map((t) => moedaNoTexto(t)).find((m) => m) ?? null;
+    this.moeda.set(lida ?? 'BRL');
+    this.moedaSugerida.set(lida);
     this.loja.set(ex.loja);
     this.sugestaoLoja.set(ex.loja ? '' : [d.loja_num, d.loja_nome].filter((x) => x?.trim()).join(' ').trim());
   }
@@ -373,6 +407,11 @@ export class Revisao {
       fornecedorLido: i.fornecedor ?? '',
       cotacao,
     });
+  }
+
+  protected escolherMoeda(m: Moeda): void {
+    this.moeda.set(m);
+    this.moedaSugerida.set(null);
   }
 
   protected opcoesDe(chave: string): OpcaoCesta[] {
@@ -463,6 +502,7 @@ export class Revisao {
     const v = this.form.getRawValue();
     this.gerar.emit({
       modo: this.store.modo(),
+      moeda: this.moeda(),
       // sem loja escolhida o servidor responde "Selecione a loja"
       lojaNumero: this.loja() ? String(this.loja()!.numero) : '',
       titulo: v.titulo,

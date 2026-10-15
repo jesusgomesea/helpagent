@@ -308,6 +308,10 @@ img.branca { filter: brightness(0) invert(1); }
   &.tmpl-RDAM { background: var(--cinza-coroa); } &.tmpl-CPL { background: #2c7a4b; } }
 
 // ---------- itens da revisão ----------
+// título "Itens" com a escolha da moeda do impresso à direita (R$ · US$ · €)
+.itens-titulo { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  .rotulo-secao { margin: 0; } }
+.moeda-escolha { display: flex; align-items: center; gap: 10px; .ajuda { margin: 0; } }
 .itens-head, .item-row { display: grid; grid-template-columns: 36px 1.2fr 2fr 64px 110px 120px 28px; gap: 8px; align-items: center; }
 .itens-head { font-size: 11px; font-weight: 700; letter-spacing: var(--rd-tracking-wider); text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .item-row { margin-bottom: 8px; }

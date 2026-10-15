@@ -11,6 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import br.com.rdamasio.helpagent.common.Dinheiro;
+import br.com.rdamasio.helpagent.common.Moeda;
 import br.com.rdamasio.helpagent.extracao.DadosExtraidos;
 import br.com.rdamasio.helpagent.fornecedor.ReconhecimentoFornecedor;
 import br.com.rdamasio.helpagent.orcamento.CalculoOrcamento;
@@ -71,7 +72,7 @@ public final class ComparacaoLeitura {
             finais.add(it);
             fornFinais.add(i < fornecedoresConfirmados.size() ? fornecedoresConfirmados.get(i) : null);
         }
-        valor(r, "total", 0, null, lido.total(), totalConfirmado == null ? null : totalConfirmado.subtract(cotadas));
+        valor(r, confirmado.moedaOuReal(), "total", 0, null, lido.total(), totalConfirmado == null ? null : totalConfirmado.subtract(cotadas));
 
         int n = Math.min(lido.itens().size(), finais.size());
         for (int i = 0; i < n; i++) {
@@ -83,7 +84,7 @@ public final class ComparacaoLeitura {
             BigDecimal qtdLida = decimal(a.qtd());
             adicionar(r, "quantidade", i + 1, forn, a.qtd(), CalculoOrcamento.quantidade(b).stripTrailingZeros().toPlainString(),
                     () -> qtdLida == null || qtdLida.subtract(CalculoOrcamento.quantidade(b)).abs().compareTo(new BigDecimal("0.001")) > 0);
-            valor(r, "valor_unitario", i + 1, forn, a.valorUnit(), Dinheiro.ouZero(b.valorUnitario()));
+            valor(r, confirmado.moedaOuReal(), "valor_unitario", i + 1, forn, a.valorUnit(), Dinheiro.ouZero(b.valorUnitario()));
             fornecedor(r, i + 1, a.fornecedor(), forn);
         }
         if (!lido.itens().isEmpty() || !finais.isEmpty()) {
@@ -97,9 +98,9 @@ public final class ComparacaoLeitura {
         adicionar(r, campo, item, forn, lido, confirmado, () -> !normalizar(lido).equals(normalizar(confirmado)));
     }
 
-    private static void valor(List<Campo> r, String campo, int item, String forn, String lido, BigDecimal confirmado) {
+    private static void valor(List<Campo> r, Moeda moeda, String campo, int item, String forn, String lido, BigDecimal confirmado) {
         BigDecimal l = lido == null || lido.isBlank() ? null : Dinheiro.parse(lido);
-        String finalTxt = confirmado == null ? null : Dinheiro.formatar(confirmado);
+        String finalTxt = confirmado == null ? null : Dinheiro.formatar(confirmado, moeda);
         adicionar(r, campo, item, forn, lido, finalTxt,
                 () -> l == null || confirmado == null || l.subtract(confirmado).abs().compareTo(new BigDecimal("0.01")) > 0);
     }

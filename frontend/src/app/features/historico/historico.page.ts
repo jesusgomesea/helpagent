@@ -1,11 +1,11 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, HostListener, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
 import { Api, mensagensDeErro, salvarArquivo } from '../../core/api';
 import { Avisos } from '../../core/avisos';
-import { fmtBRL, parseBRL } from '../../core/dinheiro';
+import { MOEDAS, Moeda, NOME_MOEDA, SIMBOLO_MOEDA, fmtMoeda, parseBRL } from '../../core/dinheiro';
 import {
   FiltrosHistorico,
   Fornecedor,
@@ -40,7 +40,7 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'ha-historico',
-  imports: [DatePipe, CurrencyPipe, Faixa, Icone],
+  imports: [DatePipe, Faixa, Icone],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ha-faixa sobretitulo="Helpdesk · Registro" titulo="Histórico" subtitulo="Todos os orçamentos gerados pelo helpdesk" />
@@ -79,9 +79,9 @@ const POR_PAGINA = 20;
                 @for (l of lojas(); track l.numero) { <option [value]="l.numero">{{ l.numero }} · {{ l.nome }}</option> }
               </select>
             </label>
-            <label>Valor de (R$) <input inputmode="decimal" placeholder="0,00" [value]="valorTexto(filtros().valorMin)"
+            <label>Valor de ({{ simbolo(filtros().moeda) }}) <input inputmode="decimal" placeholder="0,00" [value]="valorTexto(filtros().valorMin)"
               (change)="filtrar('valorMin', $any($event.target).value)"></label>
-            <label>até (R$) <input inputmode="decimal" placeholder="sem limite" [value]="valorTexto(filtros().valorMax)"
+            <label>até ({{ simbolo(filtros().moeda) }}) <input inputmode="decimal" placeholder="sem limite" [value]="valorTexto(filtros().valorMax)"
               (change)="filtrar('valorMax', $any($event.target).value)"></label>
             <label>Fornecedor
               <select [value]="filtros().fornecedor ?? ''" (change)="filtrar('fornecedor', $any($event.target).value)">
@@ -94,6 +94,12 @@ const POR_PAGINA = 20;
                 <option value="">Todas</option>
                 <option value="DOCUMENTOS">Documentos (fluxo normal)</option>
                 <option value="COTACAO">Por cotação</option>
+              </select>
+            </label>
+            <label title="Sem moeda escolhida, a faixa de valor compara só os orçamentos em real (não há conversão)">Moeda
+              <select [value]="filtros().moeda ?? ''" (change)="filtrar('moeda', $any($event.target).value)">
+                <option value="">Todas</option>
+                @for (m of moedas; track m) { <option [value]="m">{{ SIMBOLO_MOEDA[m] }} · {{ NOME_MOEDA[m] }}</option> }
               </select>
             </label>
             <button class="btn-link" type="button" (click)="limparFiltros()" [disabled]="!filtrosAtivos()">Limpar filtros</button>
@@ -143,7 +149,7 @@ const POR_PAGINA = 20;
                   <div class="hist-meta hist-excluido">Apagado em {{ r.excluidoEm | date: 'dd/MM/yyyy HH:mm' }} por {{ r.excluidoPor }}</div>
                 }
               </div>
-              <div class="hist-total">{{ r.total | currency: 'BRL' }}</div>
+              <div class="hist-total">{{ fmtEm(r.total, r.moeda) }}</div>
               <div class="hist-acoes">
                 <button (click)="baixar(r)" title="Baixar PDF novamente" aria-label="Baixar PDF"><ha-icone nome="baixar" [tamanho]="16" /></button>
                 @if (r.excluidoEm) {
@@ -253,6 +259,7 @@ export class HistoricoPage {
         valorMax: this.filtros().valorMax ?? null,
         origem: this.filtros().origem ?? null,
         fornecedor: this.filtros().fornecedor ?? null,
+        moeda: this.filtros().moeda ?? null,
       },
     });
   }
@@ -268,6 +275,7 @@ export class HistoricoPage {
       if (v > 0) f[campo] = v;
       else delete f[campo];
     } else if (campo === 'origem') f.origem = texto as OrigemOrcamento;
+    else if (campo === 'moeda') f.moeda = texto as Moeda;
     else f[campo] = texto;
     this.filtros.set(f);
     this.irPara(this.aba(), 0);
@@ -279,7 +287,17 @@ export class HistoricoPage {
   }
 
   protected valorTexto(v: number | undefined): string {
-    return v === undefined ? '' : fmtBRL(v);
+    return v === undefined ? '' : fmtMoeda(v, this.filtros().moeda);
+  }
+
+  protected readonly moedas = MOEDAS;
+  protected readonly SIMBOLO_MOEDA = SIMBOLO_MOEDA;
+  protected readonly NOME_MOEDA = NOME_MOEDA;
+  protected readonly fmtEm = fmtMoeda;
+
+  /** Símbolo da faixa de valor: a moeda filtrada, ou o real (sem moeda, a faixa compara só os em real). */
+  protected simbolo(m: Moeda | undefined): string {
+    return SIMBOLO_MOEDA[m ?? 'BRL'];
   }
 
   protected buscar(t: string): void {
@@ -374,7 +392,7 @@ export class HistoricoPage {
   }
 }
 
-/** Filtros a partir da URL (?de=&ate=&loja=&valorMin=&valorMax=&origem=); valor inválido é ignorado. */
+/** Filtros a partir da URL (?de=&ate=&loja=&valorMin=&valorMax=&origem=&moeda=); valor inválido é ignorado. */
 function filtrosDaUrl(q: ParamMap): FiltrosHistorico {
   const f: FiltrosHistorico = {};
   const data = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
@@ -387,6 +405,8 @@ function filtrosDaUrl(q: ParamMap): FiltrosHistorico {
   f.valorMax = numero(q.get('valorMax'));
   const origem = q.get('origem');
   f.origem = origem === 'DOCUMENTOS' || origem === 'COTACAO' ? origem : undefined;
+  const moeda = q.get('moeda') as Moeda | null;
+  f.moeda = moeda && MOEDAS.includes(moeda) ? moeda : undefined;
   for (const k of Object.keys(f) as (keyof FiltrosHistorico)[]) if (f[k] === undefined) delete f[k];
   return f;
 }

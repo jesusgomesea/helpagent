@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 
+import br.com.rdamasio.helpagent.common.Moeda;
 import br.com.rdamasio.helpagent.loja.LojaRepository;
 import br.com.rdamasio.helpagent.orcamento.ModoAquisicao;
 import br.com.rdamasio.helpagent.orcamento.Orcamento;
@@ -69,6 +70,23 @@ class FiltrosHistoricoTest {
                 .andExpect(jsonPath("$.total").value(1))
                 .andExpect(jsonPath("$.itens[0].total").value(4200.00));
         mvc.perform(get("/api/historico").param("valorMax", "1000")).andExpect(jsonPath("$.total").value(2));
+    }
+
+    @Test
+    void faixaDeValorSemMoedaComparaSoOsEmReal() throws Exception {
+        Orcamento o = new Orcamento(ModoAquisicao.CAPEX, lojas.findByNumero(5).orElseThrow(), "LICENCA", LocalDate.of(2026, 9, 15),
+                null, null, null, null, new BigDecimal("2000.00"), null, "A", "B", "teste", Instant.now());
+        o.definirMoeda(Moeda.USD);
+        o.registrarPdf("x.pdf", "inexistente/x.pdf");
+        orcamentos.save(o);
+
+        // US$ 2.000 não entra na faixa "a partir de 1.000" em real (não há conversão)
+        mvc.perform(get("/api/historico").param("valorMin", "1000"))
+                .andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.itens[0].moeda").value("BRL"));
+        mvc.perform(get("/api/historico").param("valorMin", "1000").param("moeda", "USD"))
+                .andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.itens[0].titulo").value("LICENCA"));
+        mvc.perform(get("/api/historico").param("moeda", "BRL")).andExpect(jsonPath("$.total").value(3));
+        mvc.perform(get("/api/historico")).andExpect(jsonPath("$.total").value(4));
     }
 
     @Test

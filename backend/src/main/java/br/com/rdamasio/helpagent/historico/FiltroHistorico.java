@@ -1,5 +1,6 @@
 package br.com.rdamasio.helpagent.historico;
 
+import br.com.rdamasio.helpagent.common.Moeda;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -36,22 +37,31 @@ import jakarta.persistence.criteria.Subquery;
  * @param valorMax   total até (inclusive)
  * @param origem     DOCUMENTOS (fluxo de sempre, inclui o misto) ou COTACAO (com linha cotada: por cotação ou misto)
  * @param fornecedor id do fornecedor: orçamentos com alguma linha dele
+ * @param moeda      só os orçamentos nessa moeda. A faixa de valor sem moeda compara só os em real: somar ou
+ *                   comparar US$ 100 com R$ 100 daria um resultado sem sentido (não há conversão)
  */
 public record FiltroHistorico(String termo, ModoAquisicao modo, boolean lixeira, LocalDate de, LocalDate ate,
-        Integer loja, BigDecimal valorMin, BigDecimal valorMax, OrigemOrcamento origem, Long fornecedor) {
+        Integer loja, BigDecimal valorMin, BigDecimal valorMax, OrigemOrcamento origem, Long fornecedor,
+        Moeda moeda) {
 
     /** Só busca, aba e lixeira (sem os filtros do painel). */
     public FiltroHistorico(String termo, ModoAquisicao modo, boolean lixeira) {
-        this(termo, modo, lixeira, null, null, null, null, null, null, null);
+        this(termo, modo, lixeira, null, null, null, null, null, null, null, null);
+    }
+
+    /** Sem a moeda (testes e chamadas de antes dela). */
+    public FiltroHistorico(String termo, ModoAquisicao modo, boolean lixeira, LocalDate de, LocalDate ate,
+            Integer loja, BigDecimal valorMin, BigDecimal valorMax, OrigemOrcamento origem, Long fornecedor) {
+        this(termo, modo, lixeira, de, ate, loja, valorMin, valorMax, origem, fornecedor, null);
     }
 
     /** O mesmo filtro em outra aba (as contagens das abas usam os demais filtros iguais). */
     public FiltroHistorico comModo(ModoAquisicao outro) {
-        return new FiltroHistorico(termo, outro, lixeira, de, ate, loja, valorMin, valorMax, origem, fornecedor);
+        return new FiltroHistorico(termo, outro, lixeira, de, ate, loja, valorMin, valorMax, origem, fornecedor, moeda);
     }
 
     public FiltroHistorico naLixeira(boolean sim) {
-        return new FiltroHistorico(termo, modo, sim, de, ate, loja, valorMin, valorMax, origem, fornecedor);
+        return new FiltroHistorico(termo, modo, sim, de, ate, loja, valorMin, valorMax, origem, fornecedor, moeda);
     }
 
     public Specification<Orcamento> especificacao() {
@@ -84,6 +94,8 @@ public record FiltroHistorico(String termo, ModoAquisicao modo, boolean lixeira,
             if (loja != null) p.add(cb.equal(lojaJ.get("numero"), loja));
             if (valorMin != null) p.add(cb.greaterThanOrEqualTo(raiz.get("total"), valorMin));
             if (valorMax != null) p.add(cb.lessThanOrEqualTo(raiz.get("total"), valorMax));
+            if (moeda != null) p.add(cb.equal(raiz.get("moeda"), moeda));
+            else if (valorMin != null || valorMax != null) p.add(cb.equal(raiz.get("moeda"), Moeda.BRL));
             if (origem == OrigemOrcamento.DOCUMENTOS) p.add(cb.equal(raiz.get("origem"), origem));
             if (origem == OrigemOrcamento.COTACAO) {
                 // "cotação" inclui o misto: origem DOCUMENTOS com alguma linha cotada (que guardou a página do preço)

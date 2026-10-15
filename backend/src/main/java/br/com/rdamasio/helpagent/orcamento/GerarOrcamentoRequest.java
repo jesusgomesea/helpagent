@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import br.com.rdamasio.helpagent.common.Moeda;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,7 +12,8 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 /**
- * Dados revisados pelo usuário. Valores monetários chegam como número (o frontend converte o BRL).
+ * Dados revisados pelo usuário. Valores monetários chegam como número (o frontend converte o texto), todos na
+ * {@code moeda} do orçamento (ausente = real).
  * {@code idLeitura}: a leitura da IA que preencheu a revisão (opcional) — o servidor compara o lido com o confirmado.
  */
 public record GerarOrcamentoRequest(
@@ -28,7 +30,20 @@ public record GerarOrcamentoRequest(
         @Size(max = 4000) String observacoes,
         @Size(max = 120) String requerente,
         @Size(max = 120) String gestor,
-        @Size(max = 36) String idLeitura) {
+        @Size(max = 36) String idLeitura,
+        Moeda moeda) {
+
+    /** Sem a moeda: em real (pedidos de antes da opção e testes). */
+    public GerarOrcamentoRequest(ModoAquisicao modo, String lojaNumero, String titulo, LocalDate dataEmissao,
+            LocalDate validade, String chamadoNum, List<Item> itens, BigDecimal subtotal, BigDecimal frete,
+            BigDecimal acrescimos, String observacoes, String requerente, String gestor, String idLeitura) {
+        this(modo, lojaNumero, titulo, dataEmissao, validade, chamadoNum, itens, subtotal, frete, acrescimos,
+                observacoes, requerente, gestor, idLeitura, Moeda.BRL);
+    }
+
+    public Moeda moedaOuReal() {
+        return Moeda.ouReal(moeda);
+    }
 
     /**
      * @param prints          só no orçamento por cotação: ids dos prints das opções do item, a escolhida primeiro

@@ -1,5 +1,6 @@
 package br.com.rdamasio.helpagent.historico;
 
+import br.com.rdamasio.helpagent.common.Moeda;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -52,18 +53,19 @@ public class HistoricoController {
      * @param fornecedores nomes dos fornecedores das linhas (sem repetir; vazio nos orçamentos antigos)
      * @param comCotacao   tem linha cotada em loja online: por cotação, ou misto (origem DOCUMENTOS + linhas cotadas).
      *                     O histórico mostra os dois rótulos no misto.
+     * @param moeda        moeda do {@code total} (real, dólar ou euro)
      */
     public record Item(Long id, Instant criadoEm, ModoAquisicao modo, String titulo, int lojaNumero, String lojaNome,
             String empresa, String chamadoNum, BigDecimal total, String nomeArquivo, String criadoPor,
             OrigemOrcamento origem, Instant excluidoEm, String excluidoPor, List<String> fornecedores,
-            boolean comCotacao) {
+            boolean comCotacao, Moeda moeda) {
 
         /** Sem ler as linhas: {@code comCotacao} só pela origem (usado onde o rótulo não aparece). */
         static Item de(Orcamento o) {
             return new Item(o.getId(), o.getCriadoEm(), o.getModo(), o.getTitulo(), o.getLoja().getNumero(),
                     o.getLoja().getNome(), o.getLoja().getEmpresa(), o.getChamadoNum(), o.getTotal(),
                     o.getNomeArquivo(), o.getCriadoPor(), o.getOrigem(), o.getExcluidoEm(), o.getExcluidoPor(), List.of(),
-                    o.getOrigem() == OrigemOrcamento.COTACAO);
+                    o.getOrigem() == OrigemOrcamento.COTACAO, o.getMoeda());
         }
 
         /** Na listagem do histórico: com os fornecedores (as linhas vêm em lote, ver default_batch_fetch_size). */
@@ -75,7 +77,7 @@ public class HistoricoController {
             boolean cotado = i.comCotacao() || o.getItens().stream().anyMatch(it -> it.getUrl() != null);
             return new Item(i.id(), i.criadoEm(), i.modo(), i.titulo(), i.lojaNumero(), i.lojaNome(), i.empresa(),
                     i.chamadoNum(), i.total(), i.nomeArquivo(), i.criadoPor(), i.origem(), i.excluidoEm(),
-                    i.excluidoPor(), nomes, cotado);
+                    i.excluidoPor(), nomes, cotado, i.moeda());
         }
     }
 
@@ -84,18 +86,20 @@ public class HistoricoController {
 
     /**
      * Filtros do painel "Filtros" da tela (query string: {@code ?de=2026-09-01&ate=2026-09-30&loja=23&valorMin=100
-     * &valorMax=5000&origem=COTACAO}). Valem para a listagem e para as contagens das abas.
+     * &valorMax=5000&origem=COTACAO&moeda=USD}). Valem para a listagem e para as contagens das abas.
      *
      * @param de         data de emissão a partir de (yyyy-MM-dd)
      * @param ate        data de emissão até (yyyy-MM-dd)
      * @param fornecedor id do fornecedor (cadastro de fornecedores)
+     * @param moeda      só os orçamentos nessa moeda; a faixa de valor sem moeda vale para os em real
      */
     public record FiltrosPainel(@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate, Integer loja, BigDecimal valorMin,
-            BigDecimal valorMax, OrigemOrcamento origem, Long fornecedor) {
+            BigDecimal valorMax, OrigemOrcamento origem, Long fornecedor, Moeda moeda) {
 
         FiltroHistorico com(String busca, ModoAquisicao modo, boolean lixeira) {
-            return new FiltroHistorico(busca, modo, lixeira, de, ate, loja, valorMin, valorMax, origem, fornecedor);
+            return new FiltroHistorico(busca, modo, lixeira, de, ate, loja, valorMin, valorMax, origem, fornecedor,
+                    moeda);
         }
     }
 

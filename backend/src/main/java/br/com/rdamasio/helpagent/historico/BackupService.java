@@ -78,7 +78,7 @@ public class BackupService {
                 o.getItens().stream().map(i -> new BackupHistorico.Item(i.getOrdem(), i.getProduto(), i.getDescricao(),
                         i.getQuantidade(), i.getValorUnitario(), i.getValorTotal(), i.getFornecedor(), i.getUrl(),
                         i.getColetadoEm())).toList(),
-                pdf, o.getOrigem());
+                pdf, o.getOrigem(), o.getMoeda());
     }
 
     /**
@@ -127,6 +127,7 @@ public class BackupService {
                     padrao(r.criadoPor(), "importado"), r.criadoEm());
             o.definirValidade(r.validade());
             o.definirOrigem(r.origem());
+            o.definirMoeda(r.moeda());
             if (r.itens() != null) {
                 r.itens().forEach(it -> {
                     OrcamentoItem item = new OrcamentoItem(it.ordem(), it.produto(), it.descricao(),

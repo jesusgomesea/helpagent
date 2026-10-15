@@ -23,7 +23,7 @@ public final class ValidadorOrcamento {
             var total = CalculoOrcamento.totalItem(item);
             if (!CalculoOrcamento.temProduto(item)) {
                 if (total.signum() > 0) {
-                    problemas.add("o item da linha " + linha + " tem valor (" + Dinheiro.formatar(total)
+                    problemas.add("o item da linha " + linha + " tem valor (" + Dinheiro.formatar(total, r.moedaOuReal())
                             + ") mas está sem nome de produto");
                 }
                 continue;

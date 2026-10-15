@@ -1,5 +1,6 @@
 package br.com.rdamasio.helpagent.orcamento;
 
+import br.com.rdamasio.helpagent.common.Moeda;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -41,6 +42,11 @@ public class Orcamento {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 12)
     private OrigemOrcamento origem = OrigemOrcamento.DOCUMENTOS;
+
+    /** Moeda de todos os valores deste orçamento (V11). Sem conversão: é a do documento do fornecedor. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 3)
+    private Moeda moeda = Moeda.BRL;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "loja_id")
@@ -138,6 +144,10 @@ public class Orcamento {
         this.origem = origem == null ? OrigemOrcamento.DOCUMENTOS : origem;
     }
 
+    public void definirMoeda(Moeda moeda) {
+        this.moeda = Moeda.ouReal(moeda);
+    }
+
     public void mandarParaLixeira(String quem, Instant quando) {
         this.excluidoEm = quando;
         this.excluidoPor = quem;
@@ -160,6 +170,7 @@ public class Orcamento {
     public Long getId() { return id; }
     public ModoAquisicao getModo() { return modo; }
     public OrigemOrcamento getOrigem() { return origem; }
+    public Moeda getMoeda() { return moeda; }
     public Loja getLoja() { return loja; }
     public String getTitulo() { return titulo; }
     public LocalDate getDataEmissao() { return dataEmissao; }

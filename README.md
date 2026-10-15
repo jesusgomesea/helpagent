@@ -109,6 +109,14 @@ A primeira cotação depois de subir o backend é mais lenta, porque o Chrome cr
 - **Ctrl+Enter** em qualquer campo da revisão gera o PDF.
 - **/** no Histórico vai direto para a busca.
 
+## Orçamento em dólar ou euro
+
+Quando o orçamento do fornecedor vem em outra moeda, escolha **US$** ou **€** no seletor **"Moeda do impresso"**, ao
+lado de "Itens", na revisão. O impresso sai inteiro nessa moeda, **sem conversão** (o mesmo valor do documento),
+inclusive frete e acréscimos. Se a IA ler "US$" ou "€" no documento, a moeda já vem escolhida, com um aviso para
+conferir. Item adicionado por cotação só existe em orçamento em R$. No Histórico, cada orçamento mostra o símbolo
+da sua moeda e há um filtro **Moeda**; a faixa de valor sem moeda escolhida compara só os orçamentos em real.
+
 ## Detalhar item a item
 
 Por padrão a IA põe **uma linha por orçamento**, resumindo o que ele inclui (ex.: "Central + 8 sensores + teclado").

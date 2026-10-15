@@ -1,5 +1,6 @@
 package br.com.rdamasio.helpagent.historico;
 
+import br.com.rdamasio.helpagent.common.Moeda;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -48,7 +49,9 @@ public record BackupHistorico(int versao, String origem, Instant exportadoEm, Li
             /** Jackson grava/lê byte[] como base64. */
             byte[] pdf,
             /** Ausente em backups anteriores ao orçamento por cotação: vale DOCUMENTOS. */
-            OrigemOrcamento origem) {
+            OrigemOrcamento origem,
+            /** Ausente em backups anteriores a 15/10/2026: vale real. */
+            Moeda moeda) {
     }
 
     /**

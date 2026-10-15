@@ -1,7 +1,7 @@
 # HELP-AGENT Orçamentos — Documentação geral
 
 Documento central do projeto: o que o sistema faz, como está construído, como roda, como se mantém e o que falta.
-Cada seção resume e aponta para o documento detalhado quando existe. Atualizado em 05/10/2026.
+Cada seção resume e aponta para o documento detalhado quando existe. Atualizado em 15/10/2026.
 
 ## Índice
 
@@ -135,7 +135,7 @@ helpagent_new/
 │  │  ├─ prompts/extracao.txt      prompt da leitura por IA
 │  │  ├─ pdf-templates/            TD.pdf, DAM.pdf, RDAM.pdf, CPL.pdf
 │  │  └─ cotacao/                  extrair-<loja>.js (um por loja), preparar-print.js, validar-print.js
-│  ├─ src/test/java/               88 testes (+4 manuais/condicionais)
+│  ├─ src/test/java/               93 testes (+4 manuais/condicionais)
 │  ├─ config/                      application-local.yml com a chave do Gemini — FORA do git
 │  ├─ dados/                       banco H2, PDFs, prints, logs, perfil do Chrome — FORA do git
 │  └─ Dockerfile · pom.xml · mvnw
@@ -165,7 +165,7 @@ Schema só por **migration Flyway** (`ddl-auto: validate`), em SQL portável (Po
 | Tabela | Conteúdo |
 |---|---|
 | `loja` | número (chave de negócio, fixo), nome, CNPJ, empresa impressa, template, ativa, razão social, IE, cidade, UF |
-| `orcamento` | tipo (`REQUISICAO`/`OPEX`/`CAPEX`), origem (`DOCUMENTOS`/`COTACAO`; misto = `DOCUMENTOS` com linha cotada), loja, título, datas, chamado, totais, observação, responsáveis, PDF, quem/quando; `excluido_em`/`excluido_por` = na lixeira |
+| `orcamento` | tipo (`REQUISICAO`/`OPEX`/`CAPEX`), origem (`DOCUMENTOS`/`COTACAO`; misto = `DOCUMENTOS` com linha cotada), moeda (`BRL`/`USD`/`EUR`, sem conversão), loja, título, datas, chamado, totais, observação, responsáveis, PDF, quem/quando; `excluido_em`/`excluido_por` = na lixeira |
 | `orcamento_item` | linhas do impresso; nas vindas da cotação, também loja fornecedora, URL e momento do print |
 | `uso_ia` | uma linha por requisição ao Gemini: modelo, degrau, papel, resultado, tokens, tempo, IP (90 dias) |
 | `fornecedor` | fornecedores conhecidos: nome padronizado, CNPJ, apelidos (nomes com que já apareceu), ativo |
@@ -183,6 +183,7 @@ Schema só por **migration Flyway** (`ddl-auto: validate`), em SQL portável (Po
 | V8 | lixeira do histórico (`excluido_em`, `excluido_por`) |
 | V9 | fornecedores (`fornecedor`, `orcamento_item.fornecedor_id`); as lojas da cotação já gravadas viraram fornecedores |
 | V10 | qualidade da IA (`leitura_ia`, `correcao_ia`) |
+| V11 | moeda do orçamento (`orcamento.moeda`, tudo o que existia = `BRL`) |
 
 Loja não se apaga (só desativa): os orçamentos antigos apontam para ela. Orçamento apagado vai para a lixeira e
 só some de vez depois de 30 dias (ou por "excluir de vez" na própria lixeira). Migration aplicada não se edita.
@@ -326,7 +327,7 @@ cd backend && ./mvnw -q test
 cd frontend && npx ng build
 ```
 
-- **88 testes** no backend, entre eles:
+- **93 testes** no backend, entre eles:
   - política da cadeia de modelos e controle de cota (`ExtratorIaTest`, `ControleCotaIaTest`);
   - paridade do ranking com o piloto Python (`MotorCotacaoParidadeTest`);
   - PDF e planilha;
@@ -416,7 +417,8 @@ Tudo em [INTEGRACAO](INTEGRACAO.md).
 | 30/09/2026 | qualidade da IA: aprender com as correções (`/swagger/qualidade-ia`) | `f03fc0e` |
 | 30/09/2026 | busca rápida de loja e atalhos (Ctrl+Enter gera, / busca no histórico) | `1cfec52` |
 | 30/09/2026 | orçamento misto: "Adicionar por cotação" na revisão do novo orçamento | `8705b0b` |
-| 05/10/2026 | "Detalhar item a item": opção de 1 linha por item do orçamento na leitura por IA | ver `git log` |
+| 05/10/2026 | "Detalhar item a item": opção de 1 linha por item do orçamento na leitura por IA | `b47e655` |
+| 15/10/2026 | moeda do impresso: real, dólar ou euro, sem conversão (V11) | ver `git log` |
 
 Detalhe de cada uma: `git log`.
 

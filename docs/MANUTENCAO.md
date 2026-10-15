@@ -82,6 +82,24 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
   tem campo de fornecedor: é dado do histórico (lista, filtro "Fornecedor") e do cadastro. Regra conservadora de
   propósito: juntar dois fornecedores diferentes é pior que cadastrar um repetido (esse se corrige na tela).
   Testado em 30/09 com um orçamento real: leu "Image Informática Ltda" e o CNPJ, e não o cliente.
+- **Moeda do impresso (desde 15/10/2026, V11)**: seletor **R$ · US$ · €** ao lado de "Itens". Orçamento de
+  fornecedor em dólar ou euro sai **na moeda original, sem conversão** (decisão do helpdesk: o impresso mostra o
+  mesmo valor do documento anexado). A moeda vale para todos os valores do orçamento, inclusive frete e acréscimos;
+  não há moeda por linha.
+  - *Onde:* `common/Moeda` (símbolo) e `Dinheiro.formatar(valor, moeda)` no servidor; `core/dinheiro.ts`
+    (`fmtMoeda`, `MOEDAS`) na tela. O template PDF não tem "R$" fixo — o símbolo vai no texto dos campos — e o "€"
+    existe na fonte WinAnsi do formulário (conferido em `MoedaOrcamentoTest`, que grava `target/impresso-euro.png`).
+    Moeda nova: acrescentar nos dois lados e conferir se o símbolo existe no WinAnsi (senão some do campo).
+  - *Sugestão automática:* a IA copia o valor com o símbolo do documento no `fonte` (às vezes no `total`);
+    `moedaNoTexto` procura "US$/USD/dólar" ou "€/EUR/euro" e já escolhe a moeda, com um aviso para o atendente
+    confirmar. O prompt não mudou (a precisão medida continua valendo).
+  - *Cotação:* as lojas da cotação vendem em real, então item adicionado por cotação só existe em orçamento em
+    R$ — com item cotado a moeda fica travada, em US$/€ o botão de cotação some, e o servidor recusa a mistura.
+  - *Histórico:* cada linha mostra o total com o símbolo; filtro **Moeda** (`?moeda=USD`). A faixa de valor sem
+    moeda escolhida compara **só os orçamentos em real** (`FiltroHistorico`): comparar US$ 100 com R$ 100 não faz
+    sentido sem conversão. O backup leva a moeda (backup antigo = real).
+  - *Leitura e aviso C2:* `Dinheiro.parse` descarta qualquer símbolo ("US$ 1.200,00" → 1200), então a conferência
+    do total e a Qualidade da IA funcionam em qualquer moeda.
 
 ### Regras de negócio (nomes herdados do HTML v3.5, citados nos comentários)
 
@@ -101,7 +119,7 @@ na porta 80 e encaminha `/api` para o backend (`frontend/proxy.conf.json`). O ba
 | Pacote | Responsabilidade |
 |---|---|
 | `config` | `HelpAgentProperties` (tudo que é configurável, prefixo `helpagent.*`), segurança/CORS, usuário atual, `/api/parametros`, `OpenApiConfig` (contrato em `/v3/api-docs`), `Recursos` + `GuardaRecursos` (liga/desliga IA e cotação; desligado → 503) |
-| `common` | `Dinheiro` (BRL ↔ `BigDecimal`), `Documento` (arquivo enviado), `OrigemRequisicao` (IP para os logs de auditoria), `IdRequisicaoFiltro` (X-Request-Id no log e no erro), erros de negócio e o `TratadorErros` (ProblemDetail) |
+| `common` | `Dinheiro` (valor ↔ `BigDecimal`, com o símbolo da moeda), `Moeda` (real, dólar, euro), `Documento` (arquivo enviado), `OrigemRequisicao` (IP para os logs de auditoria), `IdRequisicaoFiltro` (X-Request-Id no log e no erro), erros de negócio e o `TratadorErros` (ProblemDetail) |
 | `loja` | Cadastro de lojas e busca por número/nome |
 | `qualidadeia` | Aprender com as correções: guarda cada leitura da IA, compara com o orçamento gerado (`ComparacaoLeitura`) e o relatório `/api/qualidade-ia` |
 | `fornecedor` | Fornecedores conhecidos: reconhecimento do que a IA leu (`ReconhecimentoFornecedor`), vínculo da linha ao gerar e o cadastro `/api/fornecedores` |

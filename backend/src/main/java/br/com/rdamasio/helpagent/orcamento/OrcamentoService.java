@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.com.rdamasio.helpagent.armazenamento.ArmazenamentoArquivos;
 import br.com.rdamasio.helpagent.common.Dinheiro;
+import br.com.rdamasio.helpagent.common.Moeda;
 import br.com.rdamasio.helpagent.common.Documento;
 import br.com.rdamasio.helpagent.common.ErroNegocio;
 import br.com.rdamasio.helpagent.common.NaoEncontrado;
@@ -84,6 +85,12 @@ public class OrcamentoService {
                     + ") é anterior à data de emissão"));
         }
 
+        Moeda moeda = r.moedaOuReal();
+        if (moeda != Moeda.BRL && r.itens().stream().anyMatch(GerarOrcamentoRequest.Item::cotado)) {
+            // a cotação é feita em lojas brasileiras, em real: misturar com um impresso em dólar/euro somaria moedas
+            throw new ErroNegocio("Item cotado só em orçamento em real.", List.of("o orçamento está em "
+                    + moeda.simbolo() + " e tem item adicionado por cotação (em R$) — volte para R$ ou remova o item"));
+        }
         String requerente = padrao(r.requerente(), cfg.requerentePadrao());
         String gestor = padrao(r.gestor(), cfg.gestorPadrao());
         BigDecimal total = CalculoOrcamento.totalGeral(r);
@@ -94,6 +101,7 @@ public class OrcamentoService {
                 r.subtotal(), r.frete(), r.acrescimos(), total, r.observacoes(), requerente, gestor,
                 usuario.identificador(), Instant.now());
         o.definirValidade(r.validade());
+        o.definirMoeda(moeda);
         List<DadosImpresso.Linha> linhas = new ArrayList<>();
         for (int i = 0; i < impressos.size(); i++) {
             GerarOrcamentoRequest.Item it = impressos.get(i);
@@ -111,7 +119,7 @@ public class OrcamentoService {
             }
             o.adicionarItem(item);
             linhas.add(new DadosImpresso.Linha(it.produto().trim(), it.descricao(), qtd.stripTrailingZeros().toPlainString(),
-                    Dinheiro.formatar(unit), Dinheiro.formatar(tot)));
+                    Dinheiro.formatar(unit, moeda), Dinheiro.formatar(tot, moeda)));
         }
 
         List<String> numerosChamado = numeros(r.chamadoNum());
@@ -132,8 +140,8 @@ public class OrcamentoService {
         }
 
         byte[] bytes = pdf.gerar(new DadosImpresso(loja.getTemplate(), o.getTitulo(), cfg.departamento(), loja.getEmpresa(),
-                loja.getCnpj(), requerente, gestor, r.dataEmissao(), r.validade(), linhas, formatarOpcional(r.subtotal()),
-                formatarOpcional(r.frete()), formatarOpcional(r.acrescimos()), Dinheiro.formatar(total),
+                loja.getCnpj(), requerente, gestor, r.dataEmissao(), r.validade(), linhas, formatarOpcional(r.subtotal(), moeda),
+                formatarOpcional(r.frete(), moeda), formatarOpcional(r.acrescimos(), moeda), Dinheiro.formatar(total, moeda),
                 r.observacoes(), cfg.variacao(), anexos));
 
         String nome = nomeArquivo(numerosChamado, o.getTitulo());
@@ -227,8 +235,8 @@ public class OrcamentoService {
         return r;
     }
 
-    private static String formatarOpcional(BigDecimal v) {
-        return v == null || v.signum() == 0 ? null : Dinheiro.formatar(v);
+    private static String formatarOpcional(BigDecimal v, Moeda moeda) {
+        return v == null || v.signum() == 0 ? null : Dinheiro.formatar(v, moeda);
     }
 
     private static String padrao(String valor, String padrao) {
